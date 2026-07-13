@@ -115,6 +115,20 @@ def _solution_fd_note(validation: Optional[Dict[str, Any]]) -> Optional[str]:
 
 # --------------------------------------------------------------------------- #
 def run_from_config(path: str) -> RunResult:
+    """Run a job. Dispatches on the config kind:
+
+      * **Path A (assembly recipe)** -- the config names a `mesh:`; we assemble R
+        from the ingredients. THIS IS THE PRIMARY PATH.
+      * Path B/C -- the config names a `residual:` (executable / python).
+    """
+    from .checks import _is_recipe
+    if _is_recipe(path):
+        from .assembly_runner import run_recipe
+        return run_recipe(path)
+    return _run_residual_config(path)
+
+
+def _run_residual_config(path: str) -> RunResult:
     t0 = _time.time()
     cfg = load_config(path)
     u = _load_solution(cfg)
@@ -125,7 +139,10 @@ def run_from_config(path: str) -> RunResult:
     time_pair, dtime = _time_pair(cfg)
     free = _free_mask(cfg, ndof)
 
-    R_real = np.zeros(ndof)
+    # None == "the real residual was never available" (black-box). Never fabricate
+    # a zero vector here: a reader of private/residual_real.npz would see ||R||=0
+    # and conclude equilibrium was verified when nothing of the sort happened.
+    R_real = None
     validation: Dict[str, Any] = {"status": "ok"}
 
     if cfg.residual_type in ("python", "element"):

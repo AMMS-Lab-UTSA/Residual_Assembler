@@ -68,6 +68,21 @@ class Formulation(ABC):
     sign_convention: str = "residual"
     verification_levels: Tuple[int, ...] = ()
 
+    #: Can this backend's element residual be evaluated with HYPERCOMPLEX (OTI)
+    #: scalars, so parameters can be overloaded and R^(p) extracted?
+    #:
+    #: This is True only for backends written in GENERIC ARITHMETIC. Backends
+    #: whose kernels use numpy FLOAT arrays (np.zeros(dtype=float), np.linalg,
+    #: ...) cannot carry an OTI number: e.g. core/voigt.py::isotropic_D raises
+    #: `ValueError: setting an array element with a sequence` when handed one,
+    #: which would otherwise silently destroy the imaginary directions.
+    #:
+    #: A backend can ASSEMBLE R without being OTI-differentiable (that is the
+    #: common case today). Sensitivity through Path A requires this flag.
+    #: Making the solid kernels OTI-safe is a known, tractable engineering task
+    #: -- not a physics limitation. See docs/assembly_minimum_information.md.
+    oti_differentiable: bool = False
+
     # ---- capability declaration (consumed by the model inspector / CLI) ----
     # These let the framework reason about a backend without importing physics.
     supported_modes: Tuple[str, ...] = ()      # e.g. ("stress-driven","material-replay")

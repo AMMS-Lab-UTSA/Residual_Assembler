@@ -51,6 +51,7 @@ def _real_of(x):
 
 
 class NonlinearSpring1(Formulation):
+    oti_differentiable = True   # pure generic arithmetic: OTI scalars survive
     name = "nonlinear_spring1"
     element_types = ("SPRING1", "NLSPRING1", "NLS1")
     dof_types = ("U",)                         # one scalar DOF per node
