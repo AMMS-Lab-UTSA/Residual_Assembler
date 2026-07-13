@@ -1,0 +1,86 @@
+{
+  "schema": "resasm-neutral-model/1",
+  "ndim": 3,
+  "nodes": {
+    "1": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "2": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "3": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "4": [
+      1.0,
+      1.0,
+      0.0
+    ]
+  },
+  "elements": {
+    "1": {
+      "eid": 1,
+      "etype": "T3D2",
+      "connectivity": [
+        1,
+        2
+      ]
+    },
+    "2": {
+      "eid": 2,
+      "etype": "B31",
+      "connectivity": [
+        3,
+        4
+      ]
+    }
+  },
+  "node_sets": {},
+  "element_sets": {},
+  "element_formulation": {},
+  "element_material": {
+    "1": "bar",
+    "2": "frame"
+  },
+  "materials": {
+    "bar": {
+      "kind": "binding",
+      "name": "bar",
+      "material": null,
+      "constants": [],
+      "n_state_vars": 0,
+      "section": {
+        "E": 210000.0,
+        "A": 10.0
+      }
+    },
+    "frame": {
+      "kind": "binding",
+      "name": "frame",
+      "material": null,
+      "constants": [],
+      "n_state_vars": 0,
+      "section": {
+        "E": 210000.0,
+        "A": 100.0,
+        "Iz": 833.0,
+        "Iy": 833.0,
+        "G": 80000.0,
+        "J": 1666.0
+      }
+    }
+  },
+  "boundaries": [],
+  "cloads": [],
+  "equations": [],
+  "field_refs": {},
+  "meta": {
+    "title": "mixed truss + beam (heterogeneous DOFs)"
+  }
+}

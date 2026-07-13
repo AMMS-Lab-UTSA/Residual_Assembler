@@ -1,0 +1,10 @@
+{
+  "provider_file": "provider.py",
+  "provider_class": "PrivateBar",
+  "parameters": ["k1", "k2"],
+  "order": 1,
+  "solve": true,
+  "u0": [0.0, 1.0, 2.0],
+  "algebra": "dual1",
+  "output_dir": "out"
+}

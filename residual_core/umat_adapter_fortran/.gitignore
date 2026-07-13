@@ -1,0 +1,5 @@
+# gfortran build artifacts (regenerate with build.sh / build.bat)
+build/
+*.o
+*.mod
+*.exe

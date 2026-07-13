@@ -1,0 +1,6 @@
+{
+  "mode": "formulation",
+  "order": 1,
+  "parameters": ["spring.k"],
+  "expected": {"spring.k": -0.3333333333333333}
+}

@@ -1,0 +1,90 @@
+{
+  "schema": "resasm-neutral-model/1",
+  "ndim": 3,
+  "nodes": {
+    "1": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "2": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "3": [
+      1.0,
+      1.0,
+      0.0
+    ],
+    "4": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "5": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "6": [
+      1.0,
+      0.0,
+      1.0
+    ],
+    "7": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "8": [
+      0.0,
+      1.0,
+      1.0
+    ]
+  },
+  "elements": {
+    "1": {
+      "eid": 1,
+      "etype": "C3D8",
+      "connectivity": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
+  },
+  "node_sets": {},
+  "element_sets": {},
+  "element_formulation": {},
+  "element_material": {
+    "1": "solid"
+  },
+  "materials": {
+    "solid": {
+      "kind": "binding",
+      "name": "solid",
+      "material": null,
+      "constants": [],
+      "n_state_vars": 0,
+      "section": {
+        "E": 210000.0,
+        "nu": 0.3
+      }
+    }
+  },
+  "boundaries": [],
+  "cloads": [],
+  "equations": [],
+  "field_refs": {
+    "stress_ip": "fields.json"
+  },
+  "meta": {
+    "title": "single C3D8 stress-driven (minimal example)"
+  }
+}

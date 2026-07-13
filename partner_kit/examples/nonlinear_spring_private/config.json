@@ -1,0 +1,10 @@
+{
+  "provider_file": "provider.py",
+  "provider_class": "PrivateSpring",
+  "parameters": ["k"],
+  "order": 1,
+  "solve": true,
+  "u0": [1.0],
+  "algebra": "dual1",
+  "output_dir": "out"
+}

@@ -1,0 +1,13 @@
+{
+  "blackbox": {
+    "command": ["python", "mock_solver.py"],
+    "ndof": 1,
+    "parameters": ["k"],
+    "parameter_values": {"k": 2.0, "f": 16.0},
+    "free_mask": [true]
+  },
+  "parameters": ["k"],
+  "order": 1,
+  "solution": [2.0],
+  "output_dir": "out"
+}
