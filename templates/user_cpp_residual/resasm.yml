@@ -1,0 +1,21 @@
+problem:
+  name: cpp_residual_demo
+  unknowns: 1
+
+residual:
+  type: executable
+  command: ./residual --request {request} --response {response}
+
+tangent:
+  type: response
+
+parameters:
+  k: 2.0
+  f: 16.0
+
+solution:
+  file: solution.npy
+
+sensitivity:
+  order: 1
+  backend: otilib

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "residual-assembler"
+version = "0.1.0"
+description = "Model-agnostic residual assembly framework (crystal plasticity is one example backend)"
+readme = "residual_core/README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+yaml = ["PyYAML"]
+
+[project.scripts]
+resasm = "residual_core.ui.cli:main"
+
+[tool.setuptools.packages.find]
+# Automatic discovery: picks up every subpackage (residual_core.algebra,
+# residual_core.ui, resasm_user, partner_kit.python, ...) so the user-facing
+# workflow is fully importable after `pip install -e .`. Do not hand-maintain
+# a package list here -- new subpackages must not silently go unshipped.
+include = ["residual_core*", "resasm_user*", "partner_kit*"]
+exclude = ["tests*", "sources*", "scripts*"]

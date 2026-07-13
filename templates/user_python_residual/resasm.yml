@@ -1,0 +1,26 @@
+problem:
+  name: spring_demo
+  unknowns: 1
+
+residual:
+  type: python
+  module: user_residual.py
+  function: residual
+
+tangent:
+  type: python
+  function: tangent
+
+parameters:
+  k: 2.0
+  f: 16.0
+
+solution:
+  file: solution.npy
+
+sensitivity:
+  order: 2
+  backend: otilib
+
+validation:
+  rhs_finite_difference_check: true

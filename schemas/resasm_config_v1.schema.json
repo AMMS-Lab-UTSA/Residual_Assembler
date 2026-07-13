@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/santiagarcia/Residual_Assembler/schemas/resasm_config_v1.schema.json",
+  "title": "resasm user config (v1)",
+  "description": "Minimal user-facing config for a residual-method sensitivity run.",
+  "type": "object",
+  "required": ["problem", "residual", "parameters", "solution", "sensitivity"],
+  "additionalProperties": true,
+  "properties": {
+    "problem": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string"},
+        "unknowns": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "OPTIONAL. Number of DOFs. If omitted it is inferred from the solution vector (solution.file / solution.values). If given, it must agree with the solution length."
+        }
+      }
+    },
+    "residual": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"enum": ["python", "executable", "element"]},
+        "module": {"type": "string", "description": "python/element: file path"},
+        "function": {"type": "string", "default": "residual"},
+        "command": {"type": "string", "description": "executable: uses {request} {response}"}
+      }
+    },
+    "tangent": {
+      "type": "object",
+      "properties": {
+        "type": {"enum": ["python", "file", "response", "none"]},
+        "function": {"type": "string"},
+        "file": {"type": "string"}
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "number"}
+    },
+    "solution": {
+      "type": "object",
+      "properties": {
+        "file": {"type": "string"},
+        "values": {"type": "array", "items": {"type": "number"}}
+      }
+    },
+    "sensitivity": {
+      "type": "object",
+      "required": ["order"],
+      "properties": {
+        "order": {"type": "integer", "minimum": 1},
+        "backend": {"enum": ["otilib", "dual1"], "default": "otilib"}
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "free": {"type": "array", "items": {"type": "integer"}},
+        "prescribed": {"type": "array", "items": {"type": "integer"}}
+      }
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "file": {"type": "string"},
+        "values": {}
+      }
+    },
+    "time": {
+      "type": "object",
+      "properties": {
+        "time": {"type": "number"},
+        "dtime": {"type": "number"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "properties": {"dir": {"type": "string", "default": "resasm_output"}}
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "rhs_finite_difference_check": {
+          "type": "boolean",
+          "description": "Finite-difference the RESIDUAL derivative d(residual)/d(parameter) at the fixed solution u and solve with the same tangent, then compare to the order-1 sensitivity. Validates the generated RHS and that solve. It does NOT re-solve the nonlinear problem, so it cannot detect an error in the tangent itself."
+        },
+        "finite_difference": {
+          "type": "boolean",
+          "deprecated": true,
+          "description": "DEPRECATED alias of rhs_finite_difference_check (same behaviour). It was misleadingly named: it never validated the full solution."
+        },
+        "solution_finite_difference_solver": {
+          "description": "RESERVED, NOT IMPLEMENTED. A true solution-level finite-difference validation would re-run the user's nonlinear solver at perturbed parameters. Setting this does not perform any such check; the run reports that it was not implemented.",
+          "type": ["string", "boolean", "object", "null"]
+        },
+        "fd_step": {"type": "number"}
+      }
+    }
+  }
+}
