@@ -1,0 +1,21 @@
+problem:
+  name: blackbox_order2_demo
+  # unknowns is optional: inferred from solution.npy
+
+residual:
+  type: executable
+  command: python my_solver.py --request {request} --response {response}
+
+tangent:
+  type: response
+
+parameters:
+  k: 2.0
+  f: 32.0
+
+solution:
+  file: solution.npy
+
+sensitivity:
+  order: 2
+  backend: otilib

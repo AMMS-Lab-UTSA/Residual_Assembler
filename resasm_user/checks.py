@@ -16,6 +16,16 @@ from . import oti_global
 from . import runner as _runner
 
 
+def _is_recipe(path: str) -> bool:
+    """True if this resasm.yml is an assembly recipe (Path A)."""
+    try:
+        from . import _miniyaml
+        from .recipe import is_assembly_config
+        return is_assembly_config(_miniyaml.load_file(path))
+    except Exception:                                   # noqa: BLE001
+        return False
+
+
 @dataclass
 class CheckReport:
     ok: bool = True
@@ -39,8 +49,17 @@ def _fail(rep, msg):
 
 
 def check_config(path: str, warn_tol: float = 1e-4) -> CheckReport:
-    """Validate everything needed for a run, stopping at the first blocker."""
+    """Validate everything needed for a run, stopping at the first blocker.
+
+    Routes to the ASSEMBLY path (Path A) when the config is a residual-assembly
+    recipe (it names a `mesh:` rather than handing us a ready-made residual)."""
     rep = CheckReport()
+    if _is_recipe(path):
+        from .assembly_runner import check_recipe
+        res = check_recipe(path)
+        rep.ok = res.ok
+        rep.lines = res.text.splitlines()
+        return rep
     try:
         cfg = load_config(path)
     except ConfigError as exc:

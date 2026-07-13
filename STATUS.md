@@ -77,8 +77,15 @@ instantiation), verified offline:
 | conda env | `pyoti` at `/root/miniconda3/envs/pyoti` (Python 3.9.23, numpy 2.0.2) |
 | built extension | `/root/otilib/build/pyoti/sparse.cpython-39-x86_64-linux-gnu.so` |
 | adapter detection | `otilib_available()` → `True`; `api_module` = `pyoti.sparse` (genuine OTI API verified, not the unrelated PyPI squat) |
-| tests run | `tests/framework/test_otilib_adapter.py`, `test_otilib_spring_sensitivity.py`, `test_otilib_fe_sensitivity.py` |
-| result | **6 passed** (0 skipped), with `RUN_OTILIB_TESTS=1` so the skip guard is disabled and a skip would have been a failure |
+| tests run | `tests/framework/test_otilib_adapter.py`, `test_otilib_spring_sensitivity.py`, `test_otilib_fe_sensitivity.py`, `test_oti_recovery_factor.py` |
+| result | **11 passed** (0 skipped), with `RUN_OTILIB_TESTS=1` so the skip guard is disabled and a skip would have been a failure |
+
+Included in that run: the **order-2 recovery-factor proof** — for the spring
+`R = k u³ − f` at `k=2, f=16, u=2`, the raw OTI coefficient for the `k²` direction
+is `1/9` and the recovered derivative is `2! · 1/9 = 2/9 = d²u/dk²`, cross-checked
+against a finite difference of the closed-form `u(k,f)`. Public reports quote the
+**recovered derivatives**; both conventions plus `direction_map_order<p>.json` ship
+in `private/`.
 
 Reproduce with **one command**:
 
@@ -259,4 +266,3 @@ because `STATEV` is history-dependent.
    free-DOF residual ≈ 0, prescribed-DOF internal force = ±RF.
 4. Build the real UMAT (ifort+Abaqus), run Mode-2 replay increment-by-increment,
    compare STRESS↔S and STATEV↔SDV, then close Mode-1 with replayed stress.
-</content>

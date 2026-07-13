@@ -34,6 +34,7 @@ def _prop(properties, key, default=None):
 
 
 class NonlinearBar1(Formulation):
+    oti_differentiable = True   # pure generic arithmetic: OTI scalars survive
     name = "nonlinear_bar1"
     element_types = ("NLBAR2", "BAR1", "NLB2")
     dof_types = ("U",)                         # one axial DOF per node

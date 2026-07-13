@@ -16,6 +16,51 @@ from typing import Any, Dict, List
 import numpy as np
 
 
+def _derivative_label(exps, names) -> str:
+    """Human-readable derivative label, e.g. (2,0)+[k,f] -> 'd2/dk2';
+    (1,1) -> 'd2/dk_df'; (1,) -> 'd/dk'."""
+    p = int(sum(exps))
+    num = "d" if p == 1 else "d%d" % p
+    den = "_".join("d%s%s" % (names[i], "" if k == 1 else str(int(k)))
+                   for i, k in enumerate(exps) if k)
+    return "%s/%s" % (num, den)
+
+
+def direction_columns(labels_p, names) -> List[Dict[str, Any]]:
+    """Column metadata for one order: index, exponents, label, recovery_factor.
+
+    ``recovery_factor`` = prod_i (kappa_i!). It converts a raw OTI **Taylor
+    coefficient** into the true partial **derivative**:
+
+        derivative = recovery_factor * coefficient
+
+    It is 1 for every order-1 direction and for mixed directions whose exponents
+    are all 1, and > 1 whenever a parameter is repeated (e.g. d2/dk2 -> 2! = 2).
+    """
+    cols = []
+    for i, d in enumerate(labels_p):
+        exps = [int(e) for e in d["exponents"]]
+        cols.append({
+            "index": i,
+            "exponents": exps,
+            "label": _derivative_label(exps, names),
+            "oti_label": d["label"],
+            "recovery_factor": float(d["recovery_factor"]),
+            "parameter_names": names,
+        })
+    return cols
+
+
+def _factors(labels_p) -> np.ndarray:
+    """(ncols,) array of recovery factors, aligned with the array columns."""
+    return np.array([float(d["recovery_factor"]) for d in labels_p], dtype=float)
+
+
+def _exponents(labels_p) -> np.ndarray:
+    """(ncols, m) integer exponent matrix, aligned with the array columns."""
+    return np.array([[int(e) for e in d["exponents"]] for d in labels_p], dtype=int)
+
+
 def write_outputs(out_dir: str, cfg, result: Dict[str, Any]) -> Dict[str, str]:
     priv = os.path.join(out_dir, "private")
     pub = os.path.join(out_dir, "public")
@@ -41,29 +86,84 @@ def write_outputs(out_dir: str, cfg, result: Dict[str, Any]) -> Dict[str, str]:
     _dump_json(os.path.join(priv, "dof_map.json"),
                {"ndof": ndof, "free_dofs": [int(i) for i in np.where(free)[0]],
                 "prescribed_dofs": [int(i) for i in np.where(~free)[0]]})
-    np.savez(os.path.join(priv, "residual_real.npz"), residual=result["R_real"])
+    # Only write the real residual if it actually exists. In black-box mode the
+    # provider never returns it, so writing a zero vector would fake equilibrium
+    # in the private package (the same lie we refuse to print in public/).
+    if result.get("R_real") is not None:
+        np.savez(os.path.join(priv, "residual_real.npz"),
+                 residual=np.asarray(result["R_real"], float))
+    else:
+        _dump_json(os.path.join(priv, "residual_real_UNAVAILABLE.json"), {
+            "residual_available": False,
+            "reason": result["validation"].get(
+                "residual_free_norm_reason",
+                "black-box did not expose real residual"),
+            "note": "No residual_real.npz is written: the provider never returned "
+                    "the real residual vector, so there is nothing to store. A zero "
+                    "vector would falsely imply equilibrium was verified."})
     if result.get("tangent") is not None:
         np.savez(os.path.join(priv, "tangent.npz"), tangent=result["tangent"])
+    # ---- per-order arrays -------------------------------------------------
+    # The OTI evaluation yields raw TAYLOR COEFFICIENTS. The true partial
+    # derivative is  derivative = recovery_factor * coefficient, with
+    # recovery_factor = prod_i (kappa_i!). This is 1 at order 1 (so order-1
+    # numbers are unchanged), but 2! = 2 for d2/dk2, 3! = 6 for d3/dk3, ...
+    # We export BOTH, plus the direction map, so nothing has to be inferred.
     for p, arr in R_orders.items():
-        np.savez(os.path.join(priv, "rhs_order%d.npz" % p), rhs=-arr, residual=arr)
+        fac = _factors(labels[p])                    # (ncols,)
+        exps = _exponents(labels[p])                 # (ncols, m)
+        np.savez(
+            os.path.join(priv, "rhs_order%d.npz" % p),
+            # legacy keys (RAW COEFFICIENTS -- kept for backward compatibility)
+            residual=arr, rhs=-arr,
+            # explicit coefficient arrays
+            residual_coefficients=arr, rhs_coefficients=-arr,
+            # recovered partial derivatives
+            residual_derivatives=arr * fac, rhs_derivatives=(-arr) * fac,
+            direction_exponents=exps, recovery_factors=fac)
     for p, arr in U_orders.items():
-        np.savez(os.path.join(priv, "solution_sensitivities_order%d.npz" % p), U=arr)
+        fac = _factors(labels[p])
+        exps = _exponents(labels[p])
+        np.savez(
+            os.path.join(priv, "solution_sensitivities_order%d.npz" % p),
+            # legacy key (RAW COEFFICIENTS -- kept for backward compatibility)
+            U=arr,
+            U_coefficients=arr,
+            U_derivatives=arr * fac,
+            direction_exponents=exps, recovery_factors=fac)
+    for p in sorted(labels):
+        _dump_json(os.path.join(priv, "direction_map_order%d.json" % p), {
+            "order": p,
+            "parameter_names": names,
+            "note": "derivative = recovery_factor * coefficient "
+                    "(recovery_factor = prod_i kappa_i!)",
+            "columns": direction_columns(labels[p], names)})
     _dump_json(os.path.join(priv, "validation_full.json"), result["validation"])
 
     # ---- public (safe to share) -----------------------------------------
-    ranking = _parameter_ranking(names, U_orders)
+    # PUBLIC REPORTS QUOTE RECOVERED DERIVATIVES, not raw coefficients. At order 1
+    # every recovery factor is 1, so order-1 numbers are numerically unchanged; at
+    # order >= 2 this is what stops repeated directions (d2/dk2 etc.) from being
+    # under-reported by a factorial.
+    U_deriv = {p: U_orders[p] * _factors(labels[p]) for p in U_orders}
+    R_deriv = {p: R_orders[p] * _factors(labels[p]) for p in R_orders}
+
+    ranking = _parameter_ranking(names, U_deriv)      # order-1: factors are 1
     _write_csv(os.path.join(pub, "parameter_ranking.csv"),
                ["rank", "parameter", "order1_sensitivity_norm"],
                [[r["rank"], r["parameter"], "%.6e" % r["norm"]] for r in ranking])
 
     norm_rows = []
-    for p in sorted(U_orders):
-        for col, lab in enumerate(labels[p]):
-            norm_rows.append([p, lab["label"],
-                              "%.6e" % float(np.linalg.norm(U_orders[p][:, col])),
-                              "%.6e" % float(np.linalg.norm(R_orders[p][:, col]))])
+    for p in sorted(U_deriv):
+        for col, cmeta in enumerate(direction_columns(labels[p], names)):
+            norm_rows.append([
+                p, cmeta["label"], cmeta["oti_label"],
+                "%g" % cmeta["recovery_factor"],
+                "%.6e" % float(np.linalg.norm(U_deriv[p][:, col])),
+                "%.6e" % float(np.linalg.norm(R_deriv[p][:, col]))])
     _write_csv(os.path.join(pub, "sensitivity_norms.csv"),
-               ["order", "direction", "solution_sensitivity_norm", "rhs_norm"],
+               ["order", "direction", "oti_direction", "recovery_factor",
+                "solution_sensitivity_norm", "rhs_norm"],
                norm_rows)
 
     _dump_json(os.path.join(pub, "timing.json"), result.get("timing", {}))
@@ -152,6 +252,19 @@ def _write_summary_md(path, cfg, result, ranking):
     ]
     for r in ranking:
         lines.append("| %d | %s | %.6e |" % (r["rank"], r["parameter"], r["norm"]))
+
+    lines += [
+        "",
+        "> **Convention.** All numbers in this public report are **recovered partial"
+        " derivatives**, not raw OTI Taylor coefficients:"
+        " `derivative = recovery_factor * coefficient`, with"
+        " `recovery_factor = prod_i (kappa_i!)`. It is 1 for every order-1 direction"
+        " (so order-1 values are identical either way) and greater than 1 for"
+        " repeated directions (e.g. `d2/dk2` -> 2! = 2). `sensitivity_norms.csv`"
+        " lists the factor used for each direction. The private package ships both"
+        " conventions (`*_coefficients` and `*_derivatives`) plus"
+        " `direction_map_order<p>.json`.",
+    ]
 
     fd = v.get("rhs_finite_difference_check")
     if fd:

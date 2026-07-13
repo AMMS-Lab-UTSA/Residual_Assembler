@@ -327,6 +327,9 @@ def _expected_key(label, direction, expected):
 _TEMPLATES = {
     "python":  "user_python_residual",
     "blackbox": "user_blackbox_residual",
+    # order >= 2 black-box reference: returns OTI Taylor COEFFICIENTS (not
+    # derivatives) -- see docs/blackbox_order2_contract.md
+    "blackbox-order2": "user_blackbox_order2_residual",
     "cpp":     "user_cpp_residual",
     "fortran": "user_fortran_residual",
 }
@@ -383,6 +386,65 @@ def _cmd_init(args):
     init_wizard(out_path=args.out or "resasm.yml")
     print("\nNext:\n  resasm check %s\n  resasm run %s"
           % (args.out or "resasm.yml", args.out or "resasm.yml"))
+    return 0
+
+
+def _cmd_inspect_model(args):
+    """Assembly-oriented inspection: what do I have, what is inferable, what is
+    missing to ASSEMBLE the residual."""
+    from resasm_user.recipe import Recipe, MeshSpec, infer, describe
+    r = Recipe(name=os.path.basename(args.model))
+    r.base_dir = os.path.dirname(os.path.abspath(args.model)) or "."
+    r.mesh = MeshSpec(file=os.path.basename(args.model))
+    if args.solution:
+        r.fields.solution = args.solution
+    if args.material:
+        r.material.file = args.material
+    if args.param:
+        r.parameters = list(args.param)
+    infer(r)
+    print(describe(r))
+    return 0 if not (r.missing or r.blockers) else 1
+
+
+def _cmd_init_assembly(args):
+    """Write an assembly recipe (Path A) with as few questions as possible."""
+    from resasm_user.recipe import Recipe, MeshSpec, infer, describe
+    out = args.out or "resasm.yml"
+    if not args.model:
+        print("ERROR: --model <mesh file> is required (e.g. model.inp)",
+              file=sys.stderr)
+        return 2
+    lines = ["problem:", "  name: %s" % (args.name or "assembly_job"), "",
+             "mesh: %s" % args.model, ""]
+    if args.solution:
+        lines += ["solution: %s" % args.solution, ""]
+    if args.material:
+        lines += ["material: %s" % args.material, ""]
+    if args.param:
+        # In ASSEMBLY mode the parameter VALUES live in the model (section /
+        # material properties). We only need their names.
+        lines += ["parameters:"]
+        lines += ["  - %s" % p for p in args.param]
+        lines += [""]
+    lines += ["sensitivity:", "  order: 1", "  backend: otilib", ""]
+    with open(out, "w", encoding="utf-8") as fh:
+        fh.write(os.linesep.join(lines))
+    print("wrote %s" % out)
+    print()
+    # immediately tell them what is inferred and what is still missing
+    r = Recipe(name=args.name or "assembly_job")
+    r.base_dir = os.path.dirname(os.path.abspath(out)) or "."
+    r.mesh = MeshSpec(file=args.model)
+    r.fields.solution = args.solution
+    r.material.file = args.material
+    r.parameters = list(args.param or [])
+    infer(r)
+    print(describe(r))
+    print()
+    print("Next:")
+    print("  resasm check %s" % out)
+    print("  resasm run   %s" % out)
     return 0
 
 
@@ -500,6 +562,26 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--force", action="store_true",
                    help="overwrite an existing --out directory")
     s.set_defaults(func=_cmd_init)
+
+    s = sub.add_parser("inspect-model",
+                       help="ASSEMBLY path: what ingredients do I have, what is "
+                            "inferable, what is missing to assemble R?")
+    s.add_argument("model", help="mesh/model file (.inp or neutral .json)")
+    s.add_argument("--solution", help="converged solution field (U.npy)")
+    s.add_argument("--material", help="material evaluator (e.g. umat.f)")
+    s.add_argument("--param", action="append",
+                   help="a parameter to differentiate, 'material.key' (repeatable)")
+    s.set_defaults(func=_cmd_inspect_model)
+
+    s = sub.add_parser("init-assembly",
+                       help="ASSEMBLY path: write a resasm.yml recipe from a model")
+    s.add_argument("--model", help="mesh/model file (.inp or neutral .json)")
+    s.add_argument("--solution", help="converged solution field (U.npy)")
+    s.add_argument("--material", help="material evaluator (e.g. umat.f)")
+    s.add_argument("--param", action="append", help="parameter 'material.key'")
+    s.add_argument("--name", help="job name")
+    s.add_argument("--out", help="output config path (default resasm.yml)")
+    s.set_defaults(func=_cmd_init_assembly)
 
     s = sub.add_parser("check", help="check a resasm.yml is ready to run")
     s.add_argument("config_file")

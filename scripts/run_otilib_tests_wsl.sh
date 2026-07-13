@@ -28,6 +28,11 @@ TESTS=(
   "tests/framework/test_otilib_adapter.py"
   "tests/framework/test_otilib_spring_sensitivity.py"
   "tests/framework/test_otilib_fe_sensitivity.py"
+  # order-2 spring: raw OTI coefficients vs recovered partial derivatives
+  # (proves the factorial recovery factor -- d2u/dk2 = 2! * coefficient)
+  "tests/framework/test_oti_recovery_factor.py"
+  # Path A: assemble R from ingredients -> OTI overload -> solve
+  "tests/framework/test_assembly_recipe.py"
 )
 
 die() {
