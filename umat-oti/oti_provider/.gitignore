@@ -1,0 +1,9 @@
+*.mod
+*.so
+elastic/dist/
+__pycache__/
+materials/*/build/
+materials/*/material.resmat.zip
+materials/*/build/
+materials/*/*.obj
+materials/*/umat_*_oti.json

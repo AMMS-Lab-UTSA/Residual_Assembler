@@ -1,0 +1,20 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_sweep_maxwell_ve_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "sweep_maxwell_ve.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "E",
+        "nu",
+        "tau"
+      ]
+    }
+  ]
+}

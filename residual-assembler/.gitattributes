@@ -1,0 +1,31 @@
+# Normalize line endings to LF so source/transform hashes are identical across
+# Windows and Linux checkouts.
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.for   text eol=lf
+*.f90   text eol=lf
+*.f     text eol=lf
+*.inc   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.sh    text eol=lf
+*.h     text eol=lf
+*.c     text eol=lf
+*.cpp   text eol=lf
+*.inp   text eol=lf
+
+*.obj   binary
+*.o     binary
+*.so    binary
+*.dll   binary
+*.mod   binary
+*.png   binary
+*.zip   binary
+*.pdf   binary
+*.h5    binary
+*.odb   binary

@@ -1,0 +1,256 @@
+[
+  {
+    "name": "aniso_ortho",
+    "material_dir_name": "sweep_aniso_ortho",
+    "physics": "Orthotropic linear elasticity (3D small-strain), symmetric 6",
+    "props_values": [
+      168000,
+      80000,
+      80000,
+      168000,
+      80000,
+      168000,
+      44000,
+      44000,
+      44000
+    ],
+    "params": [
+      "C11",
+      "C12",
+      "C13",
+      "C22",
+      "C23",
+      "C33",
+      "C44",
+      "C55",
+      "C66"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "lame_elastic",
+    "material_dir_name": "sweep_lame_elastic",
+    "physics": "Isotropic linear elasticity parameterised by Lame parameters",
+    "props_values": [
+      120000,
+      80000
+    ],
+    "params": [
+      "lambda",
+      "mu"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "transiso",
+    "material_dir_name": "sweep_transiso",
+    "physics": "Transversely isotropic linear elasticity (plane of isotropy ",
+    "props_values": [
+      150000,
+      10000,
+      0.3,
+      0.3,
+      5000
+    ],
+    "params": [
+      "EP",
+      "ET",
+      "XNUP",
+      "XNUPT",
+      "GT"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "thermoelastic",
+    "material_dir_name": "sweep_thermoelastic",
+    "physics": "Isotropic thermo-elasticity (linear elastic with thermal exp",
+    "props_values": [
+      210000,
+      0.3,
+      1.2e-05
+    ],
+    "params": [
+      "E",
+      "nu",
+      "alpha"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "damage_elastic",
+    "material_dir_name": "sweep_damage_elastic",
+    "physics": "Secant isotropic damaged elasticity (small strain): STRESS +",
+    "props_values": [
+      210000,
+      0.3,
+      0.2
+    ],
+    "params": [
+      "E",
+      "nu",
+      "d"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "j2_kinematic",
+    "material_dir_name": "sweep_j2_kinematic",
+    "physics": "Small-strain von Mises (J2) plasticity with linear kinematic",
+    "props_values": [
+      200000,
+      0.3,
+      250,
+      2000
+    ],
+    "params": [
+      "E",
+      "nu",
+      "SIGY0",
+      "Hk"
+    ],
+    "nstatev": 6
+  },
+  {
+    "name": "j2_combined",
+    "material_dir_name": "sweep_j2_combined",
+    "physics": "J2 (von Mises) small-strain plasticity with combined linear ",
+    "props_values": [
+      200000,
+      0.3,
+      250,
+      1000,
+      1500
+    ],
+    "params": [
+      "E",
+      "nu",
+      "SIGY0",
+      "HISO",
+      "HKIN"
+    ],
+    "nstatev": 7
+  },
+  {
+    "name": "j2_bilinear",
+    "material_dir_name": "sweep_j2_bilinear",
+    "physics": "J2 (von Mises) small-strain plasticity with bilinear isotrop",
+    "props_values": [
+      200000,
+      0.3,
+      250,
+      20000
+    ],
+    "params": [
+      "E",
+      "nu",
+      "SIGY0",
+      "Et"
+    ],
+    "nstatev": 1
+  },
+  {
+    "name": "drucker_prager",
+    "material_dir_name": "sweep_drucker_prager",
+    "physics": "Linear (pressure-dependent) Drucker-Prager plasticity, assoc",
+    "props_values": [
+      20000,
+      0.25,
+      12,
+      0.3
+    ],
+    "params": [
+      "E",
+      "nu",
+      "k",
+      "beta"
+    ],
+    "nstatev": 1
+  },
+  {
+    "name": "perzyna_linear",
+    "material_dir_name": "sweep_perzyna_linear",
+    "physics": "Small-strain Perzyna viscoplasticity with LINEAR overstress ",
+    "props_values": [
+      200000,
+      0.3,
+      250,
+      5000
+    ],
+    "params": [
+      "E",
+      "nu",
+      "SIGY0",
+      "eta"
+    ],
+    "nstatev": 1
+  },
+  {
+    "name": "maxwell_ve",
+    "material_dir_name": "sweep_maxwell_ve",
+    "physics": "Linear Maxwell viscoelasticity (small strain, 3D): elastic v",
+    "props_values": [
+      200000,
+      0.3,
+      1
+    ],
+    "params": [
+      "E",
+      "nu",
+      "tau"
+    ],
+    "nstatev": 6
+  },
+  {
+    "name": "mooney_small",
+    "material_dir_name": "sweep_mooney_small",
+    "physics": "Small-strain reduction of compressible neo-Hookean = isotrop",
+    "props_values": [
+      80000,
+      160000
+    ],
+    "params": [
+      "mu",
+      "kappa"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "real_ECL_TEMP",
+    "material_dir_name": "sweep_real_ECL_TEMP",
+    "physics": "Classical isotropic linear elasticity with temperature-depen",
+    "props_values": [
+      200,
+      0.1,
+      77,
+      0.05,
+      1.2e-05
+    ],
+    "params": [
+      "E1",
+      "E2",
+      "G1",
+      "G2",
+      "CTE"
+    ],
+    "nstatev": 0
+  },
+  {
+    "name": "real_PCO",
+    "material_dir_name": "sweep_real_PCO",
+    "physics": "Reduced-Cosserat couple-stress rate-independent J2 plasticit",
+    "props_values": [
+      210000,
+      0.3,
+      250,
+      2000
+    ],
+    "params": [
+      "E",
+      "nu",
+      "SIGY0",
+      "H"
+    ],
+    "nstatev": 1
+  }
+]

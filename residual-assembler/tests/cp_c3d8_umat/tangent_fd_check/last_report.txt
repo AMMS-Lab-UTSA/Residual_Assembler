@@ -1,0 +1,26 @@
+c3d8_residual verification report
+generated: 2026-07-17T13:36:40
+numpy: 1.22.2
+
+CHECK                                                      METRIC                           TOL        RESULT
+--------------------------------------------------------------------------------------------------------------
+1 divergence: Compression111_elem1 / random_symmetric      rel=5.174e-16 |sumF|=9.280e-14   rel<1e-8   PASS
+1 divergence: Compression111_elem1 / uniaxial_s33_250      rel=5.642e-16 |sumF|=2.842e-14   rel<1e-8   PASS
+1 divergence: distorted_hex / random_symmetric             rel=6.552e-16 |sumF|=6.771e-14   rel<1e-8   PASS
+1 divergence: distorted_hex / uniaxial_s33_250             rel=7.420e-16 |sumF|=5.684e-14   rel<1e-8   PASS
+1b linear-stress patch (per-IP weights+pairing)            rel=4.473e-14                    rel<1e-9   PASS
+2 uniaxial unit cube (+z=+S33A/4, sides 0)                 max_err=1.421e-14                <1e-10     PASS
+3a linear tangent FD vs analytic K                         abs=2.910e-11 rel_Fro=1.557e-16 max=2.910e-11 rel<1e-6   PASS
+3b finite-strain force FD vs fixed-sigma J (U_amp=0.00)    abs=2.394e-09 rel_Fro=5.695e-11  rel<1e-6   PASS
+3b finite-strain force FD vs fixed-sigma J (U_amp=0.50)    abs=1.588e-09 rel_Fro=4.734e-11  rel<1e-6   PASS
+
+TANGENT FINITE-DIFFERENCE NUMERIC DETAIL
+  3a linear small-strain tangent:
+      absolute error (max entry) : 2.910383e-11
+      relative error (Frobenius) : 1.556565e-16   (assert < 1e-6)
+      max single-entry error     : 2.910383e-11
+  3b finite-strain force FD vs exact fixed-sigma Jacobian:
+      U_amp=0.00  abs=2.393507e-09  rel_Fro=5.695116e-11   (assert < 1e-6)
+      U_amp=0.50  abs=1.587674e-09  rel_Fro=4.734336e-11   (assert < 1e-6)
+
+OVERALL: ALL PASS

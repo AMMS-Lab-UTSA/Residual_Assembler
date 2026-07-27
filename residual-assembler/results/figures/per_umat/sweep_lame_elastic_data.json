@@ -1,0 +1,27 @@
+{
+  "mdir": "sweep_lame_elastic",
+  "physics": "Isotropic elasticity (Lame)",
+  "path_dependent": false,
+  "params": [
+    "lambda",
+    "mu"
+  ],
+  "props_values": [
+    120000.0,
+    80000.0
+  ],
+  "nstatev": 0,
+  "p1_worst": 1.0184480907414303e-10,
+  "p2_worst": 1.0184480907414303e-10,
+  "p1_errors": {
+    "lambda": 1.562815993553348e-10,
+    "mu": 3.174136300013188e-10
+  },
+  "p2_errors": {
+    "lambda": 7.297514620481403e-14,
+    "mu": 2.764206798054555e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_lame_elastic/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_lame_elastic/umat_sweep_lame_elastic_oti.json",
+  "svm_final": 3200.0
+}

@@ -1,0 +1,88 @@
+name: umat-oti CI
+
+# Cross-platform verification: the documented quickstart, the unit tests, the J2
+# and FCC builds, and the full 21-contract validate-all sweep must pass on native
+# Windows AND native Linux, each with its own gfortran. This is the automated
+# guard behind the claim that Program 1 runs from the same repo and CLI on both
+# platforms.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: ${{ matrix.os }} · py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Purpose-built Fortran toolchain setup: installs gfortran and puts it on
+      # PATH correctly on Windows, Linux and macOS (no hard-coded paths, no
+      # brittle "guess the MinGW dir" logic).
+      - name: Set up gfortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+
+      - name: gfortran and binutils present
+        shell: bash
+        run: |
+          gfortran --version
+          # ld / objdump are needed for the ld -r bundle and the load diagnostic
+          which ld
+          which objdump || echo "objdump not found (diagnostic detail only)"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      # --- unit tests (loader + FD methodology + binary metadata; no build) ---
+      - name: Unit tests
+        run: python -m pytest tests/ -v
+
+      # --- the documented quickstart, unchanged, on this platform ------------
+      - name: Quickstart (README build command)
+        run: python oti_provider/umat_transform.py build oti_provider/materials/m1_elastic/contract.json
+
+      # --- the flagship path-dependent + crystal-plasticity models -----------
+      - name: Build J2 plasticity
+        run: python oti_provider/umat_transform.py build oti_provider/materials/m3_j2/contract.json
+      - name: Build FCC crystal plasticity
+        run: python oti_provider/umat_transform.py build oti_provider/materials/m6_fcc/contract.json
+
+      # --- the full sweep: all 21 contracts discovered and validated ---------
+      - name: validate-all (21 material contracts)
+        run: python oti_provider/umat_transform.py validate-all
+
+      # --- record the binary metadata for this platform (artifact) -----------
+      - name: Show platform binary metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, glob
+          for f in sorted(glob.glob("oti_provider/materials/m1_elastic/umat_*_oti.json")):
+              b = json.load(open(f)).get("binary", {})
+              print(f, "->", b.get("os"), b.get("arch"), b.get("binary_format"),
+                    b.get("object_format_probed"), b.get("compiler_version"))
+          PY
+
+      # --- static-runtime fallback path also works ---------------------------
+      - name: validate-all with static gfortran runtime
+        env:
+          UMAT_OTI_STATIC_FORTRAN: "1"
+        run: python oti_provider/umat_transform.py build oti_provider/materials/m3_j2/contract.json

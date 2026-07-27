@@ -1,0 +1,35 @@
+{
+  "mdir": "m3_j2",
+  "physics": "J2 plasticity, linear hardening",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "H"
+  ],
+  "props_values": [
+    210000.0,
+    0.3,
+    250.0,
+    2000.0
+  ],
+  "nstatev": 1,
+  "p1_worst": 3.91414107856671e-10,
+  "p2_worst": 3.91414107856671e-10,
+  "p1_errors": {
+    "E": 2.883851682941132e-14,
+    "nu": 7.69395366160168e-11,
+    "SIGY0": 3.2403323842183523e-12,
+    "H": 1.4455898048107251e-12
+  },
+  "p2_errors": {
+    "E": 4.114549483818752e-11,
+    "nu": 4.5347030974099e-08,
+    "SIGY0": 1.847883680291236e-12,
+    "H": 6.938164345184792e-11
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m3_j2/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m3_j2/umat_m3_j2_oti.json",
+  "svm_final": 274.4017632241812
+}

@@ -1,0 +1,31 @@
+{
+  "mdir": "m2_cubic",
+  "physics": "Cubic anisotropic elasticity",
+  "path_dependent": false,
+  "params": [
+    "C11",
+    "C12",
+    "C44"
+  ],
+  "props_values": [
+    170000.0,
+    124000.0,
+    75000.0
+  ],
+  "nstatev": 0,
+  "p1_worst": 4.842426802174756e-11,
+  "p2_worst": 4.842426802174756e-11,
+  "p1_errors": {
+    "C11": 6.663398131434653e-11,
+    "C12": 1.1431397414098869e-10,
+    "C44": 3.785776488446737e-11
+  },
+  "p2_errors": {
+    "C11": 6.341882147234246e-11,
+    "C12": 4.941726781811031e-11,
+    "C44": 0.0
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m2_cubic/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m2_cubic/umat_m2_cubic_oti.json",
+  "svm_final": 920.0
+}

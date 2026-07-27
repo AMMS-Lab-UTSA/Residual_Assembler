@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "resasm_sensitivity_job_v1",
+  "title": "resasm sensitivity job (v1)",
+  "description": "The single job file that drives Program 2. Seven top-level groups; consumes the direct OTI .obj + completed contract, a converged analysis record, and requests parameters and physical outputs. No ZIP.",
+  "type": "object",
+  "required": ["schema", "material", "analysis", "location", "parameters", "outputs", "result"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "resasm_sensitivity_job_v1"},
+    "material": {
+      "type": "object", "required": ["oti_umat", "contract"],
+      "properties": {
+        "oti_umat": {"type": "string", "description": "path to umat_<name>_oti.obj"},
+        "contract": {"type": "string", "description": "path to umat_<name>_oti.json"}
+      }
+    },
+    "analysis": {
+      "type": "object", "required": ["record"],
+      "properties": {
+        "model": {"type": "string", "description": "path to the FE model .inp (optional; the record carries the mesh)"},
+        "record": {"type": "string", "description": "path to the converged analysis record (.resrec.h5 / .json)"}
+      }
+    },
+    "location": {
+      "type": "object",
+      "properties": {"step": {"type": "string"}, "increment": {"type": ["string", "integer"]}}
+    },
+    "parameters": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}
+    },
+    "outputs": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["output_id", "type"],
+        "properties": {
+          "output_id": {"type": "string"},
+          "type": {"enum": ["nodal_displacement", "reaction_force", "integration_point_stress"]},
+          "region": {"type": "object", "properties": {
+            "node_set": {"type": "string"}, "element_set": {"type": "string"},
+            "node": {"type": "integer"}, "element": {"type": "integer"}}},
+          "component": {"type": "string", "description": "U1..U3 / RF1..RF3 / S11,S22,S33,S12,S13,S23"},
+          "integration_points": {"type": ["string", "array"]},
+          "reduction": {"enum": ["average", "sum", "volume_average", "max_abs", "none"]}
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "summary_csv": {"type": "boolean"}, "summary_json": {"type": "boolean"},
+        "full_displacement_sensitivity_fields": {"type": "boolean"},
+        "full_stress_sensitivity_fields": {"type": "boolean"},
+        "output_dir": {"type": "string"}
+      }
+    }
+  }
+}

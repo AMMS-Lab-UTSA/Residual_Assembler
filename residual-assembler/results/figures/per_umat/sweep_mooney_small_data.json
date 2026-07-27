@@ -1,0 +1,27 @@
+{
+  "mdir": "sweep_mooney_small",
+  "physics": "Neo-Hookean (small strain)",
+  "path_dependent": false,
+  "params": [
+    "mu",
+    "kappa"
+  ],
+  "props_values": [
+    80000.0,
+    160000.0
+  ],
+  "nstatev": 0,
+  "p1_worst": 1.928571014949039e-11,
+  "p2_worst": 1.928571014949039e-11,
+  "p1_errors": {
+    "mu": 3.6775270342494523e-10,
+    "kappa": 2.384643649028268e-10
+  },
+  "p2_errors": {
+    "mu": 2.0182940525927279e-10,
+    "kappa": 6.832142733881976e-08
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_mooney_small/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_mooney_small/umat_sweep_mooney_small_oti.json",
+  "svm_final": 3200.0000000000005
+}

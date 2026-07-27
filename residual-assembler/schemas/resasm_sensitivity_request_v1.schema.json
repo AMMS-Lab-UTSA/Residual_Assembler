@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "resasm_sensitivity_request_v1",
+  "title": "resasm residual request contract (v1)",
+  "description": "The high-level OUTPUT-PARAMETER request the collaborator writes: every output field is paired with its OWN material parameters (with_respect_to), a single scope selects the domain and increments, and the material is the OTI object (its completed contract is the sibling .json). Consumed by residual_core.replay.request_contract.run_request_contract. The low-level per-point form (parameters + node/element outputs) is an internal expansion used by residual_core.replay.engine.run_request.",
+  "type": "object",
+  "required": ["material", "record", "requests"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "resasm_sensitivity_request_v1"},
+    "material": {"type": "string",
+                 "description": "path to the OTI object (.obj); the completed contract is the sibling .json"},
+    "model": {"type": "string",
+              "description": "path to the FE model (.inp); optional, the record already carries the mesh"},
+    "record": {"type": "string", "description": "path to the converged replay record"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {"type": "string",
+                   "description": "'ALL' or the name of a node/element set defined in the record"},
+        "increments": {"enum": ["ALL_CONVERGED", "LAST", "last"],
+                       "description": "which converged increments to evaluate"}
+      }
+    },
+    "requests": {
+      "type": "array",
+      "minItems": 1,
+      "description": "pair every output with its own set of material parameters",
+      "items": {
+        "type": "object",
+        "required": ["output", "with_respect_to"],
+        "additionalProperties": false,
+        "properties": {
+          "output": {"type": "string",
+                     "description": "U (displacement), RF (reaction), S (stress), or a state-variable name such as EQPLAS"},
+          "with_respect_to": {
+            "type": "array", "minItems": 1, "items": {"type": "string"},
+            "description": "material parameters to differentiate THIS output against (each must exist in the material contract)"
+          }
+        }
+      }
+    },
+    "output_dir": {"type": "string", "description": "where to write the sensitivity results (default sensitivity_out)"}
+  }
+}

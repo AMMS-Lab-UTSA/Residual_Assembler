@@ -1,0 +1,35 @@
+{
+  "mdir": "sweep_j2_bilinear",
+  "physics": "J2 plasticity, bilinear hardening",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "Et"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    250.0,
+    20000.0
+  ],
+  "nstatev": 1,
+  "p1_worst": 2.623873220503732e-10,
+  "p2_worst": 2.623873220503732e-10,
+  "p1_errors": {
+    "E": 1.8861924012436757e-14,
+    "nu": 1.0693723476137377e-10,
+    "SIGY0": 3.0183425223826233e-12,
+    "Et": 1.0337719540248312e-13
+  },
+  "p2_errors": {
+    "E": 5.112117291600341e-13,
+    "nu": 8.522777921815171e-09,
+    "SIGY0": 8.515515534785318e-11,
+    "Et": 4.11325018442495e-11
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_bilinear/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_bilinear/umat_sweep_j2_bilinear_oti.json",
+  "svm_final": 498.31081081081084
+}

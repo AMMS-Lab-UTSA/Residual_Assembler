@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "umat-oti"
+version = "0.1.0"
+description = "Transform a normal Abaqus UMAT into an OTI-enabled object that also returns its material-parameter derivatives (Program 1)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+	{ name = "David Restrepo" },
+	{ name = "Santiago Garcia Botero" },
+]
+classifiers = [
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3",
+	"Topic :: Scientific/Engineering",
+]
+dependencies = [
+	"numpy>=1.26",
+	# used by the OTILib/MultiZ module generator (UMATs/OTI/fmod_writer.py) to
+	# emit the OTI Fortran module; required for `umat_transform.py build`.
+	"sympy>=1.12",
+]
+
+[project.optional-dependencies]
+app = ["pandas>=2.0", "streamlit>=1.30"]
+test = ["pytest>=7"]
+
+[project.scripts]
+umat-oti = "umat_oti.cli:main"
+umat-oti-config = "umat_oti.cli_json:main"
+umat-oti-batch = "umat_oti.cli_batch:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

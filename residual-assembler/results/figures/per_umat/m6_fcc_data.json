@@ -1,0 +1,59 @@
+{
+  "mdir": "m6_fcc",
+  "physics": "FCC single crystal, 12 slip systems",
+  "path_dependent": true,
+  "params": [
+    "g0",
+    "h0",
+    "q",
+    "gd0",
+    "m",
+    "gsat",
+    "C11",
+    "C12",
+    "C44",
+    "a"
+  ],
+  "props_values": [
+    168000.0,
+    121000.0,
+    75000.0,
+    16.0,
+    40.0,
+    300.0,
+    2.0,
+    1.4,
+    0.001,
+    0.05
+  ],
+  "nstatev": 12,
+  "p1_worst": 6.487014730864008e-09,
+  "p2_worst": 6.487014730864008e-09,
+  "p1_errors": {
+    "g0": 8.987213036350271e-09,
+    "h0": 3.5827392409771646e-10,
+    "q": 2.0142235952656766e-08,
+    "gd0": 1.5703451427862547e-07,
+    "m": 2.7059372249162256e-08,
+    "gsat": 1.9737457205230032e-09,
+    "C11": 5.47771917497744e-13,
+    "C12": 7.454586368008006e-13,
+    "C44": 6.898440986788313e-21,
+    "a": 1.222132378237579e-08
+  },
+  "p2_errors": {
+    "g0": 2.046882804468749e-09,
+    "h0": 1.2524252825366203e-10,
+    "q": 1.2413755833369556e-09,
+    "gd0": 2.1950079104667494e-08,
+    "m": 2.6579592794790084e-09,
+    "gsat": 3.9382704878178176e-10,
+    "C11": 9.247419516726829e-14,
+    "C12": 8.655701468645408e-14,
+    "C44": 1.6852060050375915e-38,
+    "a": 1.6465849486267582e-09
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m6_fcc/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m6_fcc/umat_m6_fcc_oti.json",
+  "svm_final": 51.98031372262449
+}

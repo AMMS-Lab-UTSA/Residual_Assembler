@@ -1,0 +1,66 @@
+# Interface — the hand-off between the two programs
+
+The framework is deliberately split into two independently-shippable programs so
+that a material developer can share differentiable material objects **without
+exposing the source**:
+
+```
+ ┌─────────────────────────┐        object + contract         ┌──────────────────────────┐
+ │  umat-oti  (Program 1)   │  ───────────────────────────►    │ residual-assembler (Prog 2)│
+ │  material developer side │   umat_<name>_oti.obj  +  .json   │   collaborator side        │
+ └─────────────────────────┘                                   └──────────────────────────┘
+```
+
+Only two kinds of artifact cross the boundary, and **no OTI / dual object ever
+does** — the compiled object returns *real* values plus, in separate arrays, the
+first-order derivative coefficients for each seeded parameter.
+
+**The object is platform-specific; the JSON contract is not.** A compiled object
+is COFF (links into a `.dll`) on Windows and ELF (links into a `.so`) on Linux —
+one binary cannot serve both. Program 2 checks the object's format against the
+current platform (from its magic bytes and the contract's `binary` metadata) and
+**rejects a foreign build before linking**, with a clear diagnostic rather than an
+opaque `ld` error (`residual_core.runtime.check_binary_compatibility`).
+
+## What Program 1 emits
+
+1. **`umat_<name>_oti.obj`** — the compiled OTI-enabled material, **per
+   platform** (COFF on Windows → `.dll`, ELF on Linux → `.so`). Beyond the
+   standard UMAT outputs (`STRESS`, `STATEV`, `DDSDDE`) it returns:
+   - `DSIGMA_DP` = ∂STRESS/∂p  (ntens × nparam)
+   - `DSTATEV_DP` = ∂STATEV/∂p  (nstatev × nparam), for path-dependent models
+   - and exposes `UMAT_OTI_MARCH` for a fast state-alive whole-path replay.
+
+2. **`umat_<name>_oti.json`** — the *completed interface contract*
+   (`resasm_umat_oti_contract_v1`), **platform-independent**: `dimensions`
+   (ntens/nprops/nstatev/nparam), `parameters` (name → PROPS index → OTI
+   direction), `symbols`, `history` (path-dependent? `dstatev_dp` returned?), the
+   `object` file + `sha256`, the shared `contract_version`, and a **`binary`
+   metadata block** (OS, arch, compiler + version, format, ABI version, build id,
+   source/transform hashes) used for the pre-link compatibility check.
+
+The transient `.dll`/`.so` files built under `build/` to call a material through
+`ctypes` are **temporary validation libraries**, not the deliverable — they never
+cross the boundary.
+
+## The shared C-ABI
+
+The boundary is the versioned material C-ABI `resasm_mat_abi_v1` (header:
+`resasm_mat_abi_v1.h`, shipped with Program 2). It is identical for the reference
+provider and a real JHU OTI binary — only the shared-library path differs. A
+combined hash of the header + the material-package schema
+(`CONTRACT_VERSION.json`) lets either side detect drift immediately.
+
+## What Program 2 does with them
+
+`residual-assembler` reads the contract, links the object, replays the material at
+each recorded integration point to obtain `DSIGMA_DP` (and `DSTATEV_DP`), then
+assembles `R`, `∂R/∂p`, `K`, solves `K ∂u/∂p = -∂R/∂p`, and evaluates the
+requested `d(response)/dp`. The production analysis is replayed, never re-solved.
+
+## Versioning
+
+Both sides pin the same schema tags and ABI hash. On Program 2 they live in
+`residual_core/interface/versions.py`; the contract hash is in
+`residual_core/replay/contract/CONTRACT_VERSION.json`. A mismatched tag or a
+stale binary is rejected up front with an actionable message.

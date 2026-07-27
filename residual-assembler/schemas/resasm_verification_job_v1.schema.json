@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/santiagarcia/Residual_Assembler/schemas/resasm_verification_job_v1.schema.json",
+  "title": "resasm verification job (v1)",
+  "description": "One file that describes a residual-assembly verification against an Abaqus run. Consumed by `resasm verify-job`.",
+  "type": "object",
+  "required": ["model"],
+  "anyOf": [
+    {"required": ["odb"]},
+    {"required": ["fields"]}
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "OPTIONAL label for the run and its report."
+    },
+    "model": {
+      "type": "string",
+      "description": "Path to the Abaqus .inp (or a neutral .json). Provides the mesh and boundary conditions. Resolved relative to the job file."
+    },
+    "odb": {
+      "type": "string",
+      "description": "Path to the solved .odb. The tool runs `abaqus python scripts/extract_odb_fields.py` once to export S (integration-point stress), RF (reactions) and U (displacements). Needs Abaqus on this machine."
+    },
+    "fields": {
+      "type": "string",
+      "description": "Path to an already-exported fields.json (stress_ip / reactions / displacements). Use INSTEAD of 'odb' when Abaqus is not on this machine (offline path)."
+    },
+    "mode": {
+      "enum": ["stress-driven", "material-replay", "direct-residual", "formulation"],
+      "default": "stress-driven",
+      "description": "Assembly mode. 'stress-driven' rebuilds the residual from the exported integration-point stress with no material update."
+    },
+    "compare_reactions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Compare the assembled reaction at prescribed DOFs to the Abaqus RF (up to one global sign)."
+    },
+    "tol": {
+      "type": "number",
+      "default": 1e-06,
+      "description": "Relative tolerance for the free-residual and reaction-match checks."
+    },
+    "output": {
+      "type": "string",
+      "default": "resasm_output",
+      "description": "Output directory for the exported fields.json (when 'odb' is used) and verification_report.json."
+    }
+  }
+}

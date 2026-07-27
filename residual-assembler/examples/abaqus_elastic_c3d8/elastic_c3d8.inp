@@ -1,0 +1,54 @@
+*Heading
+ Single C3D8 isotropic-elastic uniaxial 1/8-symmetry patch
+ Standard-material end-to-end check for the residual assembler (nlgeom=NO)
+*Preprint, echo=NO, model=NO, history=NO, contact=NO
+**
+** ---- mesh: unit cube, one C3D8 element, standard node ordering ----
+*Node
+1,  0.0, 0.0, 0.0
+2,  1.0, 0.0, 0.0
+3,  1.0, 1.0, 0.0
+4,  0.0, 1.0, 0.0
+5,  0.0, 0.0, 1.0
+6,  1.0, 0.0, 1.0
+7,  1.0, 1.0, 1.0
+8,  0.0, 1.0, 1.0
+*Element, type=C3D8, elset=EALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+**
+** ---- node sets for the symmetry planes and the pulled face ----
+*Nset, nset=NX0
+1, 4, 5, 8
+*Nset, nset=NX1
+2, 3, 6, 7
+*Nset, nset=NY0
+1, 2, 5, 6
+*Nset, nset=NZ0
+1, 2, 3, 4
+*Nset, nset=NALL, generate
+1, 8, 1
+**
+*Solid Section, elset=EALL, material=STEEL
+*Material, name=STEEL
+*Elastic
+210000.0, 0.3
+**
+** ---- symmetry BCs on the three planes through the origin ----
+*Boundary
+NX0, XSYMM
+NY0, YSYMM
+NZ0, ZSYMM
+**
+*Step, name=Step-1, nlgeom=NO
+*Static
+1.0, 1.0, 1e-05, 1.0
+** prescribed stretch on the x=1 face (0.1% nominal strain)
+*Boundary
+NX1, 1, 1, 0.001
+**
+*Output, field
+*Node Output
+U, RF
+*Element Output, directions=YES
+S
+*End Step

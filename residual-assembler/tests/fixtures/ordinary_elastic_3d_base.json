@@ -1,0 +1,11 @@
+{
+  "name": "ordinary_elastic_3d",
+  "source": {"file": "ordinary_elastic_3d.for"},
+  "ntens": 6,
+  "order": 1,
+  "jacobian": {"independent": "DSTRAN", "dependent": "STRESS", "target": "DDSDDE"},
+  "promote": ["PROPS", "E", "ENU", "ELAM", "EG", "DDS", "DSTRESS", "STRESS"],
+  "replace": {"ddsdde_block": ["42-44"]},
+  "resasm": {"tangent_variable": "DDS", "stress_update_line": 39,
+             "props_values": [210000.0, 0.3]}
+}

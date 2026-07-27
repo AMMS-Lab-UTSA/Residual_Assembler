@@ -1,0 +1,17 @@
+{
+  "schema": "resasm_sdv_layout_v1",
+  "element_type": "C3D8",
+  "kinematics": "small_strain",
+  "integration": "selective_reduced",
+  "voigt_order": ["11", "22", "33", "12", "13", "23"],
+  "integration_point_order": "abaqus_label_ascending",
+  "sdv_indexing": "abaqus_1_based",
+  "sdv_layout": {
+    "ddsdde": [1, 36],
+    "parameters": {
+      "C11": [37, 42],
+      "C12": [43, 48],
+      "C44": [49, 54]
+    }
+  }
+}

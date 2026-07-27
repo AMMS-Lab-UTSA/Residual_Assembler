@@ -1,0 +1,9 @@
+{
+  "name": "elastic_c3d8_stress_driven",
+  "model": "elastic_c3d8.inp",
+  "odb": "elastic_c3d8.odb",
+  "mode": "stress-driven",
+  "compare_reactions": true,
+  "tol": 1e-6,
+  "output": "out"
+}

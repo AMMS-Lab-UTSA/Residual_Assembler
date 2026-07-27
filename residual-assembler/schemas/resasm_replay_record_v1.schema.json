@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "resasm_replay_record_v1",
+  "title": "resasm replay record (v1)",
+  "description": "The sufficient primal analysis saved in Stage 1, defined by what the residual method mathematically needs to reconstruct R, K and R_,p at the converged solution -- NOT by what an ODB happens to contain. residual_core.replay.record.preflight_record reports exactly which required fields are missing for a given material package.",
+  "type": "object",
+  "required": ["schema", "provenance", "kinematics", "material", "mesh",
+               "boundaries", "increments"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "resasm_replay_record_v1"},
+    "provenance": {
+      "type": "object",
+      "required": ["model_id", "regular_hash"],
+      "description": "identity of the model that produced this record; regular_hash is checked against the OTI package's matched-twin hash",
+      "properties": {
+        "model_id": {"type": "string"},
+        "regular_hash": {"type": "string"},
+        "units": {"type": "string"},
+        "analysis_hash": {"type": "string"}
+      }
+    },
+    "kinematics": {"enum": ["small_strain", "finite_strain"]},
+    "material": {
+      "type": "object", "required": ["props"],
+      "properties": {"props": {"type": "array", "items": {"type": "number"},
+                     "description": "the parameter values used in Stage 1 (length == package.nprops)"}}
+    },
+    "mesh": {
+      "type": "object", "required": ["nodes", "elements"],
+      "properties": {
+        "nodes": {"type": "object", "description": "{node_id: [x,y,z]}"},
+        "elements": {"type": "object", "description": "{eid: {type, connectivity}} (C3D8 in v1)"},
+        "node_sets": {"type": "object"},
+        "ip_order": {"type": "string", "description": "integration-point ordering identifier, e.g. abaqus_c3d8"}
+      }
+    },
+    "dof": {"type": "object", "description": "DOF mapping, e.g. {map: node_major_uxuyuz}"},
+    "boundaries": {
+      "type": "array", "minItems": 1,
+      "description": "Dirichlet BCs: {target, kind:ENCASTRE|value|XSYMM...} plus dof/value for prescribed components",
+      "items": {"type": "object", "required": ["target"]}
+    },
+    "loads": {
+      "type": "object",
+      "properties": {"cload": {"type": "array",
+        "items": {"type": "object", "required": ["node", "dof", "value"]}}}
+    },
+    "increments": {
+      "type": "array", "minItems": 1,
+      "description": "converged increments (final one suffices for path-INDEPENDENT models; path-dependent models require every increment)",
+      "items": {
+        "type": "object",
+        "required": ["u"],
+        "properties": {
+          "time": {"type": "number"}, "dtime": {"type": "number"},
+          "u": {"type": "array", "items": {"type": "number"},
+                "description": "converged nodal displacement, length 3*nnodes"},
+          "stress_ip": {"type": "object", "description": "production per-IP stress {eid:[[6]x8]} -- optional, used only to VALIDATE the replay"},
+          "kinematics_ip": {"type": "object", "description": "per-IP kinematic inputs -- REQUIRED for path-dependent replay"}
+        }
+      }
+    },
+    "initial_state_ip": {"type": "object", "description": "per-IP initial material state -- REQUIRED when nstatev>0"},
+    "responses": {"type": "object", "description": "optional requested primal responses"}
+  }
+}

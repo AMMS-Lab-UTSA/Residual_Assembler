@@ -1,0 +1,45 @@
+{
+  "mdir": "m5_cpflow",
+  "physics": "Thermally-activated viscoplastic flow",
+  "path_dependent": true,
+  "params": [
+    "tau0",
+    "dG",
+    "q",
+    "p",
+    "gam0",
+    "H"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    1500.0,
+    25.0,
+    0.4,
+    1.6,
+    0.1,
+    60000.0
+  ],
+  "nstatev": 1,
+  "p1_worst": 1.2162205779515562e-10,
+  "p2_worst": 1.2162205779515562e-10,
+  "p1_errors": {
+    "tau0": 7.188201423637873e-12,
+    "dG": 8.786656581676645e-11,
+    "q": 4.8072622605667044e-11,
+    "p": 4.776309532839186e-11,
+    "gam0": 1.4263292615268392e-10,
+    "H": 2.841094540837598e-13
+  },
+  "p2_errors": {
+    "tau0": 9.41776325275669e-12,
+    "dG": 2.819944939629748e-10,
+    "q": 1.0353491821087918e-10,
+    "p": 1.9625786200401342e-10,
+    "gam0": 7.472163261645147e-11,
+    "H": 2.735835604483653e-13
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m5_cpflow/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m5_cpflow/umat_m5_cpflow_oti.json",
+  "svm_final": 1097.6798780558497
+}

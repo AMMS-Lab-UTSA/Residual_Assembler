@@ -1,0 +1,35 @@
+{
+  "mdir": "sweep_j2_kinematic",
+  "physics": "J2 plasticity, kinematic hardening",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "Hk"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    250.0,
+    2000.0
+  ],
+  "nstatev": 6,
+  "p1_worst": 5.281318907215162e-10,
+  "p2_worst": 5.281318907215162e-10,
+  "p1_errors": {
+    "E": 2.952730626071096e-14,
+    "nu": 1.1288096534849728e-10,
+    "SIGY0": 1.4588868376891415e-11,
+    "Hk": 7.815910348497329e-13
+  },
+  "p2_errors": {
+    "E": 9.042732245524924e-11,
+    "nu": 6.913920597314955e-08,
+    "SIGY0": 4.5474440063313396e-11,
+    "Hk": 4.83554130445164e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_kinematic/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_kinematic/umat_sweep_j2_kinematic_oti.json",
+  "svm_final": 274.2894910773298
+}
