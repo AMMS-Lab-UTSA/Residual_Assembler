@@ -1,0 +1,18 @@
+{
+  "material": "isotropic_elastic",
+  "source": "umat.for",
+  "kinematics": "small_strain",
+  "dimensions": {
+    "stress_components": 6,
+    "material_properties": 2,
+    "state_variables": 0
+  },
+  "parameters": {
+    "E": 1,
+    "nu": 2
+  },
+  "derivatives": {
+    "stress": true,
+    "statev": false
+  }
+}

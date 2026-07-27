@@ -1,0 +1,39 @@
+{
+  "mdir": "sweep_j2_combined",
+  "physics": "J2 plasticity, combined hardening",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "HISO",
+    "HKIN"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    250.0,
+    1000.0,
+    1500.0
+  ],
+  "nstatev": 7,
+  "p1_worst": 7.325937305662694e-10,
+  "p2_worst": 7.325937305662694e-10,
+  "p1_errors": {
+    "E": 2.0554152903741496e-14,
+    "nu": 1.0700405194261407e-10,
+    "SIGY0": 3.336880673374341e-12,
+    "HISO": 2.232651065024791e-12,
+    "HKIN": 2.8374728688528792e-12
+  },
+  "p2_errors": {
+    "E": 9.962230716234422e-12,
+    "nu": 1.1116496334568579e-08,
+    "SIGY0": 3.274165660708751e-11,
+    "HISO": 1.539619871032722e-10,
+    "HKIN": 6.648105280005241e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_combined/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_j2_combined/umat_sweep_j2_combined_oti.json",
+  "svm_final": 280.2967848309977
+}

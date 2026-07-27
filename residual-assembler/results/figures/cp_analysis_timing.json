@@ -1,0 +1,12 @@
+{
+  "n_increments": 40,
+  "avg_newton_iters": 14.725,
+  "n_params": 10,
+  "nominal_ms": 296.58873826265335,
+  "extra_ms": 109.46234120056033,
+  "oti_total_ms": 406.05107946321374,
+  "fd_total_ms": 6228.36350351572,
+  "oti_vs_nominal": 1.3690711314319108,
+  "fd_vs_oti": 15.338867001041873,
+  "fd_runs": 21
+}

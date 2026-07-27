@@ -1,0 +1,39 @@
+{
+  "mdir": "sweep_real_ECL_TEMP",
+  "physics": "Thermo-elasticity (ICP ECL_TEMP, adapted)",
+  "path_dependent": false,
+  "params": [
+    "E1",
+    "E2",
+    "G1",
+    "G2",
+    "CTE"
+  ],
+  "props_values": [
+    200.0,
+    0.1,
+    77.0,
+    0.05,
+    1.2e-05
+  ],
+  "nstatev": 0,
+  "p1_worst": 4.288619485066388e-08,
+  "p2_worst": 4.288619485066388e-08,
+  "p1_errors": {
+    "E1": 1.0191127764232899e-10,
+    "E2": 0.0,
+    "G1": 1.1161787682355879e-10,
+    "G2": 0.0,
+    "CTE": 0.0
+  },
+  "p2_errors": {
+    "E1": 5.4657133525316484e-08,
+    "E2": 0.0,
+    "G1": 9.712862993470593e-11,
+    "G2": 0.0,
+    "CTE": 0.0
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_real_ECL_TEMP/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_real_ECL_TEMP/umat_sweep_real_ECL_TEMP_oti.json",
+  "svm_final": 3080.0
+}

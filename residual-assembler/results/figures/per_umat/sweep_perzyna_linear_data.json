@@ -1,0 +1,35 @@
+{
+  "mdir": "sweep_perzyna_linear",
+  "physics": "Perzyna viscoplasticity",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "eta"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    250.0,
+    5000.0
+  ],
+  "nstatev": 1,
+  "p1_worst": 3.8989186933611853e-10,
+  "p2_worst": 3.8989186933611853e-10,
+  "p1_errors": {
+    "E": 2.3860536305147267e-14,
+    "nu": 1.0285549973409891e-10,
+    "SIGY0": 1.5837720385825882e-12,
+    "eta": 1.2821768109586716e-13
+  },
+  "p2_errors": {
+    "E": 2.271603044920487e-10,
+    "nu": 0.00015138599946413762,
+    "SIGY0": 1.6007151162686804e-10,
+    "eta": 2.037507315229132e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_perzyna_linear/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_perzyna_linear/umat_sweep_perzyna_linear_oti.json",
+  "svm_final": 316.6666666666674
+}

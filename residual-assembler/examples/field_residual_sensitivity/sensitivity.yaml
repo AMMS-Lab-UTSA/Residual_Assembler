@@ -1,0 +1,35 @@
+# Field-driven residual-method parameter sensitivities (Milestone M2).
+#
+#   resasm run sensitivity.yaml
+#
+# The engine assembles K from the exported per-IP DDSDDE and one R_,a column per
+# parameter from the exported per-IP dsigma/da, then solves K U_,a = -R_,a for
+# every parameter at once. The derivative-field file's metadata is the single
+# source of truth for the SDV layout -- do NOT repeat SDV ranges here.
+
+analysis:
+  type: field_residual_sensitivity
+  kinematics: small_strain
+
+mesh:
+  format: abaqus            # or 'neutral' for a neutral .json mesh
+  file: model.inp
+
+results:
+  format: resasm_derivative_fields_v1
+  file: derivative_fields.json
+
+parameters:
+  - E
+  - nu
+
+assumptions:
+  parameter_independent_geometry: true
+  parameter_independent_loads: true
+  parameter_independent_boundaries: true
+
+output:
+  directory: results
+  save_tangent: true
+  save_residual_derivatives: true
+  save_displacement_sensitivities: true

@@ -1,0 +1,141 @@
+name: residual-assembler CI
+
+# Cross-platform verification for Program 2. The framework test suite (assembler,
+# formulations, replay, interface, binary-compatibility) must pass on native
+# Windows AND native Linux. Program 2 links a distributed .obj through ctypes
+# exactly as Program 1 does, so the same cross-platform loader is exercised here.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # The umat-oti repository to check out for the cross-repo integration job.
+  # Set to an empty string to intentionally skip integration; otherwise the job
+  # FAILS if the repo cannot be checked out (it never produces a green check on a
+  # silently-missing repo).
+  UMAT_OTI_REPO: ${{ github.repository_owner }}/umat-oti
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up gfortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+
+      - name: gfortran present
+        shell: bash
+        run: gfortran --version
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Framework test suite
+        run: python scripts/run_tests.py
+
+      - name: Replay example (links a distributed .obj through ctypes)
+        run: python examples/replay_elastic_c3d8/run_replay.py
+
+  # End-to-end integration across both repos: build a material with Program 1 and
+  # consume it in Program 2 (real hand-off + cross-platform compatibility check).
+  # If UMAT_OTI_REPO is set but cannot be checked out, this job FAILS -- a missing
+  # umat-oti is never a silent green check.
+  integration:
+    name: cross-repo hand-off (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out residual-assembler
+        uses: actions/checkout@v4
+        with:
+          path: residual-assembler
+
+      - name: Decide integration mode
+        id: mode
+        shell: bash
+        run: |
+          if [ -z "${UMAT_OTI_REPO}" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "UMAT_OTI_REPO is empty -> integration explicitly disabled."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "integration will build against ${UMAT_OTI_REPO}"
+          fi
+
+      # Required checkout: no continue-on-error. If the repo is private/missing,
+      # this step (and the job) fails with a clear error.
+      - name: Check out umat-oti (required when enabled)
+        if: steps.mode.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UMAT_OTI_REPO }}
+          path: umat-oti
+
+      - name: Fail if umat-oti is enabled but absent
+        if: steps.mode.outputs.run == 'true'
+        shell: bash
+        run: |
+          if [ ! -f umat-oti/oti_provider/umat_transform.py ]; then
+            echo "::error::UMAT_OTI_REPO=${UMAT_OTI_REPO} did not produce a usable checkout."
+            echo "Set UMAT_OTI_REPO to a reachable repo, or set it empty to disable integration."
+            exit 1
+          fi
+
+      - name: Set up gfortran
+        if: steps.mode.outputs.run == 'true'
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+
+      - uses: actions/setup-python@v5
+        if: steps.mode.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Build a material (Program 1) and reproduce a deck table (Program 2)
+        if: steps.mode.outputs.run == 'true'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./umat-oti
+          pip install -e ./residual-assembler
+          pip install matplotlib
+          # Program 1 builds a Linux (ELF) object + contract with binary metadata
+          python umat-oti/oti_provider/umat_transform.py build umat-oti/oti_provider/materials/m3_j2/contract.json
+          # Program 2 consumes it: real hand-off, converged-FD deck table
+          cd residual-assembler
+          UMAT_OTI_ROOT="$GITHUB_WORKSPACE/umat-oti" python results/program1_material_validation.py
+          # cross-platform guard: a Windows-format object must be REJECTED here on Linux
+          UMAT_OTI_ROOT="$GITHUB_WORKSPACE/umat-oti" python - <<'PY'
+          import sys
+          from residual_core.runtime import check_binary_compatibility, IncompatibleBinaryError
+          # a fabricated COFF/PE (Windows) object must be rejected on this Linux runner
+          import struct, tempfile, os
+          p = os.path.join(tempfile.mkdtemp(), "win.obj")
+          open(p, "wb").write(struct.pack("<H", 0x8664) + b"\x00" * 64)
+          try:
+              check_binary_compatibility(p, {"os": "windows", "arch": "amd64", "pointer_bits": 64})
+              print("ERROR: a Windows object was NOT rejected on Linux"); sys.exit(1)
+          except IncompatibleBinaryError as e:
+              assert "not compatible" in str(e)
+              print("OK: Windows object correctly rejected on Linux")
+          PY

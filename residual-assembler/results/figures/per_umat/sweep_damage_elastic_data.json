@@ -1,0 +1,31 @@
+{
+  "mdir": "sweep_damage_elastic",
+  "physics": "Elasticity with scalar damage",
+  "path_dependent": false,
+  "params": [
+    "E",
+    "nu",
+    "d"
+  ],
+  "props_values": [
+    210000.0,
+    0.3,
+    0.2
+  ],
+  "nstatev": 0,
+  "p1_worst": 1.4583259502540076e-10,
+  "p2_worst": 1.4583259502540076e-10,
+  "p1_errors": {
+    "E": 3.8993517645692165e-14,
+    "nu": 6.74539679788093e-11,
+    "d": 2.8253294548834313e-10
+  },
+  "p2_errors": {
+    "E": 2.731162065384283e-13,
+    "nu": 1.289580928798561e-11,
+    "d": 4.946350548531244e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_damage_elastic/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_damage_elastic/umat_sweep_damage_elastic_oti.json",
+  "svm_final": 2584.615384615384
+}

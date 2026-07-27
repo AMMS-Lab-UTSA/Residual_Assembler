@@ -1,0 +1,18 @@
+{
+  "name": "elastic_c3d8_offline",
+  "mode": "stress-driven",
+  "ndof": 24,
+  "free_residual_norm": 1.2372560319887082e-14,
+  "reaction_norm": 148.49242404917499,
+  "compared_reactions": true,
+  "sign_convention": "R = +RF",
+  "rel_reaction_error": 7.821689227092227e-17,
+  "reaction_match": true,
+  "free_residual_ok": true,
+  "tolerance": 1e-06,
+  "pass": true,
+  "notes": {
+    "fields": "/home/ammslab3/Desktop/Residual_Assembler(2)/Residual_Assembler/examples/abaqus_elastic_c3d8/fields.json",
+    "model": "/home/ammslab3/Desktop/Residual_Assembler(2)/Residual_Assembler/examples/abaqus_elastic_c3d8/elastic_c3d8.inp"
+  }
+}

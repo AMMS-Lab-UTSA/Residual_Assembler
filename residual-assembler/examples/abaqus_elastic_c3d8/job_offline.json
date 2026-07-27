@@ -1,0 +1,9 @@
+{
+  "name": "elastic_c3d8_offline",
+  "model": "elastic_c3d8.inp",
+  "fields": "fields.json",
+  "mode": "stress-driven",
+  "compare_reactions": true,
+  "tol": 1e-6,
+  "output": "out_offline"
+}

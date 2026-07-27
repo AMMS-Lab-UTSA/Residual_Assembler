@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "residual-assembler"
+version = "0.1.0"
+description = "Offline material-parameter sensitivities by residual reconstruction from a saved analysis (Program 2)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "David Restrepo" },
+    { name = "Santiago Garcia Botero" },
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+yaml = ["PyYAML"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+resasm = "residual_core.ui.cli:main"
+
+[tool.setuptools.packages.find]
+# Automatic discovery: picks up every subpackage (residual_core.algebra,
+# residual_core.ui, resasm_user, partner_kit.python, ...) so the user-facing
+# workflow is fully importable after `pip install -e .`. Do not hand-maintain
+# a package list here -- new subpackages must not silently go unshipped.
+include = ["residual_core*", "resasm_user*", "partner_kit*"]
+exclude = ["tests*", "sources*", "scripts*"]
+
+[tool.setuptools.package-data]
+# ship the JSON schemas and the C-ABI header inside the wheel so a fresh install
+# can validate contracts and link the material ABI without the source tree.
+"*" = ["*.json", "*.h"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# most tests run fully offline; the heavy ones opt in via env flags (see
+# scripts/run_tests.py and tests/conftest.py).
+markers = [
+    "otilib: needs OTILib / a compiled OTI material (RESASM_RUN_OTILIB=1)",
+    "abaqus: needs a real Abaqus run / ODB (RESASM_RUN_ABAQUS=1)",
+    "slow: long-running",
+]
+addopts = "-q -p no:cacheprovider"

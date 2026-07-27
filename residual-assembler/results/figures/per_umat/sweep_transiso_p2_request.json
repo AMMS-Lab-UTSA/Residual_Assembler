@@ -1,0 +1,22 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_sweep_transiso_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "sweep_transiso.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "EP",
+        "ET",
+        "XNUP",
+        "XNUPT",
+        "GT"
+      ]
+    }
+  ]
+}

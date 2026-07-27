@@ -1,0 +1,3 @@
+# generated demo artifacts (recreated by run_replay.py)
+*.so
+*.json

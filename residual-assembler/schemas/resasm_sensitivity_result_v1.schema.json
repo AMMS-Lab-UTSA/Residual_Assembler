@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "resasm_sensitivity_result_v1",
+  "title": "resasm sensitivity result (v1)",
+  "description": "What the replay tool returns: displacement sensitivities du/dp (summarised by norm in JSON; full arrays available from the API/npz), requested output sensitivities dq/dp, the replay-equilibrium and stress-parity checks, model identity, and timings. Produced by residual_core.replay.engine.ReplayResult.to_dict().",
+  "type": "object",
+  "required": ["schema", "model_id", "parameters", "outputs",
+               "equilibrium", "diagnostics"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "resasm_sensitivity_result_v1"},
+    "model_id": {"type": "string"},
+    "parameters": {"type": "array", "items": {"type": "string"}},
+    "du_dp_norms": {"type": "object", "description": "{param: ||du/dp||_2}"},
+    "outputs": {
+      "type": "array",
+      "description": "one entry per requested response",
+      "items": {
+        "type": "object",
+        "required": ["request", "dq_dp"],
+        "properties": {
+          "request": {"type": "object"},
+          "value": {"type": ["number", "null"], "description": "the response value at the converged state"},
+          "dq_dp": {"type": "object", "description": "{param: dq/dp}"}
+        }
+      }
+    },
+    "equilibrium": {
+      "type": "object",
+      "description": "residual balance at the converged state (V3, free-DOF half)",
+      "properties": {
+        "free_norm": {"type": "number"}, "norm": {"type": "number"}
+      }
+    },
+    "stress_check": {
+      "type": "object",
+      "description": "replay stress vs the production stress carried in the record",
+      "properties": {
+        "checked": {"type": "number"}, "max_abs": {"type": "number"}, "max_rel": {"type": "number"}
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "description": "model identity, hashes, dimensions and timings",
+      "properties": {
+        "model_id": {"type": "string"}, "regular_hash": {"type": "string"},
+        "n_elements": {"type": "integer"}, "n_dof": {"type": "integer"},
+        "n_parameters": {"type": "integer"},
+        "timings_s": {"type": "object"}
+      }
+    }
+  }
+}

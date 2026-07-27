@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "resasm_material_package_v1",
+  "title": "resasm material package manifest (v1)",
+  "description": "The boundary contract for a JHU-distributed material: it is the ONLY place parameter names, PROPS slots, OTI directions, state layout, kinematics and units are pinned, and it carries the identity of the matched REGULAR twin so the replay tool can refuse a mismatched pair. Validated by residual_core.replay.package.MaterialPackage.",
+  "type": "object",
+  "required": ["schema", "model_id", "kinematics", "ntens", "nprops", "nstatev",
+               "parameters", "abi", "binaries"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {"const": "resasm_material_package_v1"},
+    "model_id": {"type": "string", "description": "must match the binary's mat_describe_v1 model id and the replay record's provenance.model_id"},
+    "kinematics": {"enum": ["small_strain", "finite_strain"]},
+    "ntens": {"type": "integer", "minimum": 1},
+    "nprops": {"type": "integer", "minimum": 1},
+    "nstatev": {"type": "integer", "minimum": 0},
+    "parameters": {
+      "type": "array", "minItems": 1,
+      "description": "the anti-anonymity map: every differentiable parameter, named, with its 1-based PROPS slot and its OTI direction",
+      "items": {
+        "type": "object",
+        "required": ["name", "index", "oti_direction"],
+        "properties": {
+          "name": {"type": "string"},
+          "index": {"type": "integer", "minimum": 1, "description": "1-based PROPS slot"},
+          "oti_direction": {"type": "integer", "minimum": 1},
+          "units": {"type": "string"}
+        }
+      }
+    },
+    "state_layout": {
+      "type": "array",
+      "description": "which state-variable slots hold what (incl. propagated d(state)/d(p)); empty for stateless models",
+      "items": {"type": "object"}
+    },
+    "outputs": {"type": "array", "items": {"type": "string"},
+                "description": "constitutive outputs the binary exposes, e.g. stress, consistent_tangent, state"},
+    "sensitivity_capabilities": {
+      "type": "object",
+      "properties": {
+        "runtime_parameter_seeding": {"type": "boolean"},
+        "maximum_directions": {"type": "integer", "minimum": 1},
+        "order": {"type": "integer", "minimum": 1}
+      }
+    },
+    "abi": {
+      "type": "object",
+      "required": ["symbol", "version"],
+      "properties": {
+        "symbol": {"const": "mat_eval_v1"},
+        "version": {"type": "integer", "const": 1}
+      }
+    },
+    "binaries": {
+      "type": "object",
+      "description": "the matched pair. regular ran Stage 1; oti replays Stage 2. Both must share model_id, parameter/state ordering, equations, kinematics, units and update conventions (ideally generated from one source).",
+      "required": ["regular", "oti"],
+      "properties": {
+        "regular": {
+          "type": "object", "required": ["hash"],
+          "properties": {"hash": {"type": "string"}, "build_id": {"type": "string"}}
+        },
+        "oti": {
+          "type": "object", "required": ["path", "hash"],
+          "properties": {
+            "path": {"type": "string", "description": "loadable shared object exposing mat_eval_v1 (abs, or relative to this manifest)"},
+            "hash": {"type": "string"}, "build_id": {"type": "string"}
+          }
+        }
+      }
+    },
+    "provenance": {"type": "object"}
+  }
+}

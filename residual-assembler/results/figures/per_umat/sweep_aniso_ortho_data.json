@@ -1,0 +1,55 @@
+{
+  "mdir": "sweep_aniso_ortho",
+  "physics": "Orthotropic elasticity",
+  "path_dependent": false,
+  "params": [
+    "C11",
+    "C12",
+    "C13",
+    "C22",
+    "C23",
+    "C33",
+    "C44",
+    "C55",
+    "C66"
+  ],
+  "props_values": [
+    168000.0,
+    80000.0,
+    80000.0,
+    168000.0,
+    80000.0,
+    168000.0,
+    44000.0,
+    44000.0,
+    44000.0
+  ],
+  "nstatev": 0,
+  "p1_worst": 2.7148552335831198e-11,
+  "p2_worst": 2.7148552335831198e-11,
+  "p1_errors": {
+    "C11": 1.2895500639376296e-11,
+    "C12": 4.6884425597108725e-11,
+    "C13": 3.7857737779413056e-11,
+    "C22": 5.5189685284069976e-11,
+    "C23": 1.3977805456272454e-10,
+    "C33": 5.518954975879842e-11,
+    "C44": 2.1708980100148535e-11,
+    "C55": 2.1708980100148535e-11,
+    "C66": 4.137179964761961e-11
+  },
+  "p2_errors": {
+    "C11": 1.289571747981079e-11,
+    "C12": 2.8755616593648344e-11,
+    "C13": 8.226668587480822e-11,
+    "C22": 1.256799930172759e-10,
+    "C23": 1.397778738623625e-10,
+    "C33": 1.256799930172759e-10,
+    "C44": 0.0,
+    "C55": 0.0,
+    "C66": 0.0
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_aniso_ortho/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_aniso_ortho/umat_sweep_aniso_ortho_oti.json",
+  "svm_final": 1760.0
+}

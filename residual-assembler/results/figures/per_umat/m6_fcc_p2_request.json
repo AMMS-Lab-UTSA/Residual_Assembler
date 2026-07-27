@@ -1,0 +1,27 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_m6_fcc_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "m6_fcc.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "g0",
+        "h0",
+        "q",
+        "gd0",
+        "m",
+        "gsat",
+        "C11",
+        "C12",
+        "C44",
+        "a"
+      ]
+    }
+  ]
+}
