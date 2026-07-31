@@ -1,0 +1,39 @@
+{
+  "mdir": "sweep_transiso",
+  "physics": "Transversely isotropic elasticity",
+  "path_dependent": false,
+  "params": [
+    "EP",
+    "ET",
+    "XNUP",
+    "XNUPT",
+    "GT"
+  ],
+  "props_values": [
+    150000.0,
+    10000.0,
+    0.3,
+    0.3,
+    5000.0
+  ],
+  "nstatev": 0,
+  "p1_worst": 5.106099130361943e-09,
+  "p2_worst": 5.106099130361943e-09,
+  "p1_errors": {
+    "EP": 2.564691131170738e-13,
+    "ET": 4.563331826563065e-12,
+    "XNUP": 3.684227355729268e-10,
+    "XNUPT": 5.415379113309199e-09,
+    "GT": 2.4802890464769995e-14
+  },
+  "p2_errors": {
+    "EP": 2.0210730020656825e-12,
+    "ET": 5.3928434539007045e-11,
+    "XNUP": 2.0421061074723523e-09,
+    "XNUPT": 1.515126591034526e-08,
+    "GT": 0.0
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_transiso/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_transiso/umat_sweep_transiso_oti.json",
+  "svm_final": 2893.929713279349
+}

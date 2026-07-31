@@ -1,0 +1,330 @@
+{
+  "umat_m1_elastic": {
+    "physics": "Isotropic linear elasticity",
+    "path_dependent": false,
+    "program1": {
+      "E": 3.9505650284404634e-14,
+      "nu": 9.981066651201663e-11
+    },
+    "program2": {
+      "E": 1.2962896709663502e-13,
+      "nu": 1.5951620804777187e-10
+    }
+  },
+  "umat_m2_cubic": {
+    "physics": "Cubic anisotropic elasticity",
+    "path_dependent": false,
+    "program1": {
+      "C11": 6.663398131434653e-11,
+      "C12": 1.1431397414098869e-10,
+      "C44": 3.785776488446737e-11
+    },
+    "program2": {
+      "C11": 6.341882147234246e-11,
+      "C12": 4.941726781811031e-11,
+      "C44": 0.0
+    }
+  },
+  "umat_m3_j2": {
+    "physics": "J2 plasticity, linear hardening",
+    "path_dependent": true,
+    "program1": {
+      "E": 2.883851682941132e-14,
+      "nu": 7.69395366160168e-11,
+      "SIGY0": 3.2403323842183523e-12,
+      "H": 1.4455898048107251e-12
+    },
+    "program2": {
+      "E": 4.114549483818752e-11,
+      "nu": 4.5347030974099e-08,
+      "SIGY0": 1.847883680291236e-12,
+      "H": 6.938164345184792e-11
+    }
+  },
+  "umat_m5_cpflow": {
+    "physics": "Thermally-activated viscoplastic flow",
+    "path_dependent": true,
+    "program1": {
+      "tau0": 7.188201423637873e-12,
+      "dG": 8.786656581676645e-11,
+      "q": 4.8072622605667044e-11,
+      "p": 4.776309532839186e-11,
+      "gam0": 1.4263292615268392e-10,
+      "H": 2.841094540837598e-13
+    },
+    "program2": {
+      "tau0": 9.41776325275669e-12,
+      "dG": 2.819944939629748e-10,
+      "q": 1.0353491821087918e-10,
+      "p": 1.9625786200401342e-10,
+      "gam0": 7.472163261645147e-11,
+      "H": 2.735835604483653e-13
+    }
+  },
+  "umat_m6_fcc": {
+    "physics": "FCC single crystal, 12 slip systems",
+    "path_dependent": true,
+    "program1": {
+      "g0": 8.987213036350271e-09,
+      "h0": 3.5827392409771646e-10,
+      "q": 2.0142235952656766e-08,
+      "gd0": 1.5703451427862547e-07,
+      "m": 2.7059372249162256e-08,
+      "gsat": 1.9737457205230032e-09,
+      "C11": 5.47771917497744e-13,
+      "C12": 7.454586368008006e-13,
+      "C44": 6.898440986788313e-21,
+      "a": 1.222132378237579e-08
+    },
+    "program2": {
+      "g0": 2.046882804468749e-09,
+      "h0": 1.2524252825366203e-10,
+      "q": 1.2413755833369556e-09,
+      "gd0": 2.1950079104667494e-08,
+      "m": 2.6579592794790084e-09,
+      "gsat": 3.9382704878178176e-10,
+      "C11": 9.247419516726829e-14,
+      "C12": 8.655701468645408e-14,
+      "C44": 1.6852060050375915e-38,
+      "a": 1.6465849486267582e-09
+    }
+  },
+  "sweep_aniso_ortho": {
+    "physics": "Orthotropic linear elasticity (3D small-strain), symmetric 6",
+    "path_dependent": false,
+    "program1": {
+      "C11": 1.2895500639376296e-11,
+      "C12": 4.6884425597108725e-11,
+      "C13": 3.7857737779413056e-11,
+      "C22": 5.5189685284069976e-11,
+      "C23": 1.3977805456272454e-10,
+      "C33": 5.518954975879842e-11,
+      "C44": 2.1708980100148535e-11,
+      "C55": 2.1708980100148535e-11,
+      "C66": 4.137179964761961e-11
+    },
+    "program2": {
+      "C11": 1.289571747981079e-11,
+      "C12": 2.8755616593648344e-11,
+      "C13": 8.226668587480822e-11,
+      "C22": 1.256799930172759e-10,
+      "C23": 1.397778738623625e-10,
+      "C33": 1.256799930172759e-10,
+      "C44": 0.0,
+      "C55": 0.0,
+      "C66": 0.0
+    }
+  },
+  "sweep_damage_elastic": {
+    "physics": "Secant isotropic damaged elasticity (small strain): STRESS +",
+    "path_dependent": false,
+    "program1": {
+      "E": 3.8993517645692165e-14,
+      "nu": 6.74539679788093e-11,
+      "d": 2.8253294548834313e-10
+    },
+    "program2": {
+      "E": 2.731162065384283e-13,
+      "nu": 1.289580928798561e-11,
+      "d": 4.946350548531244e-10
+    }
+  },
+  "sweep_drucker_prager": {
+    "physics": "Linear (pressure-dependent) Drucker-Prager plasticity, assoc",
+    "path_dependent": true,
+    "program1": {
+      "E": 4.006832847514761e-06,
+      "nu": 0.00019232693258380284,
+      "k": 0.006678054745967751,
+      "beta": 0.0004290287943153155
+    },
+    "program2": {
+      "E": 1.270740669345923e-12,
+      "nu": 3.115484271173416e-10,
+      "k": 7.128732609304305e-10,
+      "beta": 4.4753301961824116e-11
+    }
+  },
+  "sweep_eco": {
+    "physics": "eco",
+    "path_dependent": false,
+    "program1": {
+      "E": 4.4746960613667334e-14,
+      "nu": 8.607339166023768e-11
+    },
+    "program2": {
+      "E": 2.892835193812448e-13,
+      "nu": 1.5951620804777187e-10
+    }
+  },
+  "sweep_j2_bilinear": {
+    "physics": "J2 (von Mises) small-strain plasticity with bilinear isotrop",
+    "path_dependent": true,
+    "program1": {
+      "E": 1.8861924012436757e-14,
+      "nu": 1.0693723476137377e-10,
+      "SIGY0": 3.0183425223826233e-12,
+      "Et": 1.0337719540248312e-13
+    },
+    "program2": {
+      "E": 5.112117291600341e-13,
+      "nu": 8.522777921815171e-09,
+      "SIGY0": 8.515515534785318e-11,
+      "Et": 4.11325018442495e-11
+    }
+  },
+  "sweep_j2_combined": {
+    "physics": "J2 (von Mises) small-strain plasticity with combined linear ",
+    "path_dependent": true,
+    "program1": {
+      "E": 2.0554152903741496e-14,
+      "nu": 1.0700405194261407e-10,
+      "SIGY0": 3.336880673374341e-12,
+      "HISO": 2.232651065024791e-12,
+      "HKIN": 2.8374728688528792e-12
+    },
+    "program2": {
+      "E": 9.962230716234422e-12,
+      "nu": 1.1116496334568579e-08,
+      "SIGY0": 3.274165660708751e-11,
+      "HISO": 1.539619871032722e-10,
+      "HKIN": 6.648105280005241e-10
+    }
+  },
+  "sweep_j2_kinematic": {
+    "physics": "Small-strain von Mises (J2) plasticity with linear kinematic",
+    "path_dependent": true,
+    "program1": {
+      "E": 2.952730626071096e-14,
+      "nu": 1.1288096534849728e-10,
+      "SIGY0": 1.4588868376891415e-11,
+      "Hk": 7.815910348497329e-13
+    },
+    "program2": {
+      "E": 9.042732245524924e-11,
+      "nu": 6.913920597314955e-08,
+      "SIGY0": 4.5474440063313396e-11,
+      "Hk": 4.83554130445164e-10
+    }
+  },
+  "sweep_lame_elastic": {
+    "physics": "Isotropic linear elasticity parameterised by Lame parameters",
+    "path_dependent": false,
+    "program1": {
+      "lambda": 1.562815993553348e-10,
+      "mu": 3.174136300013188e-10
+    },
+    "program2": {
+      "lambda": 7.297514620481403e-14,
+      "mu": 2.764206798054555e-10
+    }
+  },
+  "sweep_maxwell_ve": {
+    "physics": "Linear Maxwell viscoelasticity (small strain, 3D): elastic v",
+    "path_dependent": true,
+    "program1": {
+      "E": 3.906481656342131e-14,
+      "nu": 1.0042815418684936e-10,
+      "tau": 3.0036435997939857e-10
+    },
+    "program2": {
+      "E": 1.6271375165559297e-12,
+      "nu": 3.314947247224409e-13,
+      "tau": 2.249133141383037e-10
+    }
+  },
+  "sweep_mooney_small": {
+    "physics": "Small-strain reduction of compressible neo-Hookean = isotrop",
+    "path_dependent": false,
+    "program1": {
+      "mu": 3.6775270342494523e-10,
+      "kappa": 2.384643649028268e-10
+    },
+    "program2": {
+      "mu": 2.0182940525927279e-10,
+      "kappa": 6.832142733881976e-08
+    }
+  },
+  "sweep_perzyna_linear": {
+    "physics": "Small-strain Perzyna viscoplasticity with LINEAR overstress ",
+    "path_dependent": true,
+    "program1": {
+      "E": 2.3860536305147267e-14,
+      "nu": 1.0285549973409891e-10,
+      "SIGY0": 1.5837720385825882e-12,
+      "eta": 1.2821768109586716e-13
+    },
+    "program2": {
+      "E": 2.271603044920487e-10,
+      "nu": 0.00015138599946413762,
+      "SIGY0": 1.6007151162686804e-10,
+      "eta": 2.037507315229132e-10
+    }
+  },
+  "sweep_real_ECL_TEMP": {
+    "physics": "Classical isotropic linear elasticity with temperature-depen",
+    "path_dependent": false,
+    "program1": {
+      "E1": 1.0191127764232899e-10,
+      "E2": 0.0,
+      "G1": 1.1161787682355879e-10,
+      "G2": 0.0,
+      "CTE": 0.0
+    },
+    "program2": {
+      "E1": 5.4657133525316484e-08,
+      "E2": 0.0,
+      "G1": 9.712862993470593e-11,
+      "G2": 0.0,
+      "CTE": 0.0
+    }
+  },
+  "sweep_real_PCO": {
+    "physics": "Reduced-Cosserat couple-stress rate-independent J2 plasticit",
+    "path_dependent": true,
+    "program1": {
+      "E": 2.8775227084618155e-14,
+      "nu": 7.95688788423023e-11,
+      "SIGY0": 4.857312937283442e-12,
+      "H": 1.637770909952175e-12
+    },
+    "program2": {
+      "E": 4.107653675006466e-11,
+      "nu": 4.541933877031052e-08,
+      "SIGY0": 1.8477717416142135e-12,
+      "H": 1.287953981172677e-09
+    }
+  },
+  "sweep_thermoelastic": {
+    "physics": "Isotropic thermo-elasticity (linear elastic with thermal exp",
+    "path_dependent": false,
+    "program1": {
+      "E": 4.4746960613667334e-14,
+      "nu": 8.607339166023768e-11,
+      "alpha": 0.0
+    },
+    "program2": {
+      "E": 2.892835193812448e-13,
+      "nu": 1.5951620804777187e-10,
+      "alpha": 0.0
+    }
+  },
+  "sweep_transiso": {
+    "physics": "Transversely isotropic linear elasticity (plane of isotropy ",
+    "path_dependent": false,
+    "program1": {
+      "EP": 2.564691131170738e-13,
+      "ET": 4.563331826563065e-12,
+      "XNUP": 3.684227355729268e-10,
+      "XNUPT": 5.415379113309199e-09,
+      "GT": 2.4802890464769995e-14
+    },
+    "program2": {
+      "EP": 2.0210730020656825e-12,
+      "ET": 5.3928434539007045e-11,
+      "XNUP": 2.0421061074723523e-09,
+      "XNUPT": 1.515126591034526e-08,
+      "GT": 0.0
+    }
+  }
+}

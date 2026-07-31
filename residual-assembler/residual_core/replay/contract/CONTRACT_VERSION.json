@@ -1,0 +1,8 @@
+{
+  "contract_version": "resasm_mat_abi_v1",
+  "files": {
+    "resasm_mat_abi_v1.h": "77c3b258f855b750",
+    "resasm_material_package_v1.schema.json": "003b83cb15b1828f"
+  },
+  "combined_hash": "ac164b327069b1cb"
+}

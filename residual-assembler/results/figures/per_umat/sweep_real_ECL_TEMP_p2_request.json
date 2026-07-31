@@ -1,0 +1,22 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_sweep_real_ECL_TEMP_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "sweep_real_ECL_TEMP.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "E1",
+        "E2",
+        "G1",
+        "G2",
+        "CTE"
+      ]
+    }
+  ]
+}

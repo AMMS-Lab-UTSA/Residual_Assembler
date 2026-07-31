@@ -1,0 +1,27 @@
+{
+  "mdir": "m1_elastic",
+  "physics": "Isotropic linear elasticity",
+  "path_dependent": false,
+  "params": [
+    "E",
+    "nu"
+  ],
+  "props_values": [
+    210000.0,
+    0.3
+  ],
+  "nstatev": 0,
+  "p1_worst": 2.766600302207522e-10,
+  "p2_worst": 2.766600302207522e-10,
+  "p1_errors": {
+    "E": 3.9505650284404634e-14,
+    "nu": 9.981066651201663e-11
+  },
+  "p2_errors": {
+    "E": 1.2962896709663502e-13,
+    "nu": 1.5951620804777187e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m1_elastic/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/m1_elastic/umat_m1_elastic_oti.json",
+  "svm_final": 3230.7692307692314
+}

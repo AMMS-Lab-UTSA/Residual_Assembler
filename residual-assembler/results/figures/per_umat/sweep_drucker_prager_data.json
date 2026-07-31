@@ -1,0 +1,35 @@
+{
+  "mdir": "sweep_drucker_prager",
+  "physics": "Drucker-Prager plasticity",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "k",
+    "beta"
+  ],
+  "props_values": [
+    20000.0,
+    0.25,
+    12.0,
+    0.3
+  ],
+  "nstatev": 1,
+  "p1_worst": 0.04564354645521663,
+  "p2_worst": 0.04564354645521663,
+  "p1_errors": {
+    "E": 4.006832847514761e-06,
+    "nu": 0.00019232693258380284,
+    "k": 0.006678054745967751,
+    "beta": 0.0004290287943153155
+  },
+  "p2_errors": {
+    "E": 1.270740669345923e-12,
+    "nu": 3.115484271173416e-10,
+    "k": 7.128732609304305e-10,
+    "beta": 4.4753301961824116e-11
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_drucker_prager/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_drucker_prager/umat_sweep_drucker_prager_oti.json",
+  "svm_final": 102.85714285714266
+}

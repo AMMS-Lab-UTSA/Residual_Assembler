@@ -1,0 +1,23 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_m5_cpflow_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "m5_cpflow.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "tau0",
+        "dG",
+        "q",
+        "p",
+        "gam0",
+        "H"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+*Heading
+FCC cubic single crystal ([100]), nonuniform single C3D8 (M4 FCC checkpoint).
+Distorted geometry + mixed top loads -> distinct strain at all 8 IPs.
+Cubic elastic constants (Cu): C11=168400, C12=121400, C44=75400 MPa.
+**
+*Node
+1,  0.00, 0.00, 0.00
+2,  1.00, 0.08, 0.00
+3,  1.07, 1.00, 0.06
+4,  0.05, 1.00, 0.00
+5,  0.00, 0.06, 1.00
+6,  1.00, 0.00, 1.08
+7,  1.00, 1.04, 1.00
+8,  0.09, 1.00, 1.00
+*Element, type=C3D8, elset=ALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+*Solid Section, elset=ALL, material=FCCCUBIC
+**
+*Material, name=FCCCUBIC
+*Depvar
+54,
+*User Material, constants=3
+168400., 121400., 75400.
+**
+*Nset, nset=BASE
+1, 2, 3, 4
+*Nset, nset=TOP
+5, 6, 7, 8
+**
+*Step, name=Step-1, nlgeom=NO
+*Static
+1.0, 1.0, 1e-05, 1.0
+*Boundary
+BASE, ENCASTRE
+*Cload
+5, 1, 1500.0
+5, 3, 3000.0
+6, 1, 2500.0
+6, 3, 1000.0
+7, 1,  500.0
+7, 3, 4000.0
+8, 1, 3500.0
+8, 3, 2000.0
+**
+*Output, field
+*Node Output
+U, RF
+*Element Output, directions=YES
+S, SDV
+*End Step

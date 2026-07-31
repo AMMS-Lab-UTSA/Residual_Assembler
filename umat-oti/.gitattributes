@@ -1,0 +1,30 @@
+# Normalize line endings to LF so source/transform hashes are identical across
+# Windows and Linux checkouts (the binary metadata's source_hash depends on it).
+* text=auto eol=lf
+
+# Fortran, Python, and text sources are always LF
+*.py    text eol=lf
+*.for   text eol=lf
+*.f90   text eol=lf
+*.f     text eol=lf
+*.inc   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.sh    text eol=lf
+*.cfg   text eol=lf
+*.INC   text eol=lf
+
+# Compiled/binary artifacts (should be git-ignored anyway) are never normalized
+*.obj   binary
+*.o     binary
+*.so    binary
+*.dll   binary
+*.mod   binary
+*.png   binary
+*.zip   binary
+*.pdf   binary
+*.h5    binary

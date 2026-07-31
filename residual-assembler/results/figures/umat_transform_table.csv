@@ -1,0 +1,20 @@
+UMAT,ddsdde_abs,ddsdde_rel,stress_rel,statev_pass,physics_model,reason,pass
+UMAT_ECL_TEMP,0.0,0.0,0.0,True,linear/small-strain elasticity,No numerical difference detected.,True
+UMAT_ECO,0.0,0.0,0.0,True,linear/small-strain elasticity,No numerical difference detected.,True
+UMAT_HIN,0.0,0.0,0.0,True,linear/small-strain elasticity,No numerical difference detected.,True
+UMAT_NKH_1.02,0.72344970703125,0.0021311044913665477,7.795635610818863e-06,True,small-strain plasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+UMAT_PCL,0.0,0.0,0.0,True,small-strain plasticity,No numerical difference detected.,True
+UMAT_PCLI,0.0,0.0,0.0,True,small-strain plasticity,No numerical difference detected.,True
+UMAT_PCLI_R,0.0,0.0,0.0,True,small-strain plasticity,No numerical difference detected.,True
+UMAT_PCLK,0.0,0.0,0.0,True,small-strain plasticity,No numerical difference detected.,True
+UMAT_PCO,0.0,0.0,0.0,True,small-strain plasticity,No numerical difference detected.,True
+UMAT_VPDCL,0.2370147705078125,0.0011540414668875243,1.6093254089355469e-06,True,small-strain plasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+UMAT_VPDCL_R,3000.0,1.0,1.0,False,small-strain plasticity,"Original Abaqus validation job did not complete successfully (status=failed, returncode=1).; Transformed Abaqus validation job did not complete successfully (status=failed, returncode=1).",False
+UMAT_VPDCO,0.37164306640625,0.0011223434438184547,2.96647934594675e-09,True,small-strain plasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+code_exp,0.03125,1.5808898243892252e-07,9.325873406851315e-15,True,small-strain plasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+code_imp,0.015625,8.20550119775701e-08,6.124185123582688e-08,True,small-strain plasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+elastic,0.0,0.0,0.0,True,linear/small-strain elasticity,No numerical difference detected.,True
+spin_elas_def,740.125,0.0026181292071746735,5.2171494189678924e-05,True,finite-strain elasticity,DDSDDE differs slightly but remains within configured tolerance.,True
+spin_elastic,0.0,0.0,0.0,True,linear/small-strain elasticity,No numerical difference detected.,True
+visco_beam,0.0,0.0,0.0,True,small-strain viscoplasticity,No numerical difference detected.,True
+visco_imp,0.0,0.0,0.0,True,small-strain viscoplasticity,No numerical difference detected.,True

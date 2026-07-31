@@ -1,0 +1,26 @@
+{
+  "schema": "resasm_sensitivity_request_v1",
+  "material": "umat_sweep_aniso_ortho_oti.obj",
+  "model": "single_c3d8.inp",
+  "record": "sweep_aniso_ortho.resrec.h5",
+  "scope": {
+    "domain": "ALL",
+    "increments": "ALL_CONVERGED"
+  },
+  "requests": [
+    {
+      "output": "S",
+      "with_respect_to": [
+        "C11",
+        "C12",
+        "C13",
+        "C22",
+        "C23",
+        "C33",
+        "C44",
+        "C55",
+        "C66"
+      ]
+    }
+  ]
+}

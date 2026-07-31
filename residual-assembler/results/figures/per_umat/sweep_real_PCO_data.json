@@ -1,0 +1,35 @@
+{
+  "mdir": "sweep_real_PCO",
+  "physics": "Couple-stress plasticity (ICP PCO, reformulated)",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "SIGY0",
+    "H"
+  ],
+  "props_values": [
+    210000.0,
+    0.3,
+    250.0,
+    2000.0
+  ],
+  "nstatev": 1,
+  "p1_worst": 3.211567834313649e-10,
+  "p2_worst": 3.211567834313649e-10,
+  "p1_errors": {
+    "E": 2.8775227084618155e-14,
+    "nu": 7.95688788423023e-11,
+    "SIGY0": 4.857312937283442e-12,
+    "H": 1.637770909952175e-12
+  },
+  "p2_errors": {
+    "E": 4.107653675006466e-11,
+    "nu": 4.541933877031052e-08,
+    "SIGY0": 1.8477717416142135e-12,
+    "H": 1.287953981172677e-09
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_real_PCO/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_real_PCO/umat_sweep_real_PCO_oti.json",
+  "svm_final": 274.4017632241812
+}

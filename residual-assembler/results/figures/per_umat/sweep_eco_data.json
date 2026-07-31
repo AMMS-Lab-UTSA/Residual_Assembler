@@ -1,0 +1,27 @@
+{
+  "mdir": "sweep_eco",
+  "physics": "Cosserat elasticity (ICP ECO, adapted)",
+  "path_dependent": false,
+  "params": [
+    "E",
+    "nu"
+  ],
+  "props_values": [
+    210000.0,
+    0.3
+  ],
+  "nstatev": 0,
+  "p1_worst": 9.948495514684338e-11,
+  "p2_worst": 9.948495514684338e-11,
+  "p1_errors": {
+    "E": 4.4746960613667334e-14,
+    "nu": 8.607339166023768e-11
+  },
+  "p2_errors": {
+    "E": 2.892835193812448e-13,
+    "nu": 1.5951620804777187e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_eco/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_eco/umat_sweep_eco_oti.json",
+  "svm_final": 3230.769230769231
+}

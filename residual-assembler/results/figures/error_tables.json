@@ -1,0 +1,188 @@
+{
+  "umat_m1_elastic": {
+    "program1": {
+      "E": 1.3325258658162283e-16,
+      "nu": 9.981066651201663e-11
+    },
+    "program2": {
+      "E": 3.0283315538264063e-15,
+      "nu": 1.6427883392516883e-11
+    }
+  },
+  "umat_m2_cubic": {
+    "program1": {
+      "C11": 7.215365457890758e-14,
+      "C12": 3.470124578311882e-13,
+      "C44": 1.5937771935539455e-13
+    },
+    "program2": {
+      "C11": 2.7355254813479672e-14,
+      "C12": 2.3852447794681662e-14,
+      "C44": 0.0
+    }
+  },
+  "umat_m3_j2": {
+    "program1": {
+      "E": 4.824483078292563e-15,
+      "nu": 4.73737471675626e-11,
+      "SIGY0": 3.2281953867648587e-13,
+      "H": 4.058429068267533e-14
+    },
+    "program2": {
+      "E": 3.855886520518721e-11,
+      "nu": 7.12588700200846e-10,
+      "SIGY0": 1.848107557645282e-12,
+      "H": 1.1856834586574923e-11
+    }
+  },
+  "umat_m5_cpflow": {
+    "program1": {
+      "tau0": 7.188200117957708e-12,
+      "dG": 8.786659271545666e-11,
+      "q": 4.8072611517578836e-11,
+      "p": 4.776306265920293e-11,
+      "gam0": 1.4263291392844398e-10,
+      "H": 1.0333017615308804e-13
+    },
+    "program2": {
+      "tau0": 1.77690810069497e-12,
+      "dG": 2.819944939629748e-10,
+      "q": 1.0353491821087918e-10,
+      "p": 2.2094911322669626e-10,
+      "gam0": 7.472181919430736e-11,
+      "H": 1.6992852386751898e-13
+    }
+  },
+  "umat_m6_fcc": {
+    "program1": {
+      "g0": 2.48347727989162e-09,
+      "h0": 8.497965003917976e-12,
+      "q": 1.109295648219439e-09,
+      "gd0": 9.355494409835486e-09,
+      "m": 9.127909669299529e-10,
+      "gsat": 5.894940809956531e-10,
+      "C11": 1.263001135743941e-12,
+      "C12": 1.264693211332566e-12,
+      "C44": 7.270316480562907e-21,
+      "a": 2.8338020958205506e-09
+    },
+    "program2": {
+      "g0": 8.602798500907326e-11,
+      "h0": 4.621557189708757e-12,
+      "q": 7.566675890605573e-10,
+      "gd0": 4.14225146519162e-09,
+      "m": 3.75447300332272e-10,
+      "gsat": 1.3635791806832293e-10,
+      "C11": 1.2131247518552184e-13,
+      "C12": 2.337416178536533e-13,
+      "C44": 1.3081475788748388e-36,
+      "a": 2.2665600266444637e-10
+    }
+  },
+  "_meta": {
+    "schema": "resasm_validation_provenance_v1",
+    "method_version": "adaptive-fd-v1",
+    "git_commits": {
+      "umat_oti": "e272a66b5195f5a5bd45f92543a4fcbc2fdde589",
+      "residual_assembler": "2a30bd8f0a3d2facd3561afc4893da9ddcf6d239"
+    },
+    "environment": {
+      "os": "windows",
+      "platform": "Windows-11-10.0.26100-SP0",
+      "arch": "amd64",
+      "python_version": "3.12.10",
+      "numpy_version": "2.4.2",
+      "compiler": "gfortran",
+      "compiler_version": "15.2.0",
+      "compiler_path": "C:\\Users\\vfn333\\AppData\\Local\\Microsoft\\WinGet\\Packages\\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\mingw64\\bin\\gfortran.EXE"
+    },
+    "materials": [
+      "m1_elastic",
+      "m2_cubic",
+      "m3_j2",
+      "m5_cpflow",
+      "m6_fcc"
+    ],
+    "props_values": {
+      "m1_elastic": [
+        210000.0,
+        0.3
+      ],
+      "m2_cubic": [
+        170000.0,
+        124000.0,
+        75000.0
+      ],
+      "m3_j2": [
+        210000.0,
+        0.3,
+        250.0,
+        2000.0
+      ],
+      "m5_cpflow": [
+        200000.0,
+        0.3,
+        1500.0,
+        25.0,
+        0.4,
+        1.6,
+        0.1,
+        60000.0
+      ],
+      "m6_fcc": [
+        168000.0,
+        121000.0,
+        75000.0,
+        13.0,
+        55.0,
+        800.0,
+        2.0,
+        1.4,
+        0.001,
+        0.05
+      ]
+    },
+    "fd_ladder": [
+      0.001,
+      0.0003,
+      0.0001,
+      3e-05,
+      1e-05,
+      3e-06,
+      1e-06,
+      3e-07,
+      1e-07,
+      3e-08,
+      1e-08
+    ],
+    "step_selection": "two-sided plateau, Richardson-checked (fd_reference)",
+    "metric_definitions": {
+      "program1_stateless": {
+        "quantity": "DSIGMA_DP OTI-vs-FD relative discrepancy at one elastic strain point",
+        "formula": "max_components |DSIGMA_DP_OTI[:,p] - F*(p)| / max(|F*(p)|, 1e-3*global_scale)",
+        "aggregation": "max component at a single strain state; worst over parameters",
+        "path": "single point (elastic models)",
+        "normalization": "per-parameter max|FD|, floored at 1e-3 x max|FD| over all parameters"
+      },
+      "program1_path": {
+        "quantity": "DSIGMA_DP OTI-vs-FD relative RMSE over a monotonic uniaxial path",
+        "formula": "RMSE_over(path,components)(DSIGMA_DP_OTI - F*) / max(|F*|, 1e-3*global_scale)",
+        "aggregation": "root-mean-square over 150 increments and tensor components; worst over parameters",
+        "path": "150-increment monotonic uniaxial-strain ramp to 3% (path-dependent models)",
+        "normalization": "per-parameter max|FD| over the path, floored at 1e-3 x global scale"
+      },
+      "program2_residual": {
+        "quantity": "d(sigma_vM)/dp from residual assembly vs full-analysis FD",
+        "formula": "|dSvm_residual(p) - F*(p)| / max(|F*(p)|, 1e-3*global_scale)",
+        "aggregation": "single controlled C3D8 element; worst over parameters",
+        "path": "point (elastic) or last increment of a 120-step ramp (path-dependent)",
+        "normalization": "per-parameter |FD|, floored at 1e-3 x global scale"
+      },
+      "fd_reference": "umat_oti.validation.fd_reference: parameter-scaled centered difference, step selected per parameter from the FD sequence (two-sided plateau), Richardson-checked; ladder 1e-3..1e-8; never chosen by agreement with OTI",
+      "note_on_terminology": "all figures are OTI-vs-FD relative discrepancies, not errors against an analytical derivative; where a discrepancy is <= the FD reference's Richardson uncertainty, OTI and FD agree to the FD reference's resolution."
+    },
+    "worst_program1": 9.355494409835486e-09,
+    "worst_program2": 4.14225146519162e-09,
+    "timestamp_utc": "2026-07-23T19:19:50Z"
+  }
+}

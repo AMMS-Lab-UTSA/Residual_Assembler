@@ -1,0 +1,31 @@
+{
+  "mdir": "sweep_maxwell_ve",
+  "physics": "Maxwell viscoelasticity",
+  "path_dependent": true,
+  "params": [
+    "E",
+    "nu",
+    "tau"
+  ],
+  "props_values": [
+    200000.0,
+    0.3,
+    1.0
+  ],
+  "nstatev": 6,
+  "p1_worst": 1.0175222037919099e-10,
+  "p2_worst": 1.0175222037919099e-10,
+  "p1_errors": {
+    "E": 3.906481656342131e-14,
+    "nu": 1.0042815418684936e-10,
+    "tau": 3.0036435997939857e-10
+  },
+  "p2_errors": {
+    "E": 1.6271375165559297e-12,
+    "nu": 3.314947247224409e-13,
+    "tau": 2.249133141383037e-10
+  },
+  "transform_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_maxwell_ve/contract.json",
+  "completed_contract": "/home/ammslab3/Documents/UMAT_source_transformation/oti_provider/materials/sweep_maxwell_ve/umat_sweep_maxwell_ve_oti.json",
+  "svm_final": 1940.2862402475512
+}

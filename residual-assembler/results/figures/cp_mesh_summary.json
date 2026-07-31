@@ -1,0 +1,9 @@
+{
+  "mesh": "4x4x4 C3D8",
+  "n_elements": 64,
+  "n_dof": 375,
+  "n_increments": 50,
+  "max_dudp_norm": 4.470548081781123e-18,
+  "mesh_vs_single_element_rel": 1.0473501463248156e-14,
+  "sigma_vM_final_MPa": 1582.677167601473
+}

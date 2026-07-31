@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.mod
+*.o
+*.so
+*.dll
+*.obj
+.pytest_cache/
+build/
+dist/
+.DS_Store
+# regenerable per-UMAT figures (embedded in the HTML reports)
+results/figures/per_umat/*.png
+# temporary PathMaterial link workspaces created by the deck/figure scripts
+results/figures/_*_link/
+# validation scratch output
+validation/out/
