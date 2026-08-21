@@ -11,8 +11,7 @@ This is not a JSONL-only roundtrip test. It:
    ``umat-oti-driver-contract/1.1`` JSONL increment stream expected by the
    Residual Assembler bridge (:mod:`residual_core.materials.umat_oti_driver`).
 4. Loads the stream through the ResAsm bridge and assembles ``dR/dp``
-   for a small 3D "one-brick" element whose ``B`` matrix couples several
-   stress components (so the assembly is not a rank-1 truss reduction).
+    for a real eight-point C3D8 element using the production kernel.
 5. Compares the assembled ``dR/dp`` against a **full-residual finite
    difference** obtained by replaying the full loading history with each
    parameter perturbed positive/negative and re-computing the same
@@ -53,18 +52,19 @@ def _require_umat_oti():
         pytest.skip("umat_oti not importable in this test environment")
 
 
-def _b_matrix_for_one_brick_ip() -> np.ndarray:
-    """A synthetic ``6 x 24`` B matrix that couples multiple stress rows.
-
-    We are not testing brick-element correctness; we only need a matrix
-    whose transpose maps every stress component into element DOFs so that
-    the assembled ``B^T dsigma/dp`` genuinely depends on *all six* rows of
-    ``DSIGMA_DP``. The synthetic B is chosen so different rows contribute
-    to different DOFs, exposing any row/column mis-indexing in the bridge.
-    """
-    rng = np.random.default_rng(20260821)
-    B = rng.standard_normal((6, 24)) / 6.0
-    return B
+def _unit_c3d8_coordinates() -> np.ndarray:
+    return np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 0.0, 1.0],
+            [1.0, 1.0, 1.0],
+            [0.0, 1.0, 1.0],
+        ]
+    )
 
 
 def _element_dof_map() -> list[int]:
@@ -123,7 +123,7 @@ def _write_stream_from_oti_csv(
             fh.write("\n")
 
 
-def _full_residual_fd(B: np.ndarray, weight_detJ: float) -> np.ndarray:
+def _full_residual_fd(Xe: np.ndarray) -> np.ndarray:
     """Compute dR_e/dp via full loading-history FD of the Python J2 model.
 
     This uses :mod:`umat_oti.validation.j2_reference` -- the SAME algorithm
@@ -141,6 +141,7 @@ def _full_residual_fd(B: np.ndarray, weight_detJ: float) -> np.ndarray:
     """
     from umat_oti.validation.j2_reference import J2Parameters, build_softwarex_j2_path, run_path
     from umat_oti.validation.parameter_sensitivity import ParameterMap
+    from residual_core.formulations.c3d8_kernel import element_internal_force_small_strain
 
     params = J2Parameters()
     path = build_softwarex_j2_path()
@@ -157,12 +158,11 @@ def _full_residual_fd(B: np.ndarray, weight_detJ: float) -> np.ndarray:
         params_minus = params.with_replaced(name, p0 - step)
         plus = run_path(params_plus, path)
         minus = run_path(params_minus, path)
-        # Use the FINAL increment for the comparison (worst case for
-        # history dependence).
         stress_plus = np.array(plus[-1].stress)
         stress_minus = np.array(minus[-1].stress)
-        d_stress = (stress_plus - stress_minus) / (2.0 * step)
-        fd[:, k] = weight_detJ * (B.T @ d_stress)
+        residual_plus = element_internal_force_small_strain(Xe, np.tile(stress_plus, (8, 1)))
+        residual_minus = element_internal_force_small_strain(Xe, np.tile(stress_minus, (8, 1)))
+        fd[:, k] = (residual_plus - residual_minus) / (2.0 * step)
     return fd
 
 
@@ -219,14 +219,21 @@ def test_compiled_oti_j2_drives_bridge_and_dRdp_matches_full_residual_fd(tmp_pat
     dsigma_dp = np.array(last.dsigma_dp)   # shape (6, 4)
     assert dsigma_dp.shape == (6, 4)
 
-    # 4) Assemble dR_e/dp with a synthetic 6x24 B and one integration point.
-    B = _b_matrix_for_one_brick_ip()
-    weight_detJ = 1.25   # arbitrary positive weight
+    # 4) Assemble dR_e/dp through the production eight-point C3D8 kernel.
+    from residual_core.formulations.c3d8_kernel import ABAQUS_C3D8_GAUSS, b_matrix_reference
+
+    Xe = _unit_c3d8_coordinates()
+    B_at_ip = []
+    weight_detJ_at_ip = []
+    for point, weight in zip(ABAQUS_C3D8_GAUSS.points, ABAQUS_C3D8_GAUSS.weights):
+        B, detJ = b_matrix_reference(Xe, point)
+        B_at_ip.append(B)
+        weight_detJ_at_ip.append(weight * detJ)
     contributions = [
         {
-            "B_at_ip": [B],
-            "weight_x_detJ_at_ip": [weight_detJ],
-            "dsigma_dp_at_ip": [dsigma_dp],
+            "B_at_ip": B_at_ip,
+            "weight_x_detJ_at_ip": weight_detJ_at_ip,
+            "dsigma_dp_at_ip": [dsigma_dp] * 8,
             "element_dof_map": _element_dof_map(),
         }
     ]
@@ -235,7 +242,7 @@ def test_compiled_oti_j2_drives_bridge_and_dRdp_matches_full_residual_fd(tmp_pat
 
     # 5) Full-residual FD reference computed from the Python J2 model at
     # the same last increment.
-    fd_reference = _full_residual_fd(B, weight_detJ)
+    fd_reference = _full_residual_fd(Xe)
     assert fd_reference.shape == (24, 4)
 
     # 6) Compare. The scale for each column varies wildly (E and NU rows
