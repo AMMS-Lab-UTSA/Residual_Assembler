@@ -1,0 +1,39 @@
+*Heading
+C3D8 stress-driven residual validation
+*Node
+1, 0., 0., 0.
+2, 1., 0., 0.
+3, 1., 1., 0.
+4, 0., 1., 0.
+5, 0., 0., 1.
+6, 1., 0., 1.
+7, 1., 1., 1.
+8, 0., 1., 1.
+*Element, type=C3D8, elset=EALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+*Nset, nset=X0
+1, 4, 5, 8
+*Nset, nset=X1
+2, 3, 6, 7
+*Nset, nset=Y0
+1, 2, 5, 6
+*Nset, nset=Z0
+1, 2, 3, 4
+*Solid Section, elset=EALL, material=ELASTIC
+*Material, name=ELASTIC
+*Elastic
+210000., 0.3
+*Step, name=LOAD, nlgeom=NO
+*Static
+1., 1.
+*Boundary
+X0, 1, 1, 0.
+Y0, 2, 2, 0.
+Z0, 3, 3, 0.
+X1, 1, 1, 0.001
+*Output, field, frequency=1
+*Node Output
+U, RF
+*Element Output, elset=EALL, position=INTEGRATION POINTS
+S
+*End Step

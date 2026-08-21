@@ -1,0 +1,15 @@
+{
+  "frame": 1,
+  "time": 1.0,
+  "n_dof": 24,
+  "n_free": 8,
+  "n_prescribed": 16,
+  "free_residual_Linf": 1.2106529260012942e-14,
+  "free_residual_L2": 1.3701059670515758e-14,
+  "internal_force_scale": 148.49242404917499,
+  "reaction_sign_match": "+",
+  "reaction_abs_err_L2": 1.1499416735043501e-14,
+  "reaction_rel_err": 7.744110050513645e-17,
+  "sum_F_int": 3.210431287842416e-30,
+  "verdict": "PASS"
+}

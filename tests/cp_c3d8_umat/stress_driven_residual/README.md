@@ -1,5 +1,23 @@
 # Verification Mode 1 — stress-driven residual vs Abaqus reactions
 
+## Minimal validated C3D8 case
+
+`c3d8_elastic.inp` is a one-element, eight-integration-point acceptance case.
+On an Abaqus-enabled node, run:
+
+```bash
+abaqus job=c3d8_elastic input=c3d8_elastic.inp double=both interactive
+abaqus python export_fields.py c3d8_elastic.odb fields.json
+python -m residual_core.stress_driven_residual \
+  --inp c3d8_elastic.inp --fields fields.json --mode small \
+  --report abaqus_c3d8_report.json
+```
+
+The recorded Abaqus 2024 run passed with reaction relative error
+`7.744110050513645e-17` and free-residual relative error
+`8.152967646351492e-17`. The report is retained in
+`abaqus_c3d8_report.json`; the generated ODB is intentionally not versioned.
+
 **Goal.** Take the stress field Abaqus computed (integration-point Cauchy stress
 `S`) plus the displaced geometry (`U`), assemble the internal nodal force
 **externally** with the finite-strain C3D8 residual assembler, and show it
