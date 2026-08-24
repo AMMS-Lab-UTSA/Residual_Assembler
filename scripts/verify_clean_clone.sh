@@ -96,9 +96,14 @@ got="$(git -C "$sub" rev-parse HEAD)"
 echo "      $sub @ $got"
 
 echo "[6/7] strict mode must refuse to run green without the sources"
-git submodule deinit -qf "$sub" >/dev/null 2>&1
+# Remove the source the way a fresh clone lacks it. deinit can report non-zero
+# for reasons that do not matter here, so the outcome is asserted rather than
+# the exit status.
+git submodule deinit -f "$sub" >/dev/null 2>&1 || true
+[ -z "$(ls -A "$sub" 2>/dev/null)" ] || fail "could not clear $sub for the strict-mode check"
 set +e
-strict_out="$(REQUIRE_EXTERNAL_TEST_SOURCES=1 "$PYTHON" -m pytest -q 2>&1 | tail -2)"
+strict_out="$(REQUIRE_EXTERNAL_TEST_SOURCES=1 "$PYTHON" -m pytest -q 2>&1 | tail -3)"
+strict_status=$?
 set -e
 echo "$strict_out" | sed 's/^/      /'
 echo "$strict_out" | grep -qE '[0-9]+ (failed|error)' \
