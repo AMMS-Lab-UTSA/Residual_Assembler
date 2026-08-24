@@ -31,6 +31,9 @@ from residual_core.algebra.otilib_adapter import otilib_available  # noqa: E402
 from resasm_user.recipe import load_recipe, describe, sensitivity_capability  # noqa: E402
 from resasm_user.config import ConfigError  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from external_sources import require_external_file  # noqa: E402
+
 C3D8_INP = os.path.join(
     _ROOT, "sources", "permissive", "ngrilli_Oxford_Crystal_Plasticity",
     "ExampleInputFiles", "HCPnoTwin", "Compression111.inp")
@@ -52,6 +55,8 @@ def _write(tmp_path, text, **files):
 # Progressive inference: the user types 3 lines; we infer the rest.
 # --------------------------------------------------------------------------- #
 def test_infers_everything_inferable_from_an_abaqus_mesh(tmp_path):
+    require_external_file(
+        C3D8_INP, "a real C3D8 Abaqus mesh to exercise recipe inference and the OTI honesty gate")
     cfg = _write(tmp_path, "problem:\n  name: c3d8_case\nmesh: %s\nparameters:\n"
                            "  - CPuranium.E\n" % C3D8_INP.replace("\\", "/"))
     r = load_recipe(cfg)
@@ -72,6 +77,8 @@ def test_infers_everything_inferable_from_an_abaqus_mesh(tmp_path):
 
 
 def test_reports_the_minimum_missing_ingredients(tmp_path):
+    require_external_file(
+        C3D8_INP, "a real C3D8 Abaqus mesh to exercise recipe inference and the OTI honesty gate")
     cfg = _write(tmp_path, "mesh: %s\nparameters:\n  - CPuranium.E\n"
                  % C3D8_INP.replace("\\", "/"))
     r = load_recipe(cfg)
@@ -90,6 +97,8 @@ def test_c3d8_can_assemble_but_is_NOT_oti_differentiable(tmp_path):
     The C3D8 kernels use numpy float arrays (core/voigt.py::isotropic_D raises on
     an OTI number), so parameters cannot be overloaded through them. The tool must
     say so, not pretend."""
+    require_external_file(
+        C3D8_INP, "a real C3D8 Abaqus mesh to exercise recipe inference and the OTI honesty gate")
     cfg = _write(tmp_path, "mesh: %s\nparameters:\n  - CPuranium.E\n"
                  % C3D8_INP.replace("\\", "/"))
     r = load_recipe(cfg)
@@ -104,6 +113,8 @@ def test_c3d8_can_assemble_but_is_NOT_oti_differentiable(tmp_path):
 
 def test_run_REFUSES_a_sensitivity_it_cannot_compute(tmp_path):
     """Rather than emit a wrong number, `resasm run` must refuse and explain."""
+    require_external_file(
+        C3D8_INP, "a real C3D8 Abaqus mesh to exercise recipe inference and the OTI honesty gate")
     from resasm_user import run_from_config
     cfg = _write(tmp_path,
                  "mesh: %s\nsolution: U.npy\nmaterial:\n  type: elastic\n"

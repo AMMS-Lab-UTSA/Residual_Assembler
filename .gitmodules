@@ -1,0 +1,45 @@
+# External source submodules for Residual_Assembler.
+#
+# Every entry below is a PINNED gitlink already recorded in the tree. This file
+# only supplies the name -> path -> url mapping that git needs; it never changes
+# which commit a submodule points at. See sources/SUBMODULES.md for policy and
+# scripts/init_permissive_sources.sh for the supported bootstrap command.
+#
+# LICENSE TIERS
+#   permissive/       MIT / BSD-3. May be fetched. Required by the offline suite.
+#   copyleft/         GPL/AGPL. Reference-only; `update = none` keeps it unfetched.
+#   license-unknown/  No license granted. Reference-only; `update = none`.
+#
+# `update = none` means `git submodule update` (with or without --init) skips the
+# entry, so a default initialization never downloads restricted source. Fetching
+# one is then an explicit, deliberate act by the person doing it.
+
+[submodule "sources/permissive/bibekanandadatta_Abaqus-UEL-Elasticity"]
+	path = sources/permissive/bibekanandadatta_Abaqus-UEL-Elasticity
+	url = https://github.com/bibekananda-datta/Abaqus-UEL-Elasticity.git
+	update = checkout
+
+[submodule "sources/permissive/bibekanandadatta_Abaqus-UEL-Hyperelasticity"]
+	path = sources/permissive/bibekanandadatta_Abaqus-UEL-Hyperelasticity
+	url = https://github.com/bibekananda-datta/Abaqus-UEL-Hyperelasticity.git
+	update = checkout
+
+[submodule "sources/permissive/jgomezc1_ABAQUS-US"]
+	path = sources/permissive/jgomezc1_ABAQUS-US
+	url = https://github.com/jgomezc1/ABAQUS-US.git
+	update = checkout
+
+[submodule "sources/permissive/ngrilli_Oxford_Crystal_Plasticity"]
+	path = sources/permissive/ngrilli_Oxford_Crystal_Plasticity
+	url = https://github.com/ngrilli/Oxford_Crystal_Plasticity.git
+	update = checkout
+
+[submodule "sources/copyleft/ICAMS_Crystal_Plasticity_UMAT"]
+	path = sources/copyleft/ICAMS_Crystal_Plasticity_UMAT
+	url = https://github.com/ICAMS/crystal_plasticity_UMAT.git
+	update = none
+
+[submodule "sources/license-unknown/TarletonGroup_CrystalPlasticity"]
+	path = sources/license-unknown/TarletonGroup_CrystalPlasticity
+	url = https://github.com/TarletonGroup/CrystalPlasticity.git
+	update = none
