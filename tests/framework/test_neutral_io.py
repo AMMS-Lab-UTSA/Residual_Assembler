@@ -83,8 +83,10 @@ def test_user_material_flag_roundtrip():
     inp = os.path.join(_ROOT, "sources", "permissive",
                        "ngrilli_Oxford_Crystal_Plasticity", "ExampleInputFiles",
                        "HCPnoTwin", "Compression111.inp")
-    if not os.path.exists(inp):
-        pytest.skip("user_material test — sample .inp not present")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from external_sources import require_external_file
+    require_external_file(
+        inp, "an Abaqus mesh declaring a UMAT, to check the user_material flag round-trips")
     am = abaqus_inp_parser.parse_inp(inp)
     m = from_abaqus(am, formulation_policy=lambda et: None)
     m.materials = dict(am.materials)

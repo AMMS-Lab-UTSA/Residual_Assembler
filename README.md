@@ -258,7 +258,21 @@ pip install -e .            # exposes the `resasm` command
 Requires Python ≥ 3.9 and numpy. `PyYAML` is optional (`pip install -e .[yaml]`); a
 minimal YAML reader is bundled.
 
-Path A (assembly, inspection, verification) needs nothing else.
+Path A (assembly, inspection, verification) needs nothing else from PyPI, but
+the offline test suite reads one **external source submodule**. A fresh clone
+does not contain it, so run:
+
+```
+./scripts/init_permissive_sources.sh    # fetches the permissive test dependency
+```
+
+That fetches only `sources/permissive/` (MIT / BSD-3). Copyleft and
+license-unknown submodules are marked `update = none` and are never fetched by
+setup. Without the bootstrap, `pytest -q` reports `60 passed, 17 skipped` and the
+affected tests skip with a message naming the missing file and this command;
+with it, `68 passed, 9 skipped`. See
+[sources/SUBMODULES.md](sources/SUBMODULES.md) for the tier policy, the pinned
+commits, and the clean-clone verification procedure.
 
 **OTILib** is the hypercomplex engine behind the sensitivity paths. It is an
 **external GPLv3 dependency, not vendored here**:

@@ -17,8 +17,12 @@ material models and user elements — not only crystal plasticity.
   sources are **reference-only**: never copied, adapted, linked, or imported.
   Recorded under [reference_only/](reference_only/).
 - **Permissive (MIT / BSD-3 / Apache)** sources *may* be vendored later **with
-  attribution and license retention**, but are **not required** for any offline
-  test. Recorded under [external_candidates/](external_candidates/).
+  attribution and license retention**. Candidates not yet adopted are recorded
+  under [external_candidates/](external_candidates/) and are not required for any
+  offline test. One already-adopted permissive submodule *is* required:
+  `permissive/ngrilli_Oxford_Crystal_Plasticity` supplies the C3D8 mesh used by
+  the assembler/recipe/neutral-IO tests. Fetch it with
+  `./scripts/init_permissive_sources.sh`; see [SUBMODULES.md](SUBMODULES.md).
 - No license = all rights reserved = **reference-only** by default.
 
 > "On GitHub" does not mean "usable". License first, always.

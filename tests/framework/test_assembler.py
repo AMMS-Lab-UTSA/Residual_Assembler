@@ -35,6 +35,9 @@ from residual_core.formulations import c3d8_kernel as kern
 from residual_core.materials import IsotropicElastic
 from residual_core.materials.base import MaterialBinding
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from external_sources import require_external_file  # noqa: E402
+
 INP = os.path.join(_ROOT, "sources", "permissive", "ngrilli_Oxford_Crystal_Plasticity",
                    "ExampleInputFiles", "HCPnoTwin", "Compression111.inp")
 
@@ -42,6 +45,8 @@ INP = os.path.join(_ROOT, "sources", "permissive", "ngrilli_Oxford_Crystal_Plast
 @pytest.fixture(scope="module")
 def am():
     """The parsed Abaqus model shared by the tests (pytest injects it)."""
+    require_external_file(
+        INP, "a real C3D8 crystal-plasticity mesh to assemble the global residual against")
     return abaqus_inp_parser.parse_inp(INP)
 
 
