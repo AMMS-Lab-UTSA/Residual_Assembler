@@ -1,0 +1,112 @@
+name: CI
+
+# The point of this workflow is that a misconfigured checkout must go RED, not
+# green-but-smaller. External Abaqus sources are pinned submodules; without them
+# eight tests skip and the suite still passes, which is indistinguishable from a
+# healthy run. REQUIRE_EXTERNAL_TEST_SOURCES=1 turns those skips into failures.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  offline-suite:
+    name: Offline suite (strict external sources)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out without submodules
+        uses: actions/checkout@v4
+        with:
+          # Deliberately NOT submodules: true. The bootstrap script is the
+          # supported path and it is what must be exercised here, because it is
+          # also what enforces the licence tiers.
+          submodules: false
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[yaml]" pytest
+
+      - name: Initialize required permissive sources only
+        run: ./scripts/init_permissive_sources.sh
+
+      - name: Verify submodule contract (offline)
+        run: python scripts/verify_source_submodules.py -v
+
+      - name: Assert restricted tiers were not fetched
+        # Copyleft and licence-unknown sources are reference-only. If setup ever
+        # pulls one in, that is a licensing incident, not a test failure.
+        run: |
+          set -euo pipefail
+          status=0
+          for path in sources/copyleft/* sources/license-unknown/*; do
+            [ -d "$path" ] || continue
+            git ls-tree HEAD "$path" | grep -q '^160000' || continue
+            count=$(ls -A "$path" | wc -l)
+            if [ "$count" -ne 0 ]; then
+              echo "::error::restricted source was fetched into $path ($count entries)"
+              status=1
+            else
+              echo "ok (empty): $path"
+            fi
+          done
+          exit $status
+
+      - name: Run the suite in strict mode
+        env:
+          REQUIRE_EXTERNAL_TEST_SOURCES: "1"
+        run: python -m pytest -q
+
+      - name: Enforce the published baseline
+        env:
+          REQUIRE_EXTERNAL_TEST_SOURCES: "1"
+          EXPECTED_BASELINE: "68 passed, 9 skipped"
+        run: |
+          set -euo pipefail
+          out=$(python -m pytest -q 2>&1 | tail -3)
+          echo "$out"
+          echo "$out" | grep -q "$EXPECTED_BASELINE" || {
+            echo "::error::expected '$EXPECTED_BASELINE' from the offline suite"
+            exit 1
+          }
+
+  strict-mode-guard:
+    name: Strict mode must fail without the sources
+    runs-on: ubuntu-latest
+    steps:
+      # Proves the guard itself works. Without this, a broken strict mode would
+      # let the job above go green for the wrong reason.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[yaml]" pytest
+      - name: Suite must FAIL with sources absent and strict mode on
+        env:
+          REQUIRE_EXTERNAL_TEST_SOURCES: "1"
+        run: |
+          set -euo pipefail
+          if python -m pytest -q > out.txt 2>&1; then
+            cat out.txt
+            echo "::error::strict mode stayed green with the external sources absent"
+            exit 1
+          fi
+          grep -q "init_permissive_sources.sh" out.txt || {
+            cat out.txt
+            echo "::error::strict-mode failure did not carry the bootstrap instructions"
+            exit 1
+          }
+          echo "strict mode correctly refused to run green."
