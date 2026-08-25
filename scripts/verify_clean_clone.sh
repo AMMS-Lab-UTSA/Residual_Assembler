@@ -77,7 +77,16 @@ echo "[3/7] offline verifier"
 "$PYTHON" scripts/verify_source_submodules.py || fail "verify_source_submodules.py"
 
 echo "[4/7] bare 'git submodule update --init' must skip restricted tiers"
-git submodule update --init > "$WORK/init.log" 2>&1 || true
+# Required permissive sources must fail loudly. The restricted tiers carry
+# `update = none`, so they are skipped by design and their absence is correct;
+# a genuine failure to fetch a *required* source is not, and swallowing it here
+# would let a clean-clone check pass against a checkout that cannot run the
+# suite. The required-source assertion below is what turns that into a verdict.
+if ! git submodule update --init > "$WORK/init.log" 2>&1; then
+  echo "FAIL: submodule initialisation failed; see $WORK/init.log" >&2
+  sed 's/^/    /' "$WORK/init.log" >&2
+  exit 1
+fi
 for p in sources/copyleft/* sources/license-unknown/*; do
   [ -d "$p" ] || continue
   git ls-tree HEAD "$p" | grep -q '^160000' || continue
