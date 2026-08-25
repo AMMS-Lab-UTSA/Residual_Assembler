@@ -1,0 +1,16 @@
+# Normalise line endings so a Windows checkout produces no spurious diffs and
+# fixed-form Fortran column alignment survives.
+* text=auto eol=lf
+
+*.for   text eol=lf
+*.f     text eol=lf
+*.f90   text eol=lf
+*.inp   text eol=lf
+*.inc   text eol=lf
+
+# Generated evidence and exported solution data.
+tests/**/expected/**   linguist-generated=true
+
+*.odb   binary
+*.png   binary
+*.pdf   binary

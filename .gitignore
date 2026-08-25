@@ -16,3 +16,8 @@ dist/
 
 # stray local logs
 abq_val_log.txt
+
+# Build products from the Fortran material adapters
+*.o
+*.mod
+*.so

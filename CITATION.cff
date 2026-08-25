@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Residual_Assembler: model-agnostic residual assembly and structural sensitivities for Abaqus models"
+abstract: >-
+  Abaqus owns the global residual internally and never exposes it, so an Abaqus
+  user cannot supply one directly. Residual_Assembler builds R from the
+  ingredients instead: mesh, element kernels, material response, converged
+  solution fields, loads and constraints. Given a converged solution and a
+  parameter list it assembles the residual and differentiates it, producing
+  structural sensitivities without the model leaving the user's machine. It is
+  the companion product to UMAT-OTI, which supplies the differentiated material.
+type: software
+version: 0.1.0
+repository-code: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
+url: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
+# license: intentionally absent. This repository has not yet declared a licence
+# for its own code; see AUTHORS.md. Adding one here before that decision is made
+# would assert a grant the authors have not given.
+keywords:
+  - Abaqus
+  - residual assembly
+  - structural sensitivity
+  - finite element method
+  - adjoint
+  - crystal plasticity
+  - research software
+authors:
+  - family-names: "García Botero"
+    given-names: "Santiago"
+    affiliation: "The University of Texas at San Antonio"
+  - family-names: "Millwater"
+    given-names: "Harry"
+    affiliation: "The University of Texas at San Antonio, Department of Mechanical Engineering"
+  - family-names: "Montoya"
+    given-names: "Arturo"
+    affiliation: "The University of Texas at San Antonio, Department of Civil Engineering"
+  - family-names: "Restrepo"
+    given-names: "David"
+    affiliation: "The University of Texas at San Antonio, Department of Mechanical Engineering"

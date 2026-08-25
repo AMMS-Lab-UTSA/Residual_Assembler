@@ -1,0 +1,15 @@
+{
+  "_comment": [
+    "Configuration for tools/audit_repository_standards.py.",
+    "",
+    "The absolute-path check asks whether a fresh clone can run without any path",
+    "under someone's home directory existing. Code, documentation, recipes and",
+    "configuration must never name one.",
+    "",
+    "Records of runs that already happened are different: an exported Abaqus job",
+    "names the directory it ran in, and rewriting that would falsify the record.",
+    "Such directories are exempt below, each with its reason. No exemption may",
+    "cover anything a reproduction reads as input."
+  ],
+  "absolute_path_exemptions": []
+}

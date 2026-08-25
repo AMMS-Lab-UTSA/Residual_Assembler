@@ -23,3 +23,18 @@ resasm = "residual_core.ui.cli:main"
 # a package list here -- new subpackages must not silently go unshipped.
 include = ["residual_core*", "resasm_user*", "partner_kit*"]
 exclude = ["tests*", "sources*", "scripts*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+	"unit: pure-Python logic; no compiler, no Abaqus, milliseconds",
+	"integration: several components together, still offline and redistributable",
+	"regression: pins a behaviour that was once wrong; the docstring says which",
+	"slow: minutes rather than milliseconds",
+	"network: reaches the public internet; excluded from the offline suite",
+	"fortran: needs a Fortran compiler on PATH",
+	"abaqus: needs a licensed Abaqus installation; cannot run in public CI",
+	"arc: needs the documented HPC environment and its scheduler",
+	"publication: regenerates or checks a published artefact",
+]
