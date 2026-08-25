@@ -1,0 +1,45 @@
+{
+  "title": "Residual_Assembler: model-agnostic residual assembly and structural sensitivities for Abaqus models",
+  "description": "Model-agnostic residual assembly and structural sensitivities for Abaqus models. Abaqus never exposes the global residual; this framework assembles it from mesh, element kernels, material response, converged solution fields, loads and constraints, then differentiates it. Companion product to UMAT-OTI.",
+  "upload_type": "software",
+  "access_right": "open",
+  "keywords": [
+    "Abaqus",
+    "residual assembly",
+    "structural sensitivity",
+    "finite element method",
+    "crystal plasticity",
+    "research software"
+  ],
+  "creators": [
+    {
+      "name": "García Botero, Santiago",
+      "affiliation": "The University of Texas at San Antonio"
+    },
+    {
+      "name": "Millwater, Harry",
+      "affiliation": "The University of Texas at San Antonio"
+    },
+    {
+      "name": "Montoya, Arturo",
+      "affiliation": "The University of Texas at San Antonio"
+    },
+    {
+      "name": "Restrepo, David",
+      "affiliation": "The University of Texas at San Antonio"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/AMMS-Lab-UTSA/Residual_Assembler",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation",
+      "relation": "isCompiledBy",
+      "scheme": "url"
+    }
+  ],
+  "notes": "No licence is declared for this repository's own code yet; Zenodo deposition should wait until it is."
+}
