@@ -53,9 +53,8 @@ submodules organised by licence tier; see
 anything from `sources/copyleft/` or `sources/license-unknown/` into the
 redistributable core.
 
-Note that **this repository does not yet declare a licence for its own code**.
-Until it does, contributions cannot be redistributed under any grant. See
-[`AUTHORS.md`](AUTHORS.md).
+This repository is licensed **GPL-3.0-only**. By contributing you agree your
+contribution is licensed under those terms. See [`LICENSE`](LICENSE).
 
 ## Before opening a pull request
 

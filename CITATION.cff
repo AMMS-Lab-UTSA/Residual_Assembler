@@ -13,9 +13,7 @@ type: software
 version: 0.1.0
 repository-code: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
 url: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
-# license: intentionally absent. This repository has not yet declared a licence
-# for its own code; see AUTHORS.md. Adding one here before that decision is made
-# would assert a grant the authors have not given.
+license: GPL-3.0-only
 keywords:
   - Abaqus
   - residual assembly

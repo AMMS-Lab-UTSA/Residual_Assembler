@@ -16,9 +16,13 @@ public interfaces may still change.
   `abaqus`, `arc`, `publication`) so a missing Abaqus installation cannot
   silently shrink the offline suite.
 
+### Changed
+- Licensed **GPL-3.0-only**, matching the companion product UMAT-OTI and the
+  OTILib algebra both build on. The `sources/` licence tiers keep their
+  `update = none` policy but their rationale changes: they are a distribution
+  and obligation boundary, not a firewall around a non-copyleft core.
+
 ### Known gaps
-- **No licence is declared for this repository's own code.** Default copyright
-  therefore applies. See `AUTHORS.md`; the audit reports this until it is fixed.
 - The sensitivity beat does not yet run through the C3D8 assembly path. See
   `STATUS.md`.
 

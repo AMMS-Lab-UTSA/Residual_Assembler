@@ -150,29 +150,4 @@ jobs:
         with:
           python-version: "3.11"
       - name: Audit
-        # Currently reports one failure: this repository declares no licence for
-        # its own code. That is a real gap, not a lint quirk, and the job stays
-        # red until the authors choose one. See AUTHORS.md.
         run: python tools/audit_repository_standards.py
-        continue-on-error: true
-      - name: Audit (excluding the known licence gap)
-        run: |
-          python - <<'PY'
-          import json, subprocess, sys
-          out = subprocess.run([sys.executable, "tools/audit_repository_standards.py",
-                                "--json"], capture_output=True, text=True)
-          report = json.loads(out.stdout)
-          blocking = []
-          for check in report["checks"]:
-              if check["ok"]:
-                  continue
-              if check["name"] == "required_project_files" and \
-                      check["offenders"] == ["LICENSE"]:
-                  print("known gap: no licence declared (see AUTHORS.md)")
-                  continue
-              blocking.append(check)
-          if blocking:
-              print(json.dumps(blocking, indent=2))
-              sys.exit(1)
-          print("no blocking repository-standards failures")
-          PY

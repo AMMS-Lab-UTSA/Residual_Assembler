@@ -59,8 +59,8 @@ order-truncated imaginary arithmetic. It supplies the differentiated material
 this framework consumes. The two are separate products connected by a versioned
 contract and are released independently.
 
-## A note on licensing
+## Licence
 
-This repository does not yet declare a licence for its own code, so default
-copyright applies and no redistribution rights are granted. See
-[`AUTHORS.md`](AUTHORS.md).
+GPL-3.0-only; see [`LICENSE`](LICENSE). External Abaqus sources are pinned
+submodules that keep their own licences and are never vendored -- see
+[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
