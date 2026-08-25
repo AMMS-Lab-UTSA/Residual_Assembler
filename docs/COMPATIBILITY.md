@@ -8,7 +8,7 @@ independently, connected by a versioned contract. Neither vendors the other.
 | Component | Version / commit |
 |---|---|
 | `residual-assembler` | 0.1.0 |
-| `umat-oti` | pinned in `pyproject.toml`, extra `bridge` |
+| `umat-oti` | `d420904c615c507419f0af7159c122a1574d9394` (extra `bridge`) |
 | Contract schema | `resasm_umat_transform_v2` |
 | Material driver ABI | stdin property vector + strain path; stdout stress and state per increment |
 
