@@ -43,3 +43,7 @@
 	path = sources/license-unknown/TarletonGroup_CrystalPlasticity
 	url = https://github.com/TarletonGroup/CrystalPlasticity.git
 	update = none
+[submodule "sources/permissive/sergiolucarini_UMAT4COMSOL"]
+	path = sources/permissive/sergiolucarini_UMAT4COMSOL
+	url = https://github.com/sergiolucarini/UMAT4COMSOL.git
+	update = checkout
