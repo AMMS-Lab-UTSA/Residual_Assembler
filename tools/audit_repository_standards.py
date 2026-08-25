@@ -24,11 +24,6 @@ REQUIRED_FILES = (
     ".gitattributes", "pyproject.toml",
 )
 
-#: LICENSE is listed above and is currently absent. That is deliberate: this
-#: repository has not declared a licence for its own code, so default copyright
-#: applies and nothing here may be redistributed. Choosing the licence is an
-#: authors' decision, and the audit keeps reporting the gap until they make it
-#: rather than letting it pass unnoticed. See AUTHORS.md.
 
 #: Generated build products that must never be tracked.
 BINARY_SUFFIXES = {".o", ".mod", ".so", ".obj", ".a", ".pyc", ".exe"}

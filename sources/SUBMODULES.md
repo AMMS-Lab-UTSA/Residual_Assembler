@@ -1,9 +1,15 @@
 # External source submodules — policy and setup
 
 External Abaqus UMAT/UEL sources are **pinned git submodules**, never vendored
-copies. That keeps this framework's licensing clean (it is not GPL) and keeps
-provenance exact: every external file is identified by an upstream repository
-plus a commit SHA recorded in our tree.
+copies. Provenance stays exact -- every external file is identified by an
+upstream repository plus a commit SHA recorded in our tree -- and no third-party
+code is redistributed from here at all.
+
+This framework is licensed **GPL-3.0-only** (see `../LICENSE`). That was decided
+after the tier scheme below was written, and it changes why the tiers exist
+rather than whether they do. They are no longer a firewall protecting a
+non-copyleft core; they are a distribution and obligation boundary. See
+`LICENSING.md` for what each tier now means.
 
 ## The three tiers
 

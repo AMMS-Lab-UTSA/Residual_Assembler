@@ -41,5 +41,5 @@
       "scheme": "url"
     }
   ],
-  "notes": "No licence is declared for this repository's own code yet; Zenodo deposition should wait until it is."
+  "license": "GPL-3.0-only"
 }

@@ -11,15 +11,15 @@ The two are separate products connected by a versioned contract.
 | Arturo Montoya | UTSA, Department of Civil Engineering |
 | David Restrepo | UTSA, Department of Mechanical Engineering |
 
-## Licence status
+## Licence
 
-**This repository does not yet declare a licence for its own code.** Without one,
-default copyright applies and no redistribution rights are granted, which is at
-odds with the design intent recorded in
-[`sources/LICENSING.md`](sources/LICENSING.md) of building "a clean permissive
-core". Choosing the licence is an authors' decision and is deliberately not made
-here; `tools/audit_repository_standards.py` reports the missing `LICENSE` file
-until it is.
+Residual_Assembler is licensed **GPL-3.0-only**; see [`LICENSE`](LICENSE). This
+matches its companion product UMAT-OTI and the OTILib algebra both build on.
+
+The `sources/` licence tiers predate this decision and still apply, but their
+purpose changed with it: they are a distribution and obligation boundary rather
+than a firewall around a non-copyleft core. See
+[`sources/LICENSING.md`](sources/LICENSING.md).
 
 ## Third-party material
 

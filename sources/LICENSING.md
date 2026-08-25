@@ -1,8 +1,21 @@
 # Licensing & Isolation Manifest
 
 This workspace mirrors third-party code. The `sources/` tree is organized by
-**license tier** so that a future redistributable wrapper can be built against a
-clean permissive core without contaminating it with copyleft or unlicensed code.
+**license tier**, and nothing in it is vendored: every entry is a pinned
+submodule.
+
+**This framework is licensed GPL-3.0-only** (see `../LICENSE`), matching its
+companion product UMAT-OTI and the OTILib algebra both depend on. The tiers
+predate that decision and their purpose has shifted accordingly:
+
+| Tier | Under GPL-3.0 |
+|---|---|
+| `permissive/` (MIT, BSD-3) | combinable without restriction; attribution and the upstream licence text must travel with the code |
+| `copyleft/` (AGPL-3.0) | GPL-3.0 and AGPL-3.0 are compatible for combination (GPLv3 s13), but the AGPL part keeps its network-use obligation, which would then attach to any networked deployment. Still isolated, now for that obligation rather than for incompatibility |
+| `license-unknown/` | no grant of any kind exists. Isolated for the same reason as before, and no licence choice here changes that |
+
+The `update = none` policy on the restricted tiers is unchanged: fetching one
+stays a deliberate act by whoever does it.
 
 ## Tiers
 

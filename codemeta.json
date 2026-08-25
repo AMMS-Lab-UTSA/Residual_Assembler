@@ -56,5 +56,6 @@
       }
     }
   ],
-  "developmentStatus": "active"
+  "developmentStatus": "active",
+  "license": "https://spdx.org/licenses/GPL-3.0-only"
 }

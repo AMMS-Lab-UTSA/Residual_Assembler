@@ -386,4 +386,6 @@ before.
 
 The redistributable core builds only against `sources/permissive/` (MIT / BSD-3).
 `sources/copyleft/` and `sources/license-unknown/` are reference-only and are never
-copied or linked. OTILib is GPLv3 and stays external. See `sources/LICENSING.md`.
+copied or linked. This framework is GPL-3.0-only, so OTILib's GPLv3 is
+compatible; it stays an external dependency because it is a separate
+product, not because of licensing. See `sources/LICENSING.md`.

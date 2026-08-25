@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Model-agnostic residual assembly framework (crystal plasticity is one example backend)"
 readme = "residual_core/README.md"
 requires-python = ">=3.9"
+license = { text = "GPL-3.0-only" }
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
