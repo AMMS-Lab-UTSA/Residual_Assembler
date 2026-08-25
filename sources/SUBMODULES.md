@@ -36,6 +36,7 @@ and the provenance (URL + pinned SHA) is recorded. Mapping is not vendoring.
 | `permissive/bibekanandadatta_Abaqus-UEL-Elasticity` | bibekananda-datta/Abaqus-UEL-Elasticity | `9187e54a4069ed0e6196a29e97e92185d14724a5` | BSD-3 |
 | `permissive/bibekanandadatta_Abaqus-UEL-Hyperelasticity` | bibekananda-datta/Abaqus-UEL-Hyperelasticity | `ba5bf018b71e0717d3a3136a351637a27e6ff0ed` | BSD-3 |
 | `permissive/jgomezc1_ABAQUS-US` | jgomezc1/ABAQUS-US | `54181407aa7aa23055e33d354d0b2a3abc266365` | MIT |
+| `permissive/sergiolucarini_UMAT4COMSOL` | sergiolucarini/UMAT4COMSOL | `e62506fd842611566bac5b19ae1041b52b40ddc6` | MIT |
 | `copyleft/ICAMS_Crystal_Plasticity_UMAT` | ICAMS/crystal_plasticity_UMAT | `469464b646a6f250d996828559342b81a1dfbbd7` | AGPL-3.0 |
 | `license-unknown/TarletonGroup_CrystalPlasticity` | TarletonGroup/CrystalPlasticity | `2f0909472f4cdf1b0b71da6ba97db900dacc6f05` | none |
 
