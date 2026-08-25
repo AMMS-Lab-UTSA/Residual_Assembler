@@ -8,7 +8,7 @@ independently, connected by a versioned contract. Neither vendors the other.
 | Component | Version / commit |
 |---|---|
 | `residual-assembler` | 0.1.0 |
-| `umat-oti` | `117e4ab681750faaf8139d21d2d6dabfb441f2e2` (extra `bridge`) |
+| `umat-oti` | `5fb7b434fc12d0b2cc0ebb101b70cdd9754fbcce` (extra `bridge`) |
 | Contract schema | `resasm_umat_transform_v2` |
 | Material driver ABI | stdin property vector + strain path; stdout stress and state per increment |
 
@@ -50,3 +50,14 @@ and removed only after they have been reported as deprecated in at least one
 release. A schema change that removes or retypes a field is a breaking change
 and requires a major-version bump of the schema name itself
 (`resasm_umat_transform_v3`), not a silent redefinition of v2.
+
+## A pin can be invalidated by a history rewrite
+
+Pinning a commit assumes that commit stays reachable. Rewriting the pinned
+repository's history -- to correct commit authorship, for instance -- replaces
+every SHA on the branch, and the old one stops existing on the remote. `pip`
+then fails to resolve the dependency, which is loud and immediate rather than
+subtly wrong, but it does mean the pin has to be updated in the same batch as
+any such rewrite.
+
+If you rewrite history in UMAT-OTI, bump the `bridge` pin here before pushing.

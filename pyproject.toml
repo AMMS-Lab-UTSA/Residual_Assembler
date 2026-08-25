@@ -19,7 +19,7 @@ yaml = ["PyYAML"]
 # CI result depend on when it ran. Bump it deliberately when the contract moves,
 # and record the pair in the compatibility matrix.
 bridge = [
-	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@117e4ab681750faaf8139d21d2d6dabfb441f2e2",
+	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@5fb7b434fc12d0b2cc0ebb101b70cdd9754fbcce",
 ]
 
 [project.scripts]
