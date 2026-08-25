@@ -12,6 +12,14 @@ dependencies = ["numpy"]
 
 [project.optional-dependencies]
 yaml = ["PyYAML"]
+# The companion product. Residual_Assembler and UMAT-OTI are separate packages
+# connected by a versioned contract, so the bridge tests need umat_oti present.
+# The pin is a commit, not a branch: a moving branch would make this repository's
+# CI result depend on when it ran. Bump it deliberately when the contract moves,
+# and record the pair in the compatibility matrix.
+bridge = [
+	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@876256634855064ce10e202fa852c89e7f6d2fde",
+]
 
 [project.scripts]
 resasm = "residual_core.ui.cli:main"
