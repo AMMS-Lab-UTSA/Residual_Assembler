@@ -112,11 +112,22 @@ def test_the_internal_force_matches_an_independent_integration():
 
 def test_a_uniform_stress_leaves_no_net_force():
     """Equilibrium: a constant stress field on a free element produces
-    internal forces that sum to zero over the nodes."""
+    internal forces that sum to zero over the nodes.
+
+    Judged relative to the forces being summed, not against a fixed absolute
+    number. The corpus fixtures span eight orders of magnitude of stress --
+    irfancn__Abaqus-UMAT-elastic reaches 1.3e+08 where the bundled J2 control
+    is at 1.7e+03 -- and a cancellation of 1.3e+08 against itself leaves
+    7.5e-09 of float64 round-off, which an absolute 1e-9 reads as a violated
+    equilibrium and is in fact 5.7e-17 of the quantity that cancelled.
+    """
     for fixture in fixtures():
         stress = np.tile(fixture.original[-1].stress, (8, 1))
         force = element_internal_force_small_strain(UNIT_CUBE, stress).reshape(8, 3)
-        assert np.allclose(force.sum(axis=0), 0.0, atol=1e-9), fixture.path.name
+        scale = max(float(np.max(np.abs(force))), 1.0)
+        assert np.max(np.abs(force.sum(axis=0))) <= 1e-12 * scale, (
+            f"{fixture.path.name}: net force "
+            f"{force.sum(axis=0)} against forces of {scale:.3e}")
 
 
 def test_the_element_tangent_is_the_derivative_of_the_internal_force():
