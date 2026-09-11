@@ -428,3 +428,41 @@ def test_the_fixtures_come_from_more_than_one_author():
     assert len(sources) >= 3, sorted(sources)
     repositories = {fixture.repository for fixture in fixtures()}
     assert len(repositories) >= 3, sorted(repositories)
+
+
+def test_the_frozen_set_is_named_as_a_selection_rather_than_as_the_corpus():
+    """Four fixtures out of sixty-seven verified cases, and the reason is a
+    property of THIS repository's checks rather than of those UMATs.
+
+    Measured by exporting all 67 pass9 entries that reached ``verified`` and
+    putting each through ``diagnose`` with this repository's C3D8 assembly:
+    3 pass, 45 fail at ``constitutive_derivative``, 17 at ``transformation``,
+    and 2 carry NTENS=3 so the C3D8 kernel cannot take them at all.
+
+    Neither failing stage is a statement that the UMAT is wrong.
+    ``_derivative_check`` asks whether ``D dstrain`` predicts the stress
+    increment the same build reported -- a first-order chord against an
+    end-of-increment tangent, which is exact only where the response is linear
+    over the increment and is off by the curvature everywhere else, so a
+    hyperelastic model at a strain a percent wide fails it by construction.
+    And ``transformation`` compares the two builds at 1e-9 with a max-abs
+    scaling, where the UMAT pipeline's own comparison masks components that
+    are a vanishing fraction of the response.
+
+    So the frozen set is what this repository can currently consume, said as
+    that. Widening it means loosening or replacing those two checks in the
+    place they live, not quietly adding fixtures that fail them.
+    """
+    frozen = fixtures()
+    assert len(frozen) == 4
+    for fixture in frozen:
+        assert fixture.ntens == 6, (
+            f"{fixture.path.name}: the C3D8 kernel takes a six-component "
+            f"tensor, and 2 of the 67 verified corpus cases are CPS4 with "
+            f"NTENS=3")
+        assert fixture.converted[-1].tangent is not None, fixture.path.name
+        assert fixture.verification.get("states_checked"), fixture.path.name
+    kinematics = {fixture.kinematics for fixture in frozen}
+    assert kinematics >= {"small strain", "finite"}, (
+        f"the set spans both kinematics the pipeline drives, not one: "
+        f"{sorted(kinematics)}")
