@@ -12,6 +12,17 @@ converted build's tangent agreed with a finite difference of the original at
 several states. It carries the numbers and the identity of the file they came
 from, never the file: most of the corpus is not redistributable.
 
+The other thing it carries is the rule that makes it usable as a BASELINE. A
+regression fixture is what later runs are compared against, so anything wrong
+inside it is wrong in every comparison made against it afterwards, silently: a
+NaN frozen into a fixture does not fail, it propagates, and the comparison
+that should have caught it is being made against the NaN. So a fixture holds a
+completely finite successful history and nothing else -- every increment
+present, every material point present, every number a number. The exporter
+refuses to write anything else; :func:`load` refuses to read anything else,
+because a claim checked only by the tool that makes it is a claim nobody
+checked.
+
 The other thing it carries is the CONVENTION. A tangent is not a number until
 somebody says what its indices mean, and the two sides of this bridge have to
 agree about Voigt ordering and about which off-diagonal entries are
@@ -22,6 +33,7 @@ it happens rather than as a residual that is wrong by a factor of two.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Sequence
@@ -39,6 +51,13 @@ VOIGT_ORDER = ("11", "22", "33", "12", "13", "23")
 
 class FixtureError(ValueError):
     """A fixture that cannot be used, said in terms of what is wrong with it."""
+
+
+#: The arrays in a carried increment that must be finite numbers. ``ddsdde``
+#: is one of them: a fixture whose stress is finite and whose tangent is not
+#: freezes a NaN that surfaces only once somebody assembles a stiffness out of
+#: it, three layers away from the fixture that caused it.
+CARRIED_ARRAYS = ("strain", "dstrain", "stress", "state", "ddsdde")
 
 
 @dataclass(frozen=True)
@@ -142,6 +161,7 @@ def load(path: Path) -> VerifiedFixture:
                          for record in payload.get("converted") or []]
     if not fixture.original:
         raise FixtureError(f"{path.name} carries no increments")
+    _refuse_anything_but_a_finite_history(path, payload)
     for index, record in enumerate(fixture.original):
         if record.stress.size != ntens:
             raise FixtureError(
@@ -150,6 +170,71 @@ def load(path: Path) -> VerifiedFixture:
                 f"NTENS={ntens}. One of the two is wrong and neither may be "
                 f"assumed.")
     return fixture
+
+
+def _refuse_anything_but_a_finite_history(path: Path, payload: dict) -> None:
+    """Refuse a fixture that is not a completely finite successful history.
+
+    Two readings, because either alone can be fooled. What the exporter
+    RECORDED about the run it froze -- the gates the verification measured and
+    the grouping that says whether every increment produced every material
+    point and where the first value that was not a number is. And the numbers
+    in the file, scanned one by one, because "this history was finite" and
+    "these numbers are finite" are two different claims and a fixture is the
+    second.
+    """
+    frozen = payload.get("finite_history")
+    if not isinstance(frozen, dict):
+        raise FixtureError(
+            f"{path.name} carries no finite_history block, so nothing in it "
+            f"says the run it froze was complete. Re-export it with "
+            f"UMAT_source_transformation/tools/export_residual_fixture.py, "
+            f"which refuses to write a fixture that is not one.")
+    if frozen.get("complete_finite_verification_run") is not True:
+        raise FixtureError(
+            f"{path.name} was frozen from a run whose "
+            f"complete_finite_verification_run is "
+            f"{frozen.get('complete_finite_verification_run')!r}. A baseline "
+            f"built on a history that did not run whole is a baseline nothing "
+            f"can be compared against.")
+    measured = frozen.get("evidence") or {}
+    for gate in ("abaqus_job_completed", "all_requested_outputs_present",
+                 "complete_history_finite"):
+        if measured.get(gate) is not True:
+            raise FixtureError(
+                f"{path.name}: the run it was frozen from has {gate}="
+                f"{measured.get(gate, 'not measured')!r}")
+    for side, grouping in (frozen.get("history_grouping") or {}).items():
+        if not isinstance(grouping, dict):
+            continue
+        if grouping.get("first_incomplete_increment"):
+            raise FixtureError(
+                f"{path.name}: the {side} history's first incomplete "
+                f"increment is "
+                f"{grouping['first_incomplete_increment'].get('increment')}")
+        if grouping.get("first_non_finite_material_point"):
+            where = grouping["first_non_finite_material_point"]
+            raise FixtureError(
+                f"{path.name}: the {side} history stops being numbers at "
+                f"element {where.get('element')} point {where.get('point')} "
+                f"of increment {where.get('increment')}")
+    for side in ("original", "converted"):
+        for record in payload.get(side) or []:
+            for name in CARRIED_ARRAYS:
+                for index, value in enumerate(record.get(name) or ()):
+                    try:
+                        number = float(value)
+                    except (TypeError, ValueError):
+                        raise FixtureError(
+                            f"{path.name}: {side} increment "
+                            f"{record.get('increment')} {name}[{index}] is "
+                            f"{value!r}, which is not a number") from None
+                    if not math.isfinite(number):
+                        raise FixtureError(
+                            f"{path.name}: {side} increment "
+                            f"{record.get('increment')} {name}[{index}] is "
+                            f"{number}. A fixture carries a completely finite "
+                            f"history; this one does not.")
 
 
 def load_all(directory: Path) -> list:
