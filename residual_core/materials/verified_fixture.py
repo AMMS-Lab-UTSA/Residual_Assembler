@@ -92,6 +92,12 @@ class VerifiedFixture:
     original: list = field(default_factory=list)
     converted: list = field(default_factory=list)
     path: Optional[Path] = None
+    #: Which of the exporter's claims this fixture actually carries. A fixture
+    #: frozen before a check existed cannot be held to it, and saying so is
+    #: not the same as passing it: a reader of this list can tell a fixture
+    #: that was checked from one that merely was not caught.
+    claims_checked: tuple = ()
+    claims_not_carried: tuple = ()
 
     @property
     def finite_strain(self) -> bool:
@@ -162,6 +168,8 @@ def load(path: Path) -> VerifiedFixture:
     if not fixture.original:
         raise FixtureError(f"{path.name} carries no increments")
     _refuse_anything_but_a_finite_history(path, payload)
+    fixture.claims_checked, fixture.claims_not_carried = _what_was_checkable(
+        payload)
     for index, record in enumerate(fixture.original):
         if record.stress.size != ntens:
             raise FixtureError(
@@ -235,6 +243,66 @@ def _refuse_anything_but_a_finite_history(path: Path, payload: dict) -> None:
                             f"{record.get('increment')} {name}[{index}] is "
                             f"{number}. A fixture carries a completely finite "
                             f"history; this one does not.")
+
+    # -- the window was not carved out of a run that stopped early ---------
+    # The exporter grew this refusal after these fixtures were frozen. A
+    # window that is SHORT is a window built on however far an analysis got,
+    # and it is short silently: the window clamps itself to whatever was on
+    # disk and records the shortened number as though it had been asked for.
+    asked = frozen.get("increments_requested")
+    got = frozen.get("increments_carried")
+    if isinstance(asked, int) and isinstance(got, int) and got < asked:
+        raise FixtureError(
+            f"{path.name} carries {got} increment(s) of the {asked} its "
+            f"export asked for, because only "
+            f"{frozen.get('records_available')} record(s) were on disk. A "
+            f"fixture that is short is a fixture built on however far an "
+            f"analysis got before it stopped, and nothing comparing against "
+            f"it can tell that from a run meant to be that length.")
+
+    # -- and every number the run wrote, not only the ones carried ---------
+    # A window of six increments is finite in a run that went to NaN at
+    # increment 200. The exporter scans the whole history and writes what it
+    # found; this reads that rather than taking the window's finiteness as
+    # evidence about the run.
+    for side, scan in (frozen.get("whole_history") or {}).items():
+        if not isinstance(scan, dict):
+            continue
+        where = scan.get("first_non_finite")
+        if where:
+            raise FixtureError(
+                f"{path.name}: the {side} run it was frozen from stops being "
+                f"numbers OUTSIDE the carried window -- {where.get('array')}"
+                f"[{where.get('index')}] is {where.get('value')} at record "
+                f"{where.get('record')}, increment {where.get('increment')}. "
+                f"The window is finite and the run is not, so this fixture is "
+                f"the prefix of a failed analysis.")
+
+
+#: Claims the exporter writes into ``finite_history`` that :func:`load` checks
+#: when they are there. A fixture frozen before one of them existed does not
+#: carry it, and :attr:`VerifiedFixture.claims_not_carried` names which --
+#: because "checked and clean" and "never checked" are different, and a
+#: consumer that cannot tell them apart is treating an absence as a pass.
+CHECKABLE_CLAIMS = (
+    ("complete_finite_verification_run",
+     "the run was finite from end to end"),
+    ("evidence", "the gates the verification measured"),
+    ("history_grouping", "every increment produced every material point"),
+    ("increments_requested",
+     "the window is the length the export asked for, not what was on disk"),
+    ("whole_history",
+     "every number the run wrote is finite, not only the ones carried"),
+)
+
+
+def _what_was_checkable(payload: dict) -> tuple:
+    """Which of :data:`CHECKABLE_CLAIMS` this fixture actually carries."""
+    frozen = payload.get("finite_history") or {}
+    checked, absent = [], []
+    for key, said in CHECKABLE_CLAIMS:
+        (checked if frozen.get(key) is not None else absent).append(said)
+    return tuple(checked), tuple(absent)
 
 
 def load_all(directory: Path) -> list:
