@@ -42,6 +42,40 @@ import numpy as np
 
 SCHEMA = "umat-oti/residual-fixture/1"
 
+#: The transform fingerprint of the store these fixtures are allowed to have
+#: come from. A fixture is a number the OTI transformation produced, and the
+#: transformation changes: the same UMAT converted by a different build of it
+#: is a different experiment, and its stress and tangent are evidence about
+#: that build rather than about this one. Verifying today's assembler against
+#: a fixture frozen under an older fingerprint is verifying it against
+#: somebody else's run.
+#:
+#: Measured, not assumed: every one of the 237 entries in the store named
+#: below carries this fingerprint, and the four fixtures this repository
+#: carried before 2026-09-14 carried ``ff94800b1884bcc0`` -- a store two
+#: transformations ago.
+CURRENT_TRANSFORM_FINGERPRINT = "b0d27ee53c630500"
+
+#: Where that fingerprint was read from, so a reader can check it rather than
+#: take it. Counts are from the file itself, counted on 2026-09-14.
+STORE_PROVENANCE = {
+    "results": ("corpus_run/pass11/results/store_verification.jsonl"),
+    "entries": 237,
+    "verified": 55,
+    "all_six_evidence_gates": 42,
+    "fingerprint": CURRENT_TRANSFORM_FINGERPRINT,
+    "read_on": "2026-09-14",
+}
+
+#: The six gates the UMAT pipeline measures on a case. A fixture carries what
+#: was measured; it is the reader's business what to require. ``derivatives_
+#: verified`` and ``primal_agreed`` are the two that can be false on a case
+#: that still reached stage "verified", and a consumer that does not look at
+#: them is treating "verified" as a single bit when the pipeline recorded six.
+EVIDENCE_GATES = ("abaqus_job_completed", "all_requested_outputs_present",
+                  "complete_history_finite", "derivatives_verified",
+                  "mechanically_informative", "primal_agreed")
+
 #: The order Abaqus hands a UMAT a symmetric tensor in, and the order DDSDDE
 #: is expressed in. The off-diagonal entries are ENGINEERING shear: a shear
 #: strain of gamma, not gamma/2. The C3D8 kernel's B matrix is built in the
@@ -98,10 +132,31 @@ class VerifiedFixture:
     #: that was checked from one that merely was not caught.
     claims_checked: tuple = ()
     claims_not_carried: tuple = ()
+    #: The transform build that produced these numbers, and the six gates the
+    #: pipeline measured on the run they came from.
+    transform_fingerprint: str = ""
+    source_sha256: str = ""
+    deck_digest: str = ""
+    evidence: dict = field(default_factory=dict)
 
     @property
     def finite_strain(self) -> bool:
         return str(self.kinematics).startswith("finite")
+
+    @property
+    def gates_true(self) -> tuple:
+        return tuple(g for g in EVIDENCE_GATES if self.evidence.get(g) is True)
+
+    @property
+    def gates_not_true(self) -> tuple:
+        """Gates that are false OR were never measured, kept apart from the
+        ones that passed. A gate absent from the record is not a gate that
+        held."""
+        return tuple(g for g in EVIDENCE_GATES if self.evidence.get(g) is not True)
+
+    @property
+    def all_six_gates(self) -> bool:
+        return not self.gates_not_true
 
     def increments(self) -> int:
         return min(len(self.original), len(self.converted))
@@ -129,8 +184,17 @@ def _point(record: dict, ntens: int) -> Point:
         tangent=matrix)
 
 
-def load(path: Path) -> VerifiedFixture:
-    """Read a fixture, refusing one whose shape does not match its own claims."""
+def load(path: Path, *,
+         fingerprint: Optional[str] = CURRENT_TRANSFORM_FINGERPRINT
+         ) -> VerifiedFixture:
+    """Read a fixture, refusing one whose shape does not match its own claims.
+
+    ``fingerprint`` is the transform build this reader accepts evidence from;
+    a fixture frozen under a different one is refused, because the numbers in
+    it describe a transformation that is no longer the one being tested.
+    Passing ``None`` reads a fixture of any provenance -- which is a
+    deliberate act with a reason, not a default.
+    """
     path = Path(path)
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -141,6 +205,18 @@ def load(path: Path) -> VerifiedFixture:
             f"{path.name} declares schema {payload.get('schema')!r}; this "
             f"loader reads {SCHEMA!r}. A fixture whose shape is not the shape "
             f"this reads would be interpreted wrongly rather than refused.")
+    carried = str(payload.get("transform_fingerprint") or "")
+    if fingerprint is not None and carried != fingerprint:
+        raise FixtureError(
+            f"{path.name} was frozen under transform fingerprint "
+            f"{carried or 'none recorded'!r} and this reader accepts "
+            f"{fingerprint!r} ({STORE_PROVENANCE['results']}). The same UMAT "
+            f"converted by a different build of the transformation is a "
+            f"different experiment: its stress and tangent are evidence about "
+            f"that build, so checking today's assembler against them would be "
+            f"checking it against somebody else's run. Re-export it from the "
+            f"current store with "
+            f"UMAT_source_transformation/tools/export_residual_fixture.py.")
     point = payload.get("material_point") or {}
     ntens = int(point.get("ntens") or 0)
     if ntens <= 0:
@@ -160,7 +236,12 @@ def load(path: Path) -> VerifiedFixture:
             "provenance") or ""),
         deck=str(payload.get("deck") or ""),
         verification=dict(payload.get("verification") or {}),
-        path=path)
+        path=path,
+        transform_fingerprint=carried,
+        source_sha256=str(payload.get("source_sha256") or ""),
+        deck_digest=str(payload.get("deck_digest") or ""),
+        evidence=dict((payload.get("finite_history") or {}).get("evidence")
+                      or {}))
     fixture.original = [_point(record, ntens)
                         for record in payload.get("original") or []]
     fixture.converted = [_point(record, ntens)
@@ -305,9 +386,140 @@ def _what_was_checkable(payload: dict) -> tuple:
     return tuple(checked), tuple(absent)
 
 
-def load_all(directory: Path) -> list:
+def load_all(directory: Path, *,
+             fingerprint: Optional[str] = CURRENT_TRANSFORM_FINGERPRINT
+             ) -> list:
     """Every fixture in a directory, in a stable order."""
-    return [load(path) for path in sorted(Path(directory).glob("*.json"))]
+    return [load(path, fingerprint=fingerprint)
+            for path in sorted(Path(directory).glob("*.json"))]
+
+
+#: The two readings of "what is this UMAT's DDSDDE the derivative of".
+#:
+#: ``material``    Dsigma = D Denexpressed directly: the plain small-strain
+#:                 reading, and what a routine that computes sigma = C:eps
+#:                 returns even when the deck says NLGEOM=YES.
+#: ``jaumann``     Dsigma = D Deps - sigma tr(Deps): Abaqus's finite-strain
+#:                 material Jacobian, which is the tangent of the Jaumann rate
+#:                 of KIRCHHOFF stress divided by J, so the Cauchy increment
+#:                 carries the extra convective term.
+TANGENT_READINGS = ("material", "jaumann")
+
+
+@dataclass(frozen=True)
+class TangentConvention:
+    """Which reading of DDSDDE this fixture's own numbers support.
+
+    Measured rather than inferred from the deck's ``NLGEOM``, because it is a
+    property of the ROUTINE and not of the step: measured on the frozen set,
+    ``irfancn__Abaqus-UMAT-elastic`` runs under ``NLGEOM=YES`` and its tangent
+    satisfies the plain reading to 3.4e-16 while the Jaumann reading misses by
+    5.5e-03 -- it is a small-strain routine handed a logarithmic strain --
+    whereas ``AlexanderJFDR`` NeoHookean under the same flag is the other way
+    round, 8.7e-03 against 6.9e-08. An assembler that picks by the flag builds
+    the wrong stiffness for one of them.
+    """
+
+    reading: Optional[str]
+    material_error: float
+    jaumann_error: float
+    separation: float
+    increments_used: int
+    volumetric: float
+    why: str
+    #: How much larger the tangent's own prediction is than the stress change
+    #: it is supposed to predict. Far above one means the strain the fixture
+    #: carries is not the strain this tangent is the derivative with respect
+    #: to -- a growth or transformation model splits the total strain with an
+    #: internal state and the stress answers only the elastic part.
+    prediction_overshoot: float = 1.0
+
+    @property
+    def decided(self) -> bool:
+        return self.reading is not None
+
+
+def tangent_convention(fixture: VerifiedFixture, *,
+                       tolerance: float = 1e-5) -> TangentConvention:
+    """Which reading of the fixture's tangent differentiates its stress.
+
+    Both readings are evaluated at the MID-POINT of each increment -- the
+    average of the two reported tangents against the chord of the two reported
+    stresses -- because a tangent at the end of an increment and a chord
+    across it differ at first order in the increment for any nonlinear
+    material, and that difference would be mistaken for a wrong tangent.
+
+    A window in which the strain increment is isochoric cannot separate the
+    two readings at all: the term they differ by is ``sigma tr(Deps)`` and the
+    trace is zero. That is reported as undecided, not as agreement.
+    """
+    errors = {name: 0.0 for name in TANGENT_READINGS}
+    used, volumetric, overshoot = 0, 0.0, 1.0
+    for previous, current in zip(fixture.converted, fixture.converted[1:]):
+        if current.tangent is None or previous.tangent is None:
+            continue
+        if current.dstrain.size != fixture.ntens:
+            continue
+        change = np.asarray(current.stress) - np.asarray(previous.stress)
+        scale = float(np.max(np.abs(change)))
+        if scale <= 0.0:
+            continue
+        dstrain = np.asarray(current.dstrain, dtype=float)
+        middle_tangent = 0.5 * (current.tangent + previous.tangent)
+        middle_stress = 0.5 * (np.asarray(previous.stress)
+                               + np.asarray(current.stress))
+        trace = float(np.sum(dstrain[:fixture.ndi])) if fixture.ndi else 0.0
+        volumetric = max(volumetric, abs(trace))
+        predicted = {
+            "material": middle_tangent @ dstrain,
+            "jaumann": middle_tangent @ dstrain - middle_stress * trace,
+        }
+        for name, value in predicted.items():
+            errors[name] = max(errors[name],
+                               float(np.max(np.abs(value - change))) / scale)
+        overshoot = max(overshoot,
+                        float(np.max(np.abs(predicted["material"]))) / scale)
+        used += 1
+
+    if not used:
+        return TangentConvention(
+            None, float("nan"), float("nan"), float("nan"), 0, 0.0,
+            "no two increments of this window carry a tangent and a moving "
+            "stress, so neither reading can be evaluated")
+    material, jaumann = errors["material"], errors["jaumann"]
+    if volumetric == 0.0:
+        return TangentConvention(
+            None, material, jaumann, 1.0, used, volumetric,
+            "the window's strain increments are isochoric, and the two "
+            "readings differ by sigma tr(Deps): with a zero trace they are the "
+            "same formula and this window cannot tell them apart",
+            prediction_overshoot=overshoot)
+    best, other = ("material", "jaumann") if material <= jaumann \
+        else ("jaumann", "material")
+    separation = (errors[other] / errors[best]) if errors[best] > 0 else float("inf")
+    if errors[best] > tolerance and overshoot > 10.0:
+        return TangentConvention(
+            None, material, jaumann, separation, used, volumetric,
+            f"the tangent's own prediction is {overshoot:.3g} times the "
+            f"stress change it is supposed to predict, so the strain this "
+            f"fixture carries is not the strain this tangent differentiates "
+            f"with respect to: a growth or transformation model splits the "
+            f"total strain with an internal state and the stress answers only "
+            f"the elastic part, which the fixture does not carry. Nothing "
+            f"here says the tangent is wrong",
+            prediction_overshoot=overshoot)
+    if errors[best] > tolerance:
+        return TangentConvention(
+            None, material, jaumann, separation, used, volumetric,
+            f"neither reading differentiates the reported stress: the plain "
+            f"reading misses by {material:.3e} and the Jaumann one by "
+            f"{jaumann:.3e}, both above {tolerance:.0e}",
+            prediction_overshoot=overshoot)
+    return TangentConvention(
+        best, material, jaumann, separation, used, volumetric,
+        f"the {best} reading holds to {errors[best]:.3e} over {used} "
+        f"increment(s) and the {other} one misses by {errors[other]:.3e}, a "
+        f"separation of {separation:.3g}", prediction_overshoot=overshoot)
 
 
 def check_conventions(fixture: VerifiedFixture) -> list:

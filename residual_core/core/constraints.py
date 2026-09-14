@@ -37,10 +37,46 @@ def resolve_target_nodes(model, target) -> List[int]:
         return []
 
 
-def dirichlet_dofs(model, dof_manager) -> Dict[int, float]:
-    """{global_dof_index -> prescribed value}. Symmetry BCs contribute 0.0."""
+def active_boundaries(model, step=None) -> List:
+    """The boundary conditions in force during one step, in Abaqus's order.
+
+    Abaqus does not apply a deck's boundary blocks all at once. Conditions
+    written before the first ``*STEP`` are initial; each step then either
+    carries the previous set forward and modifies it (``OP=MOD``, the
+    default) or replaces it outright (``OP=NEW``). A four-step verification
+    deck read as one flat list therefore applies the LAST step's
+    displacements to every increment of the first -- silently, because a
+    dictionary of prescribed values has no way to say two steps disagreed.
+
+    ``step=None`` keeps the historical behaviour -- every boundary in the
+    file, last one wins -- so callers that never had a step to pass are not
+    quietly given a different answer than before.
+    """
+    if step is None:
+        return list(model.boundaries)
+    step = int(step)
+    active: List = []
+    for index in range(0, step + 1):
+        of_this_step = [b for b in model.boundaries
+                        if int(getattr(b, "step", 0)) == index]
+        if not of_this_step:
+            continue
+        if any(str(getattr(b, "op", "MOD")).upper() == "NEW"
+               for b in of_this_step):
+            active = list(of_this_step)
+        else:
+            active.extend(of_this_step)
+    return active
+
+
+def dirichlet_dofs(model, dof_manager, step=None) -> Dict[int, float]:
+    """{global_dof_index -> prescribed value}. Symmetry BCs contribute 0.0.
+
+    ``step`` selects which step's conditions are in force; see
+    :func:`active_boundaries` for why that is not the same as all of them.
+    """
     out: Dict[int, float] = {}
-    for b in model.boundaries:
+    for b in active_boundaries(model, step):
         nids = resolve_target_nodes(model, b.target)
         if getattr(b, "kind", "value") in _SYMM_DOF:
             dofs = _SYMM_DOF[b.kind]
@@ -57,9 +93,9 @@ def dirichlet_dofs(model, dof_manager) -> Dict[int, float]:
     return out
 
 
-def partition(model, dof_manager) -> Tuple[np.ndarray, np.ndarray, Dict[int, float]]:
+def partition(model, dof_manager, step=None) -> Tuple[np.ndarray, np.ndarray, Dict[int, float]]:
     """Return (free_mask, prescribed_idx, prescribed_values_dict)."""
-    pres = dirichlet_dofs(model, dof_manager)
+    pres = dirichlet_dofs(model, dof_manager, step)
     ndof = dof_manager.ndof
     free_mask = np.ones(ndof, dtype=bool)
     idx = np.array(sorted(pres.keys()), dtype=int)
