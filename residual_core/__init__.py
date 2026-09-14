@@ -43,9 +43,18 @@ from .core.sensitivity_package import (
 from .core.rhs_provider import (
     SensitivityRHSProvider, DualNumberRHSProvider, default_rhs_provider)
 from .algebra.dual1 import Dual1
+# The attribution is a product of this repository, not an internal: when a
+# check fails, the consumer -- a user, the GUI, or a script -- needs to be
+# told WHICH layer it came from, with the numbers behind the verdict. Exported
+# here so that reaching it does not mean reaching into core/.
+from .core.where_it_went_wrong import (
+    LAYERS, OWNER, Diagnosis, Finding, StateSensitivityProbe, diagnose)
+from .core.finite_difference import Sweep, sweep_steps
 
 __all__ = [
     "ResidualProblem",
+    "diagnose", "Diagnosis", "Finding", "LAYERS", "OWNER",
+    "StateSensitivityProbe", "Sweep", "sweep_steps",
     "build_formulation_registry", "default_formulation_registry",
     "build_material_registry", "default_material_registry",
     "ResidualAssemblyResult", "TangentResult", "TangentSource", "StateResult",

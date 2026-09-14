@@ -365,22 +365,25 @@ def _check_mapping(fixture) -> Finding:
               f"{fixture.nshr} engineering shear, and the tangent is shaped "
               f"and signed accordingly")
     measured = {"shear_exercised": shear, "ntens": fixture.ntens,
-                "ndi": fixture.ndi, "nshr": fixture.nshr}
-    if shear <= 0.0:
+                "ndi": fixture.ndi, "nshr": fixture.nshr,
+                "exercised_at": SHEAR_IS_EXERCISED_AT}
+    if shear <= SHEAR_IS_EXERCISED_AT:
         return Finding(
             "mapping", NOT_ESTABLISHED,
-            detail + ". But the carried window applies NO shear strain "
-                     "(largest shear component 0), so these numbers cannot "
-                     "tell engineering shear from tensorial: the two differ "
-                     "by a factor of two in components that are all zero "
-                     "here.",
+            detail + f". But the carried window applies effectively NO shear "
+                     f"strain -- the largest shear component is {shear:.2e} "
+                     f"of the largest extension -- so these numbers cannot "
+                     f"tell engineering shear from tensorial: the two differ "
+                     f"by a factor of two in components that are all zero "
+                     f"here.",
             measured,
             would_establish=("a fixture window inside the deck's shear step, "
                              "where a factor of two in the shear convention "
                              "changes the stress"))
     return Finding("mapping", HOLDS,
                    detail + f", over a window whose largest shear strain is "
-                            f"{shear:.3e}", measured)
+                            f"{shear:.3e} of its largest extension -- enough "
+                            f"that a factor of two would show", measured)
 
 
 def _check_element_integration(coordinates, gauss) -> Finding:
@@ -399,6 +402,27 @@ def _check_element_integration(coordinates, gauss) -> Finding:
     from residual_core.formulations import c3d8_kernel as kernel
 
     Xe = np.asarray(coordinates, dtype=float)
+    volumes = []
+    for point in gauss.points:
+        try:
+            _B, detJ, _dNdx = kernel._b_from_coords(Xe, point)
+        except np.linalg.LinAlgError:
+            return Finding(
+                "element_integration", FAILS,
+                "the element map is not invertible at an integration point, "
+                "so there is no B matrix there and nothing can be integrated. "
+                "The geometry is degenerate, not the quadrature.",
+                {"points": int(len(gauss.points))})
+        volumes.append(float(detJ))
+    if min(volumes) <= 0.0:
+        return Finding(
+            "element_integration", FAILS,
+            f"the Jacobian determinant is {min(volumes):.3e} at an "
+            f"integration point. An element that is inverted or flat "
+            f"integrates a negative volume, and every force taken out of it "
+            f"has the wrong sign or none.",
+            {"min_detJ": min(volumes), "max_detJ": max(volumes)})
+
     uniform = np.array([120.0, -45.0, 33.0, 17.0, -8.0, 5.0])
     mine = kernel.element_internal_force_small_strain(
         Xe, np.tile(uniform, (len(gauss.weights), 1)), gauss=gauss)
@@ -689,20 +713,34 @@ def _state_movement(fixture) -> float:
     return _relative(states[0], states[-1])
 
 
-def _shear_exercised(fixture) -> float:
-    """The largest shear strain the carried window applies.
+#: How large a shear strain has to be, as a fraction of the window's largest
+#: direct strain, before a factor of two in the shear convention would change
+#: a number in the fixture. Abaqus writes -0.0 and values around 1e-20 into
+#: components a deck never drives; doubling 1e-20 is still 1e-20, and reading
+#: that as "the shear convention was exercised" would report a check that
+#: cannot fail as one that passed.
+SHEAR_IS_EXERCISED_AT = 1e-6
 
-    Zero means the window says nothing about the shear convention: a factor
-    of two on components that are all zero changes no number in it.
+
+def _shear_exercised(fixture) -> float:
+    """The largest shear strain the window applies, relative to its extension.
+
+    Zero -- or float noise, which is the same thing here -- means the window
+    says nothing about the shear convention: a factor of two on components
+    that are all zero changes no number in it.
     """
     if fixture.ndi >= fixture.ntens:
         return 0.0
-    worst = 0.0
+    shear, direct = 0.0, 0.0
     for record in fixture.original:
         if record.strain.size >= fixture.ntens:
-            worst = max(worst, float(np.max(np.abs(
+            shear = max(shear, float(np.max(np.abs(
                 record.strain[fixture.ndi:fixture.ntens]))))
-    return worst
+            direct = max(direct, float(np.max(np.abs(
+                record.strain[:fixture.ndi]))))
+    if direct <= 0.0:
+        return shear
+    return shear / direct
 
 
 def _derivative_check(fixture) -> tuple:

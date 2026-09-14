@@ -33,6 +33,52 @@ assumed.
 | Derivative contract JSON | UMAT-OTI | Residual_Assembler | `resasm_umat_transform_v2` |
 | Material-point replay | either | either | stress and state agreement per increment |
 
+## What this repository needs and does not yet get
+
+Three things cross the boundary today as numbers and one does not cross at all.
+Named here so that neither side has to guess.
+
+### From UMAT-OTI
+
+1. **The transform fingerprint, on every artefact.** Already carried by
+   `export_residual_fixture.py` as `transform_fingerprint`, and now READ:
+   `verified_fixture.load()` refuses a fixture that does not match the current
+   store. The request in the other direction is that the promoted collection
+   under `umat/` carry it in the same field and at the same value — it
+   currently records `e4257779bd847cc4` in `contract.json` while the fixtures
+   from `pass11` carry `b0d27ee53c630500`, so the two artefacts of one run
+   disagree about which build produced them.
+2. **`dsigma/dq` and `dstatev/dq`, per integration point.** The assembler can
+   now assemble `dR/dq` (`core/state_sensitivity.py`) and has nothing verified
+   to put in it: the `state_sensitivity` layer of the attribution reports
+   `not_established` for every committed fixture. The shape needed is
+   `(n_ip, ntens, n_state)` per element, in the same Voigt order and the same
+   integration-point order as `STRESS`, at a NAMED increment — a state
+   derivative without the state it was taken at is not usable.
+3. **Which reading of DDSDDE a converted build's tangent is in.** Measured
+   here per fixture (`tangent_convention`) because the fixture does not say,
+   and the answer is a property of the routine rather than of the deck's
+   `NLGEOM`. If the transformation already knows — it has the source — saying
+   so in the fixture would turn a measurement into a fact and would let a
+   material whose window is isochoric be assembled at all.
+
+### From the GUI
+
+1. **`Diagnosis.as_dict()` is the interface, not the prose.** Keys: `ok`,
+   `complete`, `blame`, `not_established`, `findings`; each finding carries
+   `layer`, `status` (`holds` / `fails` / `not_established`), `detail`,
+   `measured` and `would_establish`. `ok` means nothing that was CHECKED
+   failed; `complete` means every layer was checked and held. A GUI that
+   renders `ok` as a green tick is reporting unchecked layers as passing.
+2. **Show the sweep, not the best number.** `Sweep.as_dict()` carries
+   `steps`, `errors`, `plateau`, `plateau_span`, `flat` and
+   `worst_components`. A single error is not evidence, and an error that is
+   flat in the step size is a wrong formula rather than a truncation error —
+   `flat: true` is the one field that must never be collapsed into a
+   tolerance badge.
+3. **A layer with no evidence must not be drawn as a layer that passed.**
+   `not_established` needs its own colour.
+
 ## Bumping the pin
 
 1. Confirm the UMAT-OTI commit is pushed and its CI is green.
