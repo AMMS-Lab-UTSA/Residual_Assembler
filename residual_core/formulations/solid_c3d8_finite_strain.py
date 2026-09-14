@@ -17,6 +17,26 @@ Abaqus AMATRX (objective-rate + geometric split) is the error-prone item deferre
 to the Abaqus comparison (see docs/limitations.md and tests). The residual (which
 only needs Cauchy stress) is exact; the tangent here uses the kernel's
 conventional geometric term with the material DDSDDE.
+
+Half of that question is now settled and half is not, and the difference
+matters. What a finite-strain UMAT's DDSDDE IS has been measured from the
+frozen fixtures: Abaqus's finite-strain material Jacobian is the tangent of
+the Jaumann rate of Kirchhoff stress over J, so the Cauchy increment it
+predicts is ``D:Deps - sigma tr(Deps)``. Measured on AlexanderJFDR's
+neo-Hookean, that reading holds to 6.9e-08 and the plain one misses by
+8.7e-03. Crucially it is a property of the ROUTINE and not of NLGEOM:
+irfancn's elastic UMAT under the same flag is a small-strain routine handed a
+logarithmic strain and satisfies the plain reading to 3.4e-16.
+``materials.verified_fixture.tangent_convention`` measures which, per
+material.
+
+What is NOT settled is whether ``int B^T D B dv + K_geo`` as assembled here
+equals the stiffness Abaqus builds out of the same D. Abaqus does not export
+AMATRX, so the only observable that can decide it is the derivative of the
+reaction forces, which needs a run: abaqus_queue/requests/
+A3_finite_strain_element_tangent.json. Until that returns, this tangent is a
+documented approximation and the docstring says so rather than the code
+implying otherwise.
 """
 
 from __future__ import annotations
