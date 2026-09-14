@@ -52,9 +52,12 @@ from residual_core.formulations.c3d8_kernel import (  # noqa: E402
     ABAQUS_C3D8_GAUSS, b_matrix_reference, b_matrix_spatial,
     element_internal_force_finite_strain, element_internal_force_small_strain,
     element_tangent, force_tangent_fixed_sigma)
-from residual_core.materials.verified_fixture import load_all  # noqa: E402
+from residual_core.materials.verified_fixture import (  # noqa: E402
+    tangent_convention)
 
-FIXTURES = ROOT / "tests" / "fixtures" / "verified"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verified_fixtures import (FIXTURES, all_fixtures,  # noqa: E402
+                               hex_fixtures)
 
 #: A unit cube, which is the geometry the corpus verification decks are
 #: generated on, so the element being differenced here is the element the
@@ -82,11 +85,9 @@ PLATEAU_STEPS = 3
 
 
 def fixtures():
-    if not FIXTURES.is_dir() or not any(FIXTURES.glob("*.json")):
-        pytest.skip(f"no verified fixtures in {FIXTURES}; export one with "
-                    f"UMAT_source_transformation/tools/export_residual_fixture.py")
-    usable = [f for f in load_all(FIXTURES)
-              if f.ntens == 6 and f.converted and f.converted[-1].tangent is not None]
+    """The hexahedra whose run passed every gate and that carry a tangent."""
+    usable = [f for f in hex_fixtures()
+              if f.converted and f.converted[-1].tangent is not None]
     if not usable:
         pytest.skip("no fixture carries a six-component tangent")
     return usable
@@ -419,50 +420,58 @@ def test_a_fixture_with_no_finiteness_evidence_at_all_is_refused(tmp_path: Path)
 def test_the_fixtures_come_from_more_than_one_author():
     """One material passing says the bridge works for one material.
 
-    The frozen set spans four independently written sources: this project's
-    own bundled J2 control (elastoplastic, small strain), CAEAssistant-Group's
-    isotropic elasticity, BristolCompositesInstitute's abaci UMAT, and
-    irfancn's finite-strain elastic UMAT.
+    The frozen set spans nine independently written sources from nine
+    repositories: CAEAssistant-Group's isotropic elasticity,
+    BristolCompositesInstitute's abaci UMAT, irfancn's finite-strain elastic
+    and viscoelastic UMATs, AlexanderJFDR's and Sina-Taghizadeh's neo-Hookean
+    models, keisuke58's viscous biofilm, mholla's isotropic-growth UMAT, and
+    awhelanUCD's plane-stress Lemaitre damage model.
     """
-    sources = {fixture.source_id for fixture in fixtures()}
-    assert len(sources) >= 3, sorted(sources)
-    repositories = {fixture.repository for fixture in fixtures()}
-    assert len(repositories) >= 3, sorted(repositories)
+    sources = {fixture.source_id for fixture in all_fixtures()}
+    assert len(sources) >= 8, sorted(sources)
+    repositories = {fixture.repository for fixture in all_fixtures()}
+    assert len(repositories) >= 8, sorted(repositories)
 
 
 def test_the_frozen_set_is_named_as_a_selection_rather_than_as_the_corpus():
-    """Four fixtures out of sixty-seven verified cases, and the reason is a
-    property of THIS repository's checks rather than of those UMATs.
+    """Nine fixtures out of fifty-five verified cases, chosen for coverage.
 
-    Measured by exporting all 67 pass9 entries that reached ``verified`` and
-    putting each through ``diagnose`` with this repository's C3D8 assembly:
-    3 pass, 45 fail at ``constitutive_derivative``, 17 at ``transformation``,
-    and 2 carry NTENS=3 so the C3D8 kernel cannot take them at all.
+    Measured on 2026-09-14 by exporting every one of the 55 cases that reached
+    ``verified`` in the pass11 store (fingerprint b0d27ee53c630500; the
+    exporter refused none of them) and putting each through ``diagnose`` with
+    this repository's C3D8 assembly:
 
-    Neither failing stage is a statement that the UMAT is wrong.
-    ``_derivative_check`` asks whether ``D dstrain`` predicts the stress
-    increment the same build reported -- a first-order chord against an
-    end-of-increment tangent, which is exact only where the response is linear
-    over the increment and is off by the curvature everywhere else, so a
-    hyperelastic model at a strain a percent wide fails it by construction.
-    And ``transformation`` compares the two builds at 1e-9 with a max-abs
-    scaling, where the UMAT pipeline's own comparison masks components that
-    are a vanishing fraction of the response.
+    * 1 carries NTENS=3 (CPS4 plane stress), which the C3D8 kernel cannot take;
+    * of the remaining 54, **44 have no failing layer**, 6 fail at
+      ``constitutive_derivative`` and 4 at ``transformation``;
+    * 25 leave ``constitutive_derivative`` NOT ESTABLISHED rather than passing
+      or failing it -- almost all of them growth models whose tangent's own
+      prediction is thousands of times the stress change it should predict,
+      because the stress answers an elastic strain the fixture does not carry;
+    * ``state_sensitivity`` is not established for any of them, because no
+      fixture carries a dR/dq to difference.
 
-    So the frozen set is what this repository can currently consume, said as
-    that. Widening it means loosening or replacing those two checks in the
-    place they live, not quietly adding fixtures that fail them.
+    So the committed set is a SELECTION for coverage and repository size, not
+    what this repository can consume: it spans both kinematics, both tangent
+    readings, a moving state, a rate-dependent material, a plane-stress case
+    the kernel refuses, and one case whose two builds disagreed. The 35 Jeff97
+    growth fixtures left out would add authors and not questions.
     """
-    frozen = fixtures()
-    assert len(frozen) == 4
-    for fixture in frozen:
-        assert fixture.ntens == 6, (
-            f"{fixture.path.name}: the C3D8 kernel takes a six-component "
-            f"tensor, and 2 of the 67 verified corpus cases are CPS4 with "
-            f"NTENS=3")
-        assert fixture.converted[-1].tangent is not None, fixture.path.name
-        assert fixture.verification.get("states_checked"), fixture.path.name
+    frozen = all_fixtures()
+    assert len(frozen) == 9
     kinematics = {fixture.kinematics for fixture in frozen}
     assert kinematics >= {"small strain", "finite"}, (
         f"the set spans both kinematics the pipeline drives, not one: "
         f"{sorted(kinematics)}")
+    readings = {tangent_convention(f).reading for f in frozen}
+    assert {"material", "jaumann"} <= readings, (
+        f"the set spans both readings of DDSDDE, so an assembler that picked "
+        f"one would fail here: {sorted(str(r) for r in readings)}")
+    assert any(f.ntens != 6 for f in frozen), (
+        "a case the C3D8 kernel cannot take, so the refusal is exercised")
+    assert any(not f.all_six_gates for f in frozen), (
+        "a case the pipeline did not pass on all six gates, so the "
+        "attribution is exercised against a known disagreement")
+    for fixture in hex_fixtures():
+        assert fixture.converted[-1].tangent is not None, fixture.path.name
+        assert fixture.verification.get("states_checked"), fixture.path.name

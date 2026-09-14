@@ -35,20 +35,18 @@ from residual_core.formulations.c3d8_kernel import (  # noqa: E402
     ABAQUS_C3D8_GAUSS, b_matrix_reference, element_internal_force_small_strain,
     element_tangent)
 from residual_core.materials.verified_fixture import (  # noqa: E402
-    FixtureError, SCHEMA, check_conventions, load, load_all)
+    FixtureError, SCHEMA, check_conventions, load)
 
-FIXTURES = ROOT / "tests" / "fixtures" / "verified"
-
-#: A unit cube, which is the geometry the corpus decks are generated on.
-UNIT_CUBE = np.array([[0., 0., 0.], [1., 0., 0.], [1., 1., 0.], [0., 1., 0.],
-                      [0., 0., 1.], [1., 0., 1.], [1., 1., 1.], [0., 1., 1.]])
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verified_fixtures import (FIXTURES, UNIT_CUBE,  # noqa: E402
+                               all_fixtures, hex_fixtures)
 
 
 def fixtures():
-    if not FIXTURES.is_dir() or not any(FIXTURES.glob("*.json")):
-        pytest.skip(f"no verified fixtures in {FIXTURES}; export one with "
-                    f"UMAT_source_transformation/tools/export_residual_fixture.py")
-    return load_all(FIXTURES)
+    """Only the hexahedra: the checks below integrate ``B^T sigma`` on a unit
+    cube, and a three-component plane-stress tensor is not a smaller case of
+    that -- it is a different element."""
+    return hex_fixtures()
 
 
 def independent_internal_force(Xe, stress_at_ip):

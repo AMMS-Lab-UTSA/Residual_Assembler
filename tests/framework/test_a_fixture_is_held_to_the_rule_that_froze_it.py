@@ -20,12 +20,15 @@ cannot tell a verification from the salvageable prefix of a failed analysis.
 The exporter now scans the whole history and writes what it found; this reads
 that rather than taking the window's finiteness as evidence about the run.
 
-And the third thing, which is the reason this file is not simply stricter: the
-four fixtures committed here were frozen before either check existed. They do
-not carry the keys. Refusing them would be treating "frozen before the check"
-as "failed the check", and passing them silently would be treating it as
-"passed". So the loader names which claims a fixture carries and which it does
-not, and the two are different answers.
+And the third thing, which is why the loader reports three answers rather than
+two. The set committed here was re-frozen from the current store and carries
+every claim; the four fixtures it replaced were frozen before two of the
+checks existed and carried neither. Refusing those would have been treating
+"frozen before the check" as "failed the check", and passing them silently
+would have been treating it as "passed". So the loader names which claims a
+fixture carries and which it does not, and the two are different answers --
+kept here against a hand-built fixture that omits one, because the committed
+set no longer exercises that path.
 """
 from __future__ import annotations
 
@@ -34,16 +37,17 @@ from pathlib import Path
 
 import pytest
 
-from residual_core.materials.verified_fixture import (CHECKABLE_CLAIMS,
-                                                      FixtureError, load,
-                                                      load_all)
+from residual_core.materials.verified_fixture import (
+    CHECKABLE_CLAIMS, CURRENT_TRANSFORM_FINGERPRINT, FixtureError, load,
+    load_all)
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "verified"
 
 
 @pytest.fixture()
 def payload() -> dict:
-    return json.loads((FIXTURES / "j2_props--2feae9f158.json").read_text())
+    return json.loads(
+        (FIXTURES / "isotropic-elasticity--f7eb90376a.json").read_text())
 
 
 def _written(tmp_path: Path, payload: dict, name: str = "case.json") -> Path:
@@ -56,32 +60,40 @@ def _written(tmp_path: Path, payload: dict, name: str = "case.json") -> Path:
 # what is committed here
 # ---------------------------------------------------------------------------
 def test_every_committed_fixture_still_loads():
-    """Measured: four fixtures, each six increments of original and converted,
-    every number a number."""
+    """Measured: nine fixtures, each six increments of original and
+    converted, every number a number, every one of them frozen under the
+    transform fingerprint this reader accepts."""
     fixtures = load_all(FIXTURES)
-    assert len(fixtures) == 4
+    assert len(fixtures) == 9
     for fixture in fixtures:
         assert fixture.increments() == 6
         assert fixture.ntens > 0
         assert fixture.source_id
+        assert fixture.transform_fingerprint == CURRENT_TRANSFORM_FINGERPRINT
 
 
-def test_a_fixture_says_which_claims_it_carries_and_which_it_does_not():
-    """"Checked and clean" and "never checked" are different answers, and a
-    consumer that cannot tell them apart is treating an absence as a pass.
+def test_every_committed_fixture_now_carries_every_claim():
+    """The set committed here was re-frozen from the current store, so each
+    carries all five claims rather than naming two as not carried.
 
-    The four committed here predate the two newest checks, so each names them
-    as not carried rather than reporting them as passed.
+    Asserted rather than assumed: a fixture that quietly lost a claim on
+    re-export would otherwise be reported as clean on it.
     """
     for fixture in load_all(FIXTURES):
         assert "the run was finite from end to end" in fixture.claims_checked
-        assert fixture.claims_not_carried, fixture.source_id
-        assert ("the window is the length the export asked for, not what was "
-                "on disk") in fixture.claims_not_carried
-        assert ("every number the run wrote is finite, not only the ones "
-                "carried") in fixture.claims_not_carried
-        assert len(fixture.claims_checked) + len(fixture.claims_not_carried) \
-            == len(CHECKABLE_CLAIMS) == 5
+        assert fixture.claims_not_carried == (), fixture.source_id
+        assert len(fixture.claims_checked) == len(CHECKABLE_CLAIMS) == 5
+
+
+def test_a_claim_a_fixture_does_not_carry_is_named_rather_than_assumed(
+        tmp_path, payload):
+    """"Checked and clean" and "never checked" are different answers, and a
+    consumer that cannot tell them apart is treating an absence as a pass."""
+    payload["finite_history"].pop("whole_history", None)
+    fixture = load(_written(tmp_path, payload))
+    assert ("every number the run wrote is finite, not only the ones "
+            "carried") in fixture.claims_not_carried
+    assert len(fixture.claims_checked) == len(CHECKABLE_CLAIMS) - 1
 
 
 def test_a_fixture_carrying_every_claim_reports_none_missing(tmp_path, payload):

@@ -43,6 +43,12 @@ class Model:
     boundaries: List[Any] = field(default_factory=list)
     cloads: List[Any] = field(default_factory=list)
     equations: List[Any] = field(default_factory=list)
+    #: The deck's ``*STEP`` blocks in order, when the source had any. Carried
+    #: because a boundary condition without the step it was written in is a
+    #: displacement with no time attached to it: a four-step verification deck
+    #: read as one flat list applies the last step's displacements to the
+    #: first step's increments.
+    steps: List[Any] = field(default_factory=list)
 
     ndim: int = 3
     meta: Dict[str, Any] = field(default_factory=dict)
@@ -89,5 +95,6 @@ def from_abaqus(am, formulation_policy: Callable[[str], Optional[str]] = None,
     m.boundaries = list(am.boundaries)
     m.cloads = list(am.cloads)
     m.equations = list(am.equations)
+    m.steps = list(getattr(am, "steps", ()) or ())
     m.meta = {"source": "abaqus_inp", "n_c3d8": len(m.elements_of_type("C3D8"))}
     return m

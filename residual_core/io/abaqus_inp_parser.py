@@ -66,6 +66,16 @@ class Boundary:
     value: float
     kind: str
     amplitude: Optional[str] = None
+    #: Which ``*STEP`` this condition was written inside. ``0`` means it was
+    #: written before any step -- Abaqus's initial conditions, which stay
+    #: active in every step unless a later ``OP=NEW`` clears them.
+    step: int = 0
+    #: ``NEW`` (this step's boundary block replaces every condition carried
+    #: forward) or ``MOD`` (it is merged on top of them). Abaqus's default is
+    #: ``MOD``; the verification decks this project generates say ``OP=NEW``
+    #: on every step, and reading four steps of them as one flat list applies
+    #: the LAST step's displacements to every increment of the first.
+    op: str = "MOD"
 
 
 @dataclass
@@ -74,6 +84,51 @@ class Cload:
     dof: int
     value: float
     amplitude: Optional[str] = None
+    step: int = 0
+    op: str = "MOD"
+
+
+@dataclass
+class Step:
+    """One ``*STEP`` block: what it is, and how long it lasts.
+
+    The residual assembler needs the step for three separate reasons, and a
+    parser that flattens steps away denies all three: which boundary
+    conditions are active at an increment, whether the step is geometrically
+    nonlinear (``NLGEOM``), and how the step's time maps onto increments so a
+    recorded increment can be placed on the loading path.
+    """
+
+    index: int
+    nlgeom: bool = False
+    #: ``*STATIC`` data line: initial increment, period, minimum, maximum.
+    initial_increment: Optional[float] = None
+    time_period: Optional[float] = None
+    min_increment: Optional[float] = None
+    max_increment: Optional[float] = None
+    procedure: str = ""
+    name: str = ""
+
+    @property
+    def fixed_increments(self) -> Optional[int]:
+        """How many increments this step takes when it never cuts back.
+
+        ``None`` when the step does not say. A deck whose initial increment
+        divides its period exactly is the fixed-increment case the
+        verification harness generates; anything else is a solver decision
+        this repository cannot reconstruct from the deck, and saying so is
+        not the same as guessing.
+        """
+        if not self.initial_increment or not self.time_period:
+            return None
+        count = self.time_period / self.initial_increment
+        rounded = int(round(count))
+        if rounded < 1 or abs(count - rounded) > 1e-9:
+            return None
+        if self.max_increment and abs(
+                self.max_increment - self.initial_increment) > 1e-12:
+            return None
+        return rounded
 
 
 @dataclass
@@ -87,6 +142,7 @@ class AbaqusModel:
     element_material: Dict[int, str] = field(default_factory=dict)
     boundaries: List[Boundary] = field(default_factory=list)
     cloads: List[Cload] = field(default_factory=list)
+    steps: List[Step] = field(default_factory=list)
     dsloads: List[dict] = field(default_factory=list)
     equations: List[dict] = field(default_factory=list)
     includes: List[str] = field(default_factory=list)
@@ -366,6 +422,9 @@ def parse_inp(path: str) -> AbaqusModel:
     pending_sections: List[Section] = []  # sections whose elset was not yet known
     seen_setnames_node: set = set()
     seen_setnames_elem: set = set()
+    #: 0 until the first ``*STEP``: conditions written there are Abaqus's
+    #: initial ones, not a step's.
+    step_counter = [0]
 
     def _record_unsupported(kw_raw: str) -> None:
         if kw_raw not in model.unsupported_keywords:
@@ -427,11 +486,21 @@ def parse_inp(path: str) -> AbaqusModel:
             elif kw_norm == "user material":
                 _handle_user_material(model, current_material, params, data)
 
+            elif kw_norm == "step":
+                step_counter[0] += 1
+                model.steps.append(Step(
+                    index=step_counter[0],
+                    nlgeom=_nlgeom_of(params),
+                    name=str(params.get("name", "") or "")))
+
+            elif kw_norm in ("static", "visco", "dynamic", "coupled temperature-displacement"):
+                _handle_step_procedure(model, kw_norm, data)
+
             elif kw_norm == "boundary":
-                _handle_boundary(model, params, data)
+                _handle_boundary(model, params, data, step_counter[0])
 
             elif kw_norm == "cload":
-                _handle_cload(model, params, data)
+                _handle_cload(model, params, data, step_counter[0])
 
             elif kw_norm == "dsload":
                 _handle_dsload(model, params, data)
@@ -605,10 +674,51 @@ def _handle_user_material(
             pass
 
 
-def _handle_boundary(model: AbaqusModel, params: dict, data: List[str]) -> None:
+def _nlgeom_of(params: dict) -> bool:
+    """``NLGEOM`` as Abaqus reads it: absent means NO, bare means YES."""
+    if "nlgeom" not in params:
+        return False
+    value = params.get("nlgeom")
+    if value is None or value is True:
+        return True
+    return str(value).strip().upper() not in ("NO", "OFF", "FALSE", "0")
+
+
+def _handle_step_procedure(model: AbaqusModel, kw_norm: str,
+                           data: List[str]) -> None:
+    """The step's time line, attached to the step it is inside.
+
+    Recorded rather than ignored because it is what turns an increment number
+    into a place on the loading path: a fixture says "increment 4" and only
+    the period and the initial increment say what displacement that is.
+    """
+    if not model.steps:
+        return
+    step = model.steps[-1]
+    step.procedure = kw_norm
+    for line in data:
+        tok = _tokens(line)
+        if not tok:
+            continue
+        numbers = []
+        for entry in tok[:4]:
+            try:
+                numbers.append(float(entry))
+            except (TypeError, ValueError):
+                numbers.append(None)
+        while len(numbers) < 4:
+            numbers.append(None)
+        step.initial_increment, step.time_period = numbers[0], numbers[1]
+        step.min_increment, step.max_increment = numbers[2], numbers[3]
+        break
+
+
+def _handle_boundary(model: AbaqusModel, params: dict, data: List[str],
+                     step: int = 0) -> None:
     amp = params.get("amplitude")
     if amp is not None:
         amp = str(amp)
+    op = str(params.get("op", "MOD") or "MOD").strip().upper()
     for line in data:
         tok = _tokens(line)
         if len(tok) < 2:
@@ -627,6 +737,8 @@ def _handle_boundary(model: AbaqusModel, params: dict, data: List[str]) -> None:
                     value=0.0,
                     kind=sym,
                     amplitude=amp,
+                    step=step,
+                    op=op,
                 )
             )
         else:
@@ -641,14 +753,18 @@ def _handle_boundary(model: AbaqusModel, params: dict, data: List[str]) -> None:
                     value=value,
                     kind="value",
                     amplitude=amp,
+                    step=step,
+                    op=op,
                 )
             )
 
 
-def _handle_cload(model: AbaqusModel, params: dict, data: List[str]) -> None:
+def _handle_cload(model: AbaqusModel, params: dict, data: List[str],
+                  step: int = 0) -> None:
     amp = params.get("amplitude")
     if amp is not None:
         amp = str(amp)
+    op = str(params.get("op", "MOD") or "MOD").strip().upper()
     for line in data:
         tok = _tokens(line)
         if len(tok) < 3:
@@ -660,6 +776,8 @@ def _handle_cload(model: AbaqusModel, params: dict, data: List[str]) -> None:
                 dof=_to_int(tok[1]),
                 value=_to_float(tok[2]),
                 amplitude=amp,
+                step=step,
+                op=op,
             )
         )
 
