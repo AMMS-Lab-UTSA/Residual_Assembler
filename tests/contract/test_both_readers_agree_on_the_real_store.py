@@ -126,7 +126,11 @@ def test_the_store_row_is_not_the_contract_and_the_producer_adapts_it(both):
     materialised = sum(
         1 for record in adapted.records
         if getattr(record.evidence, SEVENTH).is_measured())
-    assert materialised == 80        # 19 explained, 61 not
+    # 83 rows carry a measured-false primal: 19 with an explanation and 64
+    # without. How many reach a RECORD depends on whether the producing
+    # checkout can translate the three arguments_diverged rows, which are
+    # among the 64 -- so this is 80 before those words landed and 83 after.
+    assert materialised == 83 - len(adapted.errors)
 
 
 def test_the_two_readers_agree_about_every_gate_in_every_record(both):
@@ -145,7 +149,8 @@ def test_the_two_readers_agree_about_every_gate_in_every_record(both):
                 f"{record.identity.path}: {name} is {mine[name].spelling()} "
                 f"here and {getattr(theirs, name).spelling()} in the producer")
             compared += 1
-    assert compared == len(adapted.records) * 7 == 1638
+    assert compared == len(adapted.records) * 7
+    assert len(adapted.records) + len(adapted.errors) == 237
 
 
 def test_the_two_readers_agree_about_the_settled_primal(both):
@@ -256,8 +261,10 @@ def test_the_two_readers_agree_about_which_entries_may_drive_the_assembler(both)
         if mine.is_true():
             usable += 1
             assert record.terminal.verified
+    # 55 is fixed: it is how many entries reached a verified terminal state,
+    # and no vocabulary change moves it. The denominator is what moves.
     assert usable == 55
-    assert len(adapted.records) == 234
+    assert len(adapted.records) + len(adapted.errors) == 237
 
 
 def test_no_record_is_usable_without_all_six_gates_settled(both):
