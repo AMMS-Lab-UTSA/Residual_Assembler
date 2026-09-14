@@ -454,11 +454,15 @@ def test_the_frozen_set_is_named_as_a_selection_rather_than_as_the_corpus():
     So the committed set is a SELECTION for coverage and repository size, not
     what this repository can consume: it spans both kinematics, both tangent
     readings, a moving state, a rate-dependent material, a plane-stress case
-    the kernel refuses, and one case whose two builds disagreed. The 35 Jeff97
-    growth fixtures left out would add authors and not questions.
+    the kernel refuses, one case whose two builds disagreed, and the bundled
+    J2 -- the only plasticity in the set, added once the lead re-verified the
+    control at the current fingerprint, and the only fixture whose four steps
+    carry an elastic branch, a yield point, plastic flow, an elastic unloading
+    and a reverse. The 35 Jeff97 growth fixtures left out would add authors
+    and not questions.
     """
     frozen = all_fixtures()
-    assert len(frozen) == 9
+    assert len(frozen) == 10
     kinematics = {fixture.kinematics for fixture in frozen}
     assert kinematics >= {"small strain", "finite"}, (
         f"the set spans both kinematics the pipeline drives, not one: "

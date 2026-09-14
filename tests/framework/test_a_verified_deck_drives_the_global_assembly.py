@@ -76,15 +76,30 @@ def test_the_strain_reconstructed_from_the_deck_is_the_strain_abaqus_recorded(
     integration point -- and compares. Nothing in the comparison comes from
     this repository on both sides.
     """
-    replay = replay_deck(fixture.deck, step=1)
-    assert replay.fully_prescribed, (
+    # Each record is replayed in ITS OWN step. Abaqus numbers increments from
+    # 1 again in every step, so a four-step J2 cycle has four increment 1s, and
+    # replaying all of them against step 1 compares the reversal and the reload
+    # against the first loading -- wrong by 3.0 relative, which is not a
+    # tolerance question but a different deformation. The fixture carries the
+    # step for exactly this; a fixture frozen before it did says None, and
+    # those are the single-step ones, where 1 is right.
+    replays: dict = {}
+
+    def _replay(step: int):
+        if step not in replays:
+            replays[step] = replay_deck(fixture.deck, step=step)
+        return replays[step]
+
+    first = _replay(1)
+    assert first.fully_prescribed, (
         f"{fixture.path.name}: the verification deck drives every degree of "
         f"freedom, so the strain follows from the deck without solving; this "
-        f"one prescribes {len(replay.prescribed)} of {replay.dof_manager.ndof}")
-    assert replay.increments, "the step must fix its own increment count"
+        f"one prescribes {len(first.prescribed)} of {first.dof_manager.ndof}")
+    assert first.increments, "the step must fix its own increment count"
 
     worst = 0.0
     for record in fixture.original:
+        replay = _replay(int(getattr(record, "step", None) or 1))
         strains = replay.strain_at_points(1, record.increment)
         reference = np.asarray(record.strain, dtype=float)
         scale = max(float(np.max(np.abs(reference))), 1e-30)
@@ -111,8 +126,13 @@ def test_the_kinematic_reading_is_read_off_the_step_and_not_assumed():
     """
     measured = {}
     for fixture in hex_fixtures():
-        replay = replay_deck(fixture.deck, step=1)
         record = fixture.original[-1]
+        # The record's OWN step. The last record of a multi-step fixture is
+        # not in step 1, and replaying it there compares a reload against the
+        # first loading -- which made all three readings equally wrong at 0.5
+        # and the test read that as the deck choosing none of them.
+        replay = replay_deck(fixture.deck,
+                             step=int(getattr(record, "step", None) or 1))
         reference = np.asarray(record.strain, dtype=float)
         scale = max(float(np.max(np.abs(reference))), 1e-30)
         errors = {}
@@ -468,8 +488,16 @@ def test_the_fixtures_numbers_reach_the_assembly_unaltered():
         stress, tangent, state, _info = material.evaluate(
             {"strain": material.strain0, "dstrain": np.zeros(fixture.ntens)},
             None, binding, (0.0, 0.0), 0.0, None, None)
+        # Matched on the STRAIN the playback was built about, not on an
+        # increment number. Abaqus numbers increments from 1 again in every
+        # step, so a four-step fixture has four increment 1s, and taking the
+        # first match compared a state from step 1 against one from step 4 --
+        # 1868.09 against 1002.97, two real numbers from two real increments
+        # of the same run. The strain is what "at the fixture's own strain"
+        # means, so it is what identifies the record.
         record = [r for r in fixture.converted
-                  if r.increment == material.increment][0]
+                  if np.array_equal(np.asarray(r.strain, dtype=float),
+                                    np.asarray(material.strain0, dtype=float))][0]
         assert np.array_equal(stress, record.stress), fixture.path.name
         assert np.array_equal(tangent, record.tangent), fixture.path.name
         assert list(binding.constants) == list(fixture.props), fixture.path.name
