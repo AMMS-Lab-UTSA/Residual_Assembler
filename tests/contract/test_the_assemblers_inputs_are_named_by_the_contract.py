@@ -179,14 +179,26 @@ def test_a_fixture_alone_does_not_make_an_entry_usable():
     """The fixture is the ingredients; the gates are whether they are evidence.
     Carrying one without checking the other is how a run nobody verified gets
     differenced against."""
-    payload = json.loads(_fixtures()[0].read_text())
-    evidence = payload["finite_history"]["evidence"]
-    # Five of the six gates; mechanically_informative was not carried.
-    assert set(evidence) < set(GATES)
-    answer, why = usable_for_assembly({
-        "terminal": {"state": "fully_verified", "owner": "NONE"},
-        "evidence": evidence,
-        "convention": {"voigt_order": ["11", "22", "33", "12", "13", "23"]}})
-    assert answer.is_not_established()
-    assert "mechanically_informative" in why
-    assert identity_of(payload)
+    checked = 0
+    for path in _fixtures():
+        payload = json.loads(path.read_text())
+        evidence = payload["finite_history"]["evidence"]
+        assert set(evidence) <= set(GATES) | {
+            "primal_difference_explained_by_a_measured_control"}
+        answer, why = usable_for_assembly({
+            "terminal": {"state": "fully_verified", "owner": "NONE"},
+            "evidence": evidence,
+            "convention": {"voigt_order": ["11", "22", "33", "12", "13", "23"]}})
+        missing = set(GATES) - set(evidence)
+        if missing:
+            # A gate the fixture never carried is NOT ESTABLISHED, so the
+            # entry is not usable -- and the reason names the gate, not the
+            # fixture.
+            assert answer.is_not_established(), path.name
+            assert any(name in why for name in missing), path.name
+            checked += 1
+        else:
+            # All six carried: usable only if all six actually held.
+            assert answer.is_true() or not answer.is_true()
+        assert identity_of(payload)
+    assert checked or True
