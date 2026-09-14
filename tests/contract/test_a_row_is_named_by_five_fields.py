@@ -29,11 +29,23 @@ def _fixtures() -> list:
     return sorted(FIXTURES.glob("*.json"))
 
 
-def _five_field():
+def _five_field(*, spanning_steps: bool = False):
+    """A committed fixture carrying all five identity fields.
+
+    ``spanning_steps`` asks for one whose rows cross a step boundary, which is
+    the only place an increment number can collide -- Abaqus restarts the
+    numbering in each step. Every committed fixture carries five fields now, so
+    taking the first one gets a single-step history with nothing to collide,
+    and a test written against that was asserting an accident of which fixture
+    sorts first rather than the rule.
+    """
     for path in _fixtures():
         payload = json.loads(path.read_text())
-        if fixture_generation(payload)["usable_for_boundary_conditions"]:
-            return path, payload
+        if not fixture_generation(payload)["usable_for_boundary_conditions"]:
+            continue
+        if spanning_steps and len({r.get("step") for r in payload["original"]}) < 2:
+            continue
+        return path, payload
     return None, None
 
 
@@ -104,9 +116,11 @@ def test_the_five_counts_are_named():
 # what is actually committed here
 # ---------------------------------------------------------------------------
 def test_a_committed_five_field_fixture_shows_the_collision():
-    path, payload = _five_field()
+    """Where a fixture crosses a step boundary, the increment number collides
+    and the five-field key is what still tells the rows apart."""
+    path, payload = _five_field(spanning_steps=True)
     if payload is None:
-        pytest.skip("no five-field fixture committed here yet")
+        pytest.skip("no committed fixture spans more than one step")
     rows = payload["original"]
     keys = {increment_key(r).as_tuple() for r in rows}
     numbers = {r["increment"] for r in rows}

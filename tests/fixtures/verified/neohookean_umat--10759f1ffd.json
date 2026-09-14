@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-14T13:56:03+00:00",
+ "generated": "2026-09-14T21:12:45+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "AlexanderJFDR__Hyperelastic_phase_field/umat/NeoHookean_umat.for",
  "source_sha256": "565d307f0679dcb9377d0ccf04e601082c115590707af15bb6d193a25ef836a9",
  "repository": "AlexanderJFDR/Hyperelastic_phase_field",
- "transform_fingerprint": "b0d27ee53c630500",
+ "transform_fingerprint": "94a92c01814f107a",
  "deck_digest": "a61c80f162904d99",
  "material": {
   "provenance": "AlexanderJFDR__Hyperelastic_phase_field/umat/twist_umat.inp: twist_umat.inp *MATERIAL user_mat: 2 constants, *DEPVAR 0 -- a section in twist_umat.inp attaches user_mat to C3D8R; the deck's name 'twist_umat.inp' contains the whole of the source's stem 'umat'; the deck sits in the source's own directory",
@@ -39,7 +39,8 @@
    "complete_history_finite": true,
    "derivatives_verified": true,
    "mechanically_informative": true,
-   "primal_agreed": true
+   "primal_agreed": true,
+   "primal_difference_explained_by_a_measured_control": null
   },
   "complete_finite_verification_run": true,
   "history_grouping": {
@@ -63,9 +64,15 @@
     "total_increments": 35
    }
   },
+  "records_carried": 6,
   "increments_carried": 6,
+  "material_points_per_increment": 1,
+  "material_point_carried": 1,
+  "material_points_available": 8,
+  "records_requested": 6,
   "increments_requested": 6,
-  "records_available": 280,
+  "whole_history_requested": false,
+  "records_available": 35,
   "records_requested_from": {
    "original": 280,
    "transformed": 280
@@ -89,6 +96,9 @@
  },
  "original": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -158,6 +168,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -227,6 +240,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -296,6 +312,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -365,6 +384,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -434,6 +456,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [
@@ -505,6 +530,9 @@
  ],
  "converted": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -574,6 +602,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -643,6 +674,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -712,6 +746,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -781,6 +818,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -850,6 +890,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [

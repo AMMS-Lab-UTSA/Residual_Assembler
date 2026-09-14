@@ -123,7 +123,12 @@ def test_a_window_shorter_than_the_export_asked_for_is_refused(tmp_path,
                                                                payload):
     """The refusal the exporter grew. A three-increment fixture out of a
     six-increment request is a fixture built on however far an analysis got."""
-    payload["finite_history"].update({"increments_requested": 6,
+    # In RECORDS, which is what the exporter's --increments bounds and what
+    # the check reads. The old keys are kept beside them so a fixture frozen
+    # before the counts were separated is still held to the same rule.
+    payload["finite_history"].update({"records_requested": 6,
+                                      "records_carried": 3,
+                                      "increments_requested": 6,
                                       "increments_carried": 3,
                                       "records_available": 3})
     payload["original"] = payload["original"][:3]
@@ -133,6 +138,27 @@ def test_a_window_shorter_than_the_export_asked_for_is_refused(tmp_path,
     said = str(raised.value)
     assert "3 record(s) of the 6" in said
     assert "however far an analysis got before it stopped" in said
+
+
+def test_a_fixture_frozen_before_the_counts_were_separated_is_still_held(
+        tmp_path, payload):
+    """The fallback: only the old keys, and the rule still bites.
+
+    Fixtures frozen before records and increments were counted separately
+    carry increments_requested and increments_carried alone. Reading only the
+    new keys would let exactly those through unchecked -- the ones with no
+    second opinion available.
+    """
+    payload["finite_history"].pop("records_requested", None)
+    payload["finite_history"].pop("records_carried", None)
+    payload["finite_history"].update({"increments_requested": 6,
+                                      "increments_carried": 3,
+                                      "records_available": 3})
+    payload["original"] = payload["original"][:3]
+    payload["converted"] = payload["converted"][:3]
+    with pytest.raises(FixtureError) as raised:
+        load(_written(tmp_path, payload))
+    assert "3 record(s) of the 6" in str(raised.value)
 
 
 def test_a_window_of_exactly_what_was_asked_for_is_not_refused(tmp_path,
