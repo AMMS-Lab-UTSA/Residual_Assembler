@@ -62,6 +62,9 @@ class ReplayedDeck:
     nlgeom: bool
     increments: Optional[int]
     prescribed: dict = field(default_factory=dict)   # global dof -> value
+    #: Where each prescribed degree of freedom STOOD when this step began,
+    #: which is what the earlier steps left it at. Empty for step 1.
+    starts_from: dict = field(default_factory=dict)   # global dof -> value
     warnings: tuple = ()
 
     @property
@@ -78,10 +81,20 @@ class ReplayedDeck:
     def displacement_at(self, increment: int) -> np.ndarray:
         """The nodal displacement vector at the END of ``increment``.
 
-        A fixed-increment step ramps its prescribed values linearly from zero
-        over ``increments`` steps, so increment ``i`` ends at ``i /
-        increments`` of them. A step this repository cannot read an increment
-        count off is refused rather than guessed at.
+        A fixed-increment step ramps its prescribed values linearly over
+        ``increments`` steps, so increment ``i`` ends at ``i / increments`` of
+        the way. A step this repository cannot read an increment count off is
+        refused rather than guessed at.
+
+        From WHERE THE PREVIOUS STEP LEFT IT, not from zero. Abaqus ramps a
+        prescribed displacement from its current value to the one the new step
+        names; ``OP=NEW`` replaces which conditions are in force, not the
+        displacement the model already has. Ramping from zero instead is right
+        for step 1 and wrong for every step after it, and on the four-step J2
+        cycle it was wrong by 3.0 relative -- a different deformation, not a
+        tolerance. Reading it correctly reproduces Abaqus exactly: step 3
+        increment 6 takes e11 from 0 to -0.005 and gamma12 from 0.010 back to
+        0, giving -0.003 and 0.004, which is what the run recorded.
         """
         if not self.increments:
             raise DeckReplayError(
@@ -96,7 +109,8 @@ class ReplayedDeck:
         fraction = float(increment) / float(self.increments)
         U = np.zeros(self.dof_manager.ndof)
         for dof, value in self.prescribed.items():
-            U[dof] = fraction * value
+            began = float(self.starts_from.get(dof, 0.0))
+            U[dof] = began + fraction * (float(value) - began)
         return U
 
     def element_displacement(self, eid: int, U: np.ndarray) -> np.ndarray:
@@ -269,8 +283,16 @@ def replay_deck(deck: str, *, step: int = 1,
             f"the deck has {len(steps)} step(s); step {step} is not one of them")
     chosen = steps[step - 1]
     prescribed = constraints.dirichlet_dofs(model, dm, step=step)
+    # Where the earlier steps left each degree of freedom. Resolved by reading
+    # them in order and letting the latest one that names a dof win, which is
+    # what OP=NEW does: it replaces the set of conditions in force, and the
+    # displacement carries on from where it was.
+    starts_from: dict = {}
+    for earlier in range(1, step):
+        starts_from.update(constraints.dirichlet_dofs(model, dm, step=earlier))
     return ReplayedDeck(model=model, dof_manager=dm, step=step,
                         nlgeom=bool(chosen.nlgeom),
                         increments=chosen.fixed_increments,
                         prescribed=dict(prescribed),
+                        starts_from=starts_from,
                         warnings=tuple(parsed.warnings))

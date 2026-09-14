@@ -96,7 +96,15 @@ CARRIED_ARRAYS = ("strain", "dstrain", "stress", "state", "ddsdde")
 
 @dataclass(frozen=True)
 class Point:
-    """One material point at one increment."""
+    """One material point at one increment.
+
+    ``step`` and ``point`` complete the identity. Abaqus numbers increments
+    from 1 again in every step, so ``increment`` alone does not name a state:
+    a four-step cycle has four increment 1s, and reconstructing the strain
+    without the step compared a reversal against the first loading and was
+    wrong by 3.0 relative. Both are None in a fixture frozen before the
+    exporter carried them, and those are the single-step, single-point ones.
+    """
 
     increment: int
     time: float
@@ -105,6 +113,9 @@ class Point:
     stress: np.ndarray
     state: np.ndarray
     tangent: Optional[np.ndarray]
+    step: Optional[int] = None
+    point: Optional[int] = None
+    element: Optional[int] = None
 
 
 @dataclass
@@ -181,7 +192,11 @@ def _point(record: dict, ntens: int) -> Point:
         dstrain=np.asarray(record.get("dstrain") or [], dtype=float),
         stress=np.asarray(record.get("stress") or [], dtype=float),
         state=np.asarray(record.get("state") or [], dtype=float),
-        tangent=matrix)
+        tangent=matrix,
+        step=(int(record["step"]) if record.get("step") is not None else None),
+        point=(int(record["point"]) if record.get("point") is not None else None),
+        element=(int(record["element"]) if record.get("element") is not None
+                 else None))
 
 
 def load(path: Path, *,
@@ -330,11 +345,17 @@ def _refuse_anything_but_a_finite_history(path: Path, payload: dict) -> None:
     # window that is SHORT is a window built on however far an analysis got,
     # and it is short silently: the window clamps itself to whatever was on
     # disk and records the shortened number as though it had been asked for.
-    asked = frozen.get("increments_requested")
-    got = frozen.get("increments_carried")
+    # Compared in RECORDS, which is what the exporter's --increments bounds:
+    # one increment of a C3D8 is eight probe records, one per integration
+    # point. Comparing the increment count against the record count read a
+    # complete 35-increment J2 history as 35 of 280 and refused it. The
+    # exporter now writes both counts; the older key is the fallback for
+    # fixtures frozen before it did.
+    asked = frozen.get("records_requested", frozen.get("increments_requested"))
+    got = frozen.get("records_carried", frozen.get("increments_carried"))
     if isinstance(asked, int) and isinstance(got, int) and got < asked:
         raise FixtureError(
-            f"{path.name} carries {got} increment(s) of the {asked} its "
+            f"{path.name} carries {got} record(s) of the {asked} its "
             f"export asked for, because only "
             f"{frozen.get('records_available')} record(s) were on disk. A "
             f"fixture that is short is a fixture built on however far an "

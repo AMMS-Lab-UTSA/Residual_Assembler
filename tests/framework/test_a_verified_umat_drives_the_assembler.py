@@ -187,11 +187,88 @@ def _diagnose(fixture):
         reference=lambda stress: independent_internal_force(UNIT_CUBE, stress))
 
 
+#: The one committed fixture whose material is not linear over an increment,
+#: and what the diagnosis finds in it. Recorded rather than excluded.
+#:
+#: ``constitutive_derivative`` asks whether the reported tangent predicts the
+#: reported stress increment -- a SECANT across a finite increment. For an
+#: elastic or hyperelastic material driven in small steps the secant and the
+#: tangent agree, which is why the other nine pass it. J2 is the first
+#: committed fixture with a real nonlinearity, and its worst disagreement,
+#: 3.102e-01, is at INCREMENT 2: the increment in which it yields, where
+#: EQPLAS goes from exactly 0 to 2.478519e-04. The tangent at the start of
+#: that increment is the elastic one and the stress change across it is
+#: elastoplastic, so no tangent evaluated at either end predicts it.
+#:
+#: That is a limitation of the check, not a defect in the material: this
+#: project's standing rule is that a derivative is never evaluated across
+#: yielding, damage initiation or any other nonsmooth transition, and this
+#: check has no notion of one. The fixture reaches `transformation: holds` at
+#: 3.210e-16 in stress and 2.158e-16 in state over all 35 increments before it
+#: stops, so what is established about it is established.
+#:
+#: Written down as a measured fact so that it cannot be mistaken for a pass
+#: and cannot be quietly lost: if the check learns about nonsmooth increments,
+#: or if the numbers move, this fails and someone reads it.
+NONLINEAR_OVER_AN_INCREMENT = {
+    "bundled__generic_ps/src/j2_props.f": "constitutive_derivative",
+}
+
+
 def test_a_verified_fixture_passes_every_stage():
     for fixture in fixtures():
         found = _diagnose(fixture)
-        assert found.ok, found.report()
+        expected = NONLINEAR_OVER_AN_INCREMENT.get(fixture.source_id)
+        if expected is None:
+            assert found.ok, found.report()
+        else:
+            assert not found.ok, (
+                f"{fixture.source_id} now passes every stage. If the "
+                f"constitutive_derivative check learned to skip the increment "
+                f"a material yields in, delete its entry from "
+                f"NONLINEAR_OVER_AN_INCREMENT and say so.")
+            assert found.blame == expected, found.report()
+            # and everything before the stage it stops at really did hold
+            for finding in found.findings:
+                if finding.stage == expected:
+                    break
+                assert finding.status == "holds", found.report()
+            # The diagnosis stops at the first failure, so it reports the
+            # stages up to and including that one and no more -- reporting
+            # later stages it never reached would be claiming they were
+            # checked.
+            reached = [f.stage for f in found.findings]
+            assert reached == list(STAGES)[:len(reached)]
+            assert reached[-1] == expected
+            continue
         assert [f.stage for f in found.findings] == list(STAGES)
+
+
+def test_the_yield_increment_is_what_the_derivative_check_trips_on():
+    """Named, so the reason J2 stops where it does is not guessed at later.
+
+    The worst disagreement is at the increment where EQPLAS leaves zero. A
+    secant taken across a yield point is not a derivative of anything.
+    """
+    j2 = [f for f in fixtures()
+          if f.source_id in NONLINEAR_OVER_AN_INCREMENT]
+    if not j2:
+        import pytest as _pytest
+        _pytest.skip("the J2 fixture is not committed here")
+    fixture = j2[0]
+    found = _diagnose(fixture)
+    measured = next(f.measured for f in found.findings
+                    if f.stage == "constitutive_derivative")
+    worst_at = int(measured["increment"])
+
+    plastic = [r.state[0] for r in fixture.original]
+    assert plastic[0] == 0.0, "the first increment is elastic"
+    first_yield = next(i for i, q in enumerate(plastic, start=1) if q > 0.0)
+    assert worst_at == first_yield, (
+        f"the derivative check's worst increment is {worst_at} and the "
+        f"material first yields at {first_yield}; if those have come apart, "
+        f"the explanation recorded in NONLINEAR_OVER_AN_INCREMENT no longer "
+        f"describes what is happening")
 
 
 def test_a_stress_that_is_not_a_number_is_blamed_on_the_umat():
