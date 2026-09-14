@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-14T13:56:04+00:00",
+ "generated": "2026-09-14T21:12:44+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "awhelanUCD__Lemaitre-damage-UMAT-Public/nonLocalLemaitre/lemaitreDamageNonLocal.f",
  "source_sha256": "f841c77b3c7687f1ff8696a4758f9198aeb85dbd06c97d409c400baaa4f87a38",
  "repository": "awhelanUCD/Lemaitre-damage-UMAT-Public",
- "transform_fingerprint": "b0d27ee53c630500",
+ "transform_fingerprint": "94a92c01814f107a",
  "deck_digest": "9eb89cea3f679865",
  "material": {
   "provenance": "awhelanUCD__Lemaitre-damage-UMAT-Public/nonLocalLemaitre/axiSymmetricNotchedBar.inp: axiSymmetricNotchedBar.inp *MATERIAL Material-1: 7 constants, *DEPVAR 23 -- a section in axiSymmetricNotchedBar.inp attaches Material-1 to CAX4T; the deck sits in the source's own directory",
@@ -44,7 +44,8 @@
    "complete_history_finite": true,
    "derivatives_verified": true,
    "mechanically_informative": true,
-   "primal_agreed": true
+   "primal_agreed": true,
+   "primal_difference_explained_by_a_measured_control": null
   },
   "complete_finite_verification_run": true,
   "history_grouping": {
@@ -68,9 +69,15 @@
     "total_increments": 35
    }
   },
+  "records_carried": 6,
   "increments_carried": 6,
+  "material_points_per_increment": 1,
+  "material_point_carried": 1,
+  "material_points_available": 4,
+  "records_requested": 6,
   "increments_requested": 6,
-  "records_available": 140,
+  "whole_history_requested": false,
+  "records_available": 35,
   "records_requested_from": {
    "original": 140,
    "transformed": 140
@@ -94,6 +101,9 @@
  },
  "original": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -149,6 +159,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -204,6 +217,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -259,6 +275,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -314,6 +333,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -369,6 +391,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [
@@ -426,6 +451,9 @@
  ],
  "converted": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -481,6 +509,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -536,6 +567,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -591,6 +625,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -646,6 +683,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -701,6 +741,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [

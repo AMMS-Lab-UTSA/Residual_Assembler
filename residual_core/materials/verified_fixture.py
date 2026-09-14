@@ -54,16 +54,45 @@ SCHEMA = "umat-oti/residual-fixture/1"
 #: below carries this fingerprint, and the four fixtures this repository
 #: carried before 2026-09-14 carried ``ff94800b1884bcc0`` -- a store two
 #: transformations ago.
-CURRENT_TRANSFORM_FINGERPRINT = "b0d27ee53c630500"
+#: READ FROM THE CONTRACT, not written here.
+#:
+#: It was a literal, and it went stale the moment the transformation changed:
+#: the store moved to a new build, every fixture was re-frozen against it, and
+#: this reader went on accepting the old value and refusing all ten of them.
+#: A number that two repositories must agree on belongs in the one file they
+#: both read -- ``schemas/transform_generation.json``, which the UMAT
+#: repository writes and copies here, and whose own ``how_to_update`` describes
+#: this exact sequence.
+def _recorded_generation() -> str:
+    """The transform the current evidence was cut at."""
+    import json as _json
+
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        candidate = parent / "schemas" / "transform_generation.json"
+        if candidate.is_file():
+            recorded = _json.loads(candidate.read_text(encoding="utf-8"))
+            value = str(recorded.get("transform_fingerprint") or "")
+            if value:
+                return value
+    raise FixtureError(
+        "schemas/transform_generation.json is missing, so nothing here knows "
+        "which build of the transformation the committed evidence was cut at. "
+        "It is copied from the UMAT repository; without it a fixture cannot be "
+        "told from evidence about a transformation that no longer exists.")
+
+
+CURRENT_TRANSFORM_FINGERPRINT = _recorded_generation()
 
 #: Where that fingerprint was read from, so a reader can check it rather than
-#: take it. Counts are from the file itself, counted on 2026-09-14.
+#: take it. Counts are from the file itself.
 STORE_PROVENANCE = {
-    "results": ("corpus_run/pass11/results/store_verification.jsonl"),
-    "entries": 237,
-    "verified": 55,
-    "all_six_evidence_gates": 42,
+    "results": ("corpus_run/pass12/results/store_verification.jsonl"),
+    "entries": 244,
+    "verified": 57,
+    "all_six_evidence_gates": 44,
     "fingerprint": CURRENT_TRANSFORM_FINGERPRINT,
+    "read_from": "schemas/transform_generation.json",
     "read_on": "2026-09-14",
 }
 

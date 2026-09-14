@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-14T13:56:04+00:00",
+ "generated": "2026-09-14T21:12:45+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "mholla__growth/umats/umat_iso_stretch.f",
  "source_sha256": "395c8c890a30fa47f747766ff4b9cd9d5a0d641cb8a09b14d72fe992d1774e8b",
  "repository": "mholla/growth",
- "transform_fingerprint": "b0d27ee53c630500",
+ "transform_fingerprint": "94a92c01814f107a",
  "deck_digest": "d4afd2e252a6169e",
  "material": {
   "provenance": "mholla__growth/input_files/cube_1_C3D8_stretch_xyz_iso.inp: cube_1_C3D8_stretch_xyz_iso.inp *MATERIAL VOL: 6 constants, *DEPVAR 3 -- cube_1_C3D8_stretch_xyz_iso.inp declares exactly one element, so it is the author's own single-element test of this material; a section in cube_1_C3D8_stretch_xyz_iso.inp attaches VOL to C3D8; the two names share iso, stretch",
@@ -43,7 +43,8 @@
    "complete_history_finite": true,
    "derivatives_verified": true,
    "mechanically_informative": true,
-   "primal_agreed": true
+   "primal_agreed": true,
+   "primal_difference_explained_by_a_measured_control": null
   },
   "complete_finite_verification_run": true,
   "history_grouping": {
@@ -67,9 +68,15 @@
     "total_increments": 35
    }
   },
+  "records_carried": 6,
   "increments_carried": 6,
+  "material_points_per_increment": 1,
+  "material_point_carried": 1,
+  "material_points_available": 8,
+  "records_requested": 6,
   "increments_requested": 6,
-  "records_available": 280,
+  "whole_history_requested": false,
+  "records_available": 35,
   "records_requested_from": {
    "original": 280,
    "transformed": 280
@@ -93,6 +100,9 @@
  },
  "original": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -164,6 +174,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -235,6 +248,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -306,6 +322,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -377,6 +396,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -448,6 +470,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [
@@ -521,6 +546,9 @@
  ],
  "converted": [
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 4,
    "time": 0.30000000000000004,
    "strain": [
@@ -592,6 +620,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 5,
    "time": 0.4,
    "strain": [
@@ -663,6 +694,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 6,
    "time": 0.5,
    "strain": [
@@ -734,6 +768,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 7,
    "time": 0.6,
    "strain": [
@@ -805,6 +842,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 8,
    "time": 0.7,
    "strain": [
@@ -876,6 +916,9 @@
    ]
   },
   {
+   "element": 1,
+   "point": 1,
+   "step": 1,
    "increment": 9,
    "time": 0.7999999999999999,
    "strain": [

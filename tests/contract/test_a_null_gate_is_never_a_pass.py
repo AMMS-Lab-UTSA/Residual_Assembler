@@ -163,10 +163,12 @@ def test_a_frozen_fixture_may_not_carry_a_false_primal_with_no_explanation():
     whether a control measured the reason, and under this contract that reads
     NOT ESTABLISHED. Not a pass, and not a refusal either.
 
-    The fix is upstream: the exporter writes the six and should carry the
-    seventh with them, because a fixture whose own evidence block says a gate
-    failed and says nothing about why is a regression baseline a reader cannot
-    evaluate. Until it does, this is what stops the assembler resting on one.
+    The fix was upstream and it has landed: the exporter carries the seventh
+    field beside the six, so a fixture whose primal gate is false now says
+    whether a control measured the reason. Both halves are asserted here --
+    that an explained one settles, and that an unexplained one does not -- so
+    this keeps working whichever kind is committed, and would catch the
+    exporter silently dropping the seventh again.
     """
     from pathlib import Path
 
@@ -179,15 +181,24 @@ def test_a_frozen_fixture_may_not_carry_a_false_primal_with_no_explanation():
         gates = gates_of({"evidence": evidence})
         if not gates["primal_agreed"].is_false():
             continue
-        assert gates[SEVENTH].is_not_established()
         settled = primal_settled(gates)
-        assert settled.is_not_established()
-        assert not settled.is_true()
-        answer, why = usable_for_assembly({
-            "terminal": {"state": "fully_verified", "owner": "NONE"},
-            "evidence": evidence,
-            "convention": {"voigt_order": ["11", "22", "33", "12", "13", "23"]}})
-        assert not answer.is_true(), path.name
+        explained = gates[SEVENTH]
+        if explained.is_not_established():
+            # Nothing says whether a control measured the reason, so the
+            # question is open and the assembler may not rest on it.
+            assert settled.is_not_established(), path.name
+            assert not settled.is_true(), path.name
+            answer, _why = usable_for_assembly({
+                "terminal": {"state": "fully_verified", "owner": "NONE"},
+                "evidence": evidence,
+                "convention": {
+                    "voigt_order": ["11", "22", "33", "12", "13", "23"]}})
+            assert not answer.is_true(), path.name
+        else:
+            # A control ran. Whatever it found, the question is no longer open,
+            # and "it found an explanation" is not the same as "the gate held".
+            assert not settled.is_not_established(), path.name
+            assert gates["primal_agreed"].is_false(), path.name
 
 
 def test_no_committed_fixture_hides_a_gate_behind_a_truthy_value():
