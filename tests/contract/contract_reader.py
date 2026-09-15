@@ -33,7 +33,13 @@ from tristate import NOT_ESTABLISHED, Tri, all_true, read  # noqa: F401
 #: one, and a result envelope whose success is no longer shaped like its
 #: verdict. A 1.x reader would have MISREAD every one of those rather than
 #: failed on them, which is what makes the bump major.
-CONTRACT_VERSION = "2.0.0"
+#:
+#: 3.0.0: ``primal_mismatch_explained`` joined the vocabulary (INTERNAL), and
+#: ``arguments_diverged_before_the_routine`` changed owner from EXTERNAL to
+#: INTERNAL. A 2.x reader would have booked three of the producer's primal
+#: disagreements against somebody else's file and fallen through on the new
+#: state -- misreadings, not failures, so major.
+CONTRACT_VERSION = "3.0.0"
 SPEAKER = "Residual_Assembler"
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -53,28 +59,27 @@ SEVENTH = "primal_difference_explained_by_a_measured_control"
 #: A fact about somebody's published repository. More engineering in the
 #: producing project changes none of them.
 #:
-#: ``arguments_diverged_before_the_routine`` is here and is EXTERNAL: the
-#: paired call's INPUTS already differed before the routine was entered, so
-#: the difference is upstream of the constitutive code. Three of the 237
-#: frozen entries carry it, and before the vocabulary had a word for them they
-#: were answered ``not_attempted`` -- INTERNAL, "the run never happened" --
-#: about three entries that ran.
 EXTERNAL_STATES = frozenset({
     "missing_material_data", "not_a_umat", "incomplete_or_corrupt_source",
     "external_dependency_unavailable",
-    "published_stub_no_constitutive_content", "waits_for_input",
-    "arguments_diverged_before_the_routine"})
+    "published_stub_no_constitutive_content", "waits_for_input"})
 #: A limitation of the producing project. Every one of these is work there.
 #:
 #: ``primal_mismatch_explained`` is here and is INTERNAL: the primal results
 #: disagreed and a measured control accounts for the difference. An explained
 #: disagreement is still a disagreement -- the primal gate is false -- so it is
 #: neither verified nor a fact about somebody else's repository.
+#:
+#: ``arguments_diverged_before_the_routine`` is here and is INTERNAL (it was
+#: EXTERNAL at 2.0.0): the paired call's inputs already differed before the
+#: routine was entered, but the solver computed those inputs from each build's
+#: own earlier outputs, on a deck the producer generated.
 INTERNAL_STATES = frozenset({
     "transform_refused", "experiment_not_generated",
     "experiment_not_informative", "informativeness_not_established",
     "unsupported_formulation", "support_build_failed", "original_job_failed",
     "transformed_job_failed", "primal_disagreed", "primal_mismatch_explained",
+    "arguments_diverged_before_the_routine",
     "disagreement_not_in_any_recorded_call", "derivative_truncated",
     "tangent_not_verified", "not_attempted", "harness_error"})
 FULLY_VERIFIED = "fully_verified"
