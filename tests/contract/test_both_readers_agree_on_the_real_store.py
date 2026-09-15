@@ -221,12 +221,12 @@ def test_a_stage_nobody_mapped_is_refused_and_never_becomes_not_attempted(both):
                 "arguments_diverged_before_the_routine"
             assert "not_attempted" in error["message"]
     else:
-        # The producer has the word. It must be the external one, and this
-        # repository must know it too or it would fall through in its place.
+        # The producer has the word. It is the producer's own (INTERNAL), and
+        # this repository must know it too or it would fall through.
         states = {r.terminal.state for r in adapted.records
                   if r.terminal.stage == "arguments_diverged_before_the_routine"}
         assert states == {"arguments_diverged_before_the_routine"}
-        assert owner_of("arguments_diverged_before_the_routine") == "EXTERNAL"
+        assert owner_of("arguments_diverged_before_the_routine") == "INTERNAL"
 
     # Either way, nothing anywhere became not_attempted.
     assert all(r.terminal.state != "not_attempted" for r in adapted.records)

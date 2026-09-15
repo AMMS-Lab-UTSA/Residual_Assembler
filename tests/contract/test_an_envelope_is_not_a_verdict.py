@@ -75,7 +75,7 @@ def test_the_schema_refuses_an_envelope_carrying_ok():
     validator = jsonschema.Draft7Validator(schema)
 
     def record(envelope):
-        return {"contract_version": "2.0.0",
+        return {"contract_version": "3.0.0",
                 "identity": {"path": "repo__x/u.f", "sha256": "a" * 64},
                 "transform_fingerprint": "b0d27ee53c630500",
                 "terminal": {"state": "fully_verified", "owner": "NONE"},

@@ -31,7 +31,7 @@ from contract_reader import (EXTERNAL_STATES, FULLY_VERIFIED, INTERNAL_STATES,
 #: fall-through answered ``not_attempted`` -- INTERNAL, "the run never
 #: happened" -- about all three.
 ADDED_AFTER_THE_DEFAULT_DID_DAMAGE = {
-    "arguments_diverged_before_the_routine": "EXTERNAL",
+    "arguments_diverged_before_the_routine": "INTERNAL",
     "disagreement_not_in_any_recorded_call": "INTERNAL",
 }
 #: A rung nothing has ever mapped, for exercising the refusal itself.
@@ -54,7 +54,7 @@ def test_the_two_states_added_after_the_default_did_damage_are_known_here():
     was written for."""
     for state, owner in ADDED_AFTER_THE_DEFAULT_DID_DAMAGE.items():
         assert owner_of(state) == owner
-    assert "arguments_diverged_before_the_routine" in EXTERNAL_STATES
+    assert "arguments_diverged_before_the_routine" in INTERNAL_STATES
     assert "disagreement_not_in_any_recorded_call" in INTERNAL_STATES
 
 
@@ -98,7 +98,7 @@ def test_the_schema_refuses_a_state_declared_with_the_wrong_owner():
     validator = jsonschema.Draft7Validator(schema)
 
     def record(state, owner):
-        return {"contract_version": "2.0.0",
+        return {"contract_version": "3.0.0",
                 "identity": {"path": "repo__x/u.f", "sha256": "a" * 64},
                 "transform_fingerprint": "b0d27ee53c630500",
                 "terminal": {"state": state, "owner": owner},
@@ -115,9 +115,9 @@ def test_the_schema_refuses_a_state_declared_with_the_wrong_owner():
         record(UNMAPPED_IN_THE_FROZEN_STORE, "INTERNAL")))
     # And the two added states validate on the side the evidence puts them.
     assert not list(validator.iter_errors(
-        record("arguments_diverged_before_the_routine", "EXTERNAL")))
-    assert list(validator.iter_errors(
         record("arguments_diverged_before_the_routine", "INTERNAL")))
+    assert list(validator.iter_errors(
+        record("arguments_diverged_before_the_routine", "EXTERNAL")))
     assert not list(validator.iter_errors(
         record("disagreement_not_in_any_recorded_call", "INTERNAL")))
 
