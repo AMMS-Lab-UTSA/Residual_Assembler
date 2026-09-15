@@ -65,11 +65,16 @@ EXTERNAL_STATES = frozenset({
     "published_stub_no_constitutive_content", "waits_for_input",
     "arguments_diverged_before_the_routine"})
 #: A limitation of the producing project. Every one of these is work there.
+#:
+#: ``primal_mismatch_explained`` is here and is INTERNAL: the primal results
+#: disagreed and a measured control accounts for the difference. An explained
+#: disagreement is still a disagreement -- the primal gate is false -- so it is
+#: neither verified nor a fact about somebody else's repository.
 INTERNAL_STATES = frozenset({
     "transform_refused", "experiment_not_generated",
     "experiment_not_informative", "informativeness_not_established",
     "unsupported_formulation", "support_build_failed", "original_job_failed",
-    "transformed_job_failed", "primal_disagreed",
+    "transformed_job_failed", "primal_disagreed", "primal_mismatch_explained",
     "disagreement_not_in_any_recorded_call", "derivative_truncated",
     "tangent_not_verified", "not_attempted", "harness_error"})
 FULLY_VERIFIED = "fully_verified"
