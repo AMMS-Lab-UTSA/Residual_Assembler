@@ -1,8 +1,8 @@
 """Which layer a bad residual came from, asked in the order the layers run.
 
-"The residual is wrong by 12%" tells nobody which of nine people to ask. A
-residual assembled from a converted UMAT passes through nine places where it
-can go wrong, and they need nine different fixes:
+"The residual is wrong by 12%" tells nobody which of eleven people to ask. A
+residual assembled from a converted UMAT passes through eleven places where it
+can go wrong, and they need eleven different fixes:
 
 1.  **the UMAT** -- the author's routine returned something that is not a
     number, or a stress that does not move when the strain does;
@@ -13,6 +13,8 @@ can go wrong, and they need nine different fixes:
     not the derivative of the stress it reports;
 4.  **the state sensitivity** -- the derivative with respect to the internal
     state does not differentiate the residual that uses that state;
+4b. **the parameter sensitivity** -- the derivative with respect to a material
+    constant does not differentiate the residual;
 5.  **the tensor mapping** -- stress and tangent are right and the assembler
     reads them in a different convention: a transposed Voigt order, or
     tensorial shear where the UMAT meant engineering;
@@ -20,6 +22,8 @@ can go wrong, and they need nine different fixes:
     ordering, or the pairing of a stress with the point it belongs to;
 7.  **the residual assembly** -- everything handed in is right and the
     integration of ``B^T sigma`` into an element force is not;
+7b. **the element Jacobian** -- the force is right and the stiffness
+    ``B^T D B`` assembled beside it is not its derivative;
 8.  **the boundary conditions** -- the free/prescribed partition, or which
     step's displacements are in force;
 9.  **the global degree-of-freedom mapping** -- the element's force scattered
@@ -52,8 +56,9 @@ from residual_core.core.finite_difference import Sweep, relative_error
 #: The layers, in the order they run. A failure is attributed to the first one
 #: that does not hold, because everything after it is downstream of it.
 LAYERS = ("umat", "transformation", "constitutive_derivative",
-          "state_sensitivity", "mapping", "element_integration",
-          "residual_assembly", "boundary_conditions", "global_dof_mapping")
+          "state_sensitivity", "parameter_sensitivity", "mapping",
+          "element_integration", "residual_assembly", "element_jacobian",
+          "boundary_conditions", "global_dof_mapping")
 
 #: Kept under its old name because the five it used to have are five of these
 #: nine and callers index by name.
@@ -66,11 +71,16 @@ OWNER = {
     "transformation": "the OTI source transformation",
     "constitutive_derivative": "the derivative the converted build extracts",
     "state_sensitivity": "the internal-state derivative and how it is carried",
+    "parameter_sensitivity": "the material-parameter derivative and how it "
+                             "is assembled",
     "mapping": "the convention this assembler reads the UMAT's arrays in",
-    "element_integration": "the quadrature and integration-point order here",
+    "element_integration": "the shape functions, quadrature and "
+                           "integration-point order here",
     "residual_assembly": "the integration of B^T sigma in this repository",
+    "element_jacobian": "the element stiffness B^T D B in this repository",
     "boundary_conditions": "the prescribed/free partition in this repository",
-    "global_dof_mapping": "the element-to-global scatter in this repository",
+    "global_dof_mapping": "the element-to-global scatter and degree-of-"
+                          "freedom ordering in this repository",
 }
 
 HOLDS, FAILS, NOT_ESTABLISHED = "holds", "fails", "not_established"
@@ -165,10 +175,11 @@ class Diagnosis:
                 if not self.complete else
                 "every layer holds: the UMAT computed numbers, the conversion "
                 "agrees with it, the tangent is the derivative of the stress, "
-                "the state derivative differentiates the residual, the "
-                "conventions match, the quadrature integrates, the assembly "
-                "sums, the partition is a partition, and the scatter lands "
-                "where the map says")
+                "the state and parameter derivatives differentiate the "
+                "residual, the conventions match, the shape functions and "
+                "quadrature integrate, the assembly sums, the stiffness is its "
+                "derivative, the partition is a partition, and the scatter "
+                "lands where the map says")
         if self.not_established:
             head += (f"; NOT established: {', '.join(self.not_established)}")
         return head + ".\n  " + "\n  ".join(lines)
@@ -209,6 +220,21 @@ class StateSensitivityProbe:
     scale: float = 1.0
     label: str = "dR/dq"
     tolerance: float = 1e-6
+
+
+#: A dR/dp claim and a way to difference it. Same shape as the state probe:
+#: ``analytic`` assembled here, ``difference_at(h)`` the residual differenced
+#: at an absolute step in the parameter.
+ParameterSensitivityProbe = StateSensitivityProbe
+
+
+#: ``material_update(stress_prev, state_prev, dstrain) -> stress`` re-evaluates
+#: one increment of the material from a given start. With one, the
+#: constitutive layer is checked by DIFFERENTIATING the update at every carried
+#: increment -- a derivative, including at the increment the material yields
+#: in. Without one it falls back to the secant across each increment, which is
+#: a derivative only where the material is linear over that increment.
+MaterialUpdate = Callable
 
 
 # --------------------------------------------------------------------------- #
@@ -261,8 +287,81 @@ def _check_transformation(fixture, tolerance: float) -> Finding:
          "gates_not_true": list(getattr(fixture, "gates_not_true", ()))})
 
 
-def _check_constitutive_derivative(fixture, tolerance: float) -> Finding:
+def _check_constitutive_derivative_by_update(fixture, tolerance: float,
+                                             update, steps) -> Finding:
+    """Differentiate the re-evaluated update at every carried increment."""
+    from residual_core.core.finite_difference import sweep_steps
+
+    worst, worst_at, secant_worst, checked, mismatched = 0.0, None, None, 0, []
+    for previous, current in zip(fixture.converted, fixture.converted[1:]):
+        if current.tangent is None or current.dstrain.size != fixture.ntens:
+            continue
+        base = np.asarray(current.dstrain, dtype=float)
+        again = np.asarray(update(previous.stress, previous.state, base),
+                           dtype=float)
+        if _relative(again, current.stress) > 1e-8:
+            mismatched.append(current.increment)
+            continue
+
+        def jacobian(h, base=base, previous=previous):
+            columns = []
+            for j in range(fixture.ntens):
+                plus, minus = base.copy(), base.copy()
+                plus[j] += h
+                minus[j] -= h
+                columns.append(
+                    (np.asarray(update(previous.stress, previous.state, plus))
+                     - np.asarray(update(previous.stress, previous.state,
+                                         minus))) / (2.0 * h))
+            return np.array(columns).T
+
+        sweep = sweep_steps(current.tangent, jacobian, steps=steps,
+                            tolerance=tolerance,
+                            scale=max(float(np.max(np.abs(base))), 1e-12))
+        checked += 1
+        if not sweep.converged:
+            return Finding(
+                "constitutive_derivative", FAILS,
+                f"at increment {current.increment} the reported tangent is not "
+                f"the derivative of the re-evaluated update: {sweep.verdict()}",
+                {"increment": current.increment, "best": sweep.best,
+                 "plateau": sweep.plateau, "errors": list(sweep.errors),
+                 "worst_components": sweep.worst_components()})
+        if sweep.best >= worst:
+            worst, worst_at = sweep.best, current.increment
+    if mismatched and not checked:
+        return Finding(
+            "constitutive_derivative", NOT_ESTABLISHED,
+            f"the material update offered does not reproduce this fixture's "
+            f"stress at any increment ({mismatched[:5]}), so it is not a model "
+            f"of this material and differentiating it says nothing",
+            {"increments_not_reproduced": len(mismatched)},
+            would_establish="an update that reproduces the fixture's stress")
+    if not checked:
+        return Finding(
+            "constitutive_derivative", NOT_ESTABLISHED,
+            "no carried increment has a tangent to compare", {"checked": 0},
+            would_establish="a window carrying tangents")
+    _w, secant_at, _rows = _derivative_check(fixture)
+    return Finding(
+        "constitutive_derivative", HOLDS,
+        f"the reported tangent is the derivative of the re-evaluated update at "
+        f"all {checked} increments carried (worst {worst:.3e} at increment "
+        f"{worst_at}); the secant across increments, which is not a "
+        f"derivative, was not used",
+        {"worst": worst, "increment": worst_at, "increments_checked": checked,
+         "increments_not_reproduced": len(mismatched),
+         "secant_worst_increment": secant_at})
+
+
+def _check_constitutive_derivative(fixture, tolerance: float,
+                                   update=None, steps=()) -> Finding:
     from residual_core.materials.verified_fixture import tangent_convention
+
+    if update is not None:
+        return _check_constitutive_derivative_by_update(
+            fixture, tolerance, update,
+            steps or (1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8))
 
     convention = tangent_convention(fixture, tolerance=tolerance)
     measured = {"material_reading": convention.material_error,
@@ -308,6 +407,33 @@ def _check_constitutive_derivative(fixture, tolerance: float) -> Finding:
                        f"layer.")
         measured.update({"worst": worst, "increment": at,
                          "direct_rows": direct, "shear_rows": shear})
+        moved = _state_movement(fixture)
+        if moved > 0.0:
+            # A material whose state evolves over the window can change regime
+            # inside an increment -- yield, unloading, a reversal of flow --
+            # and a secant across that increment is not a derivative of
+            # anything, however right both end tangents are. Measured on the
+            # bundled J2: a filter on the SIZE of the tangent change removes
+            # nearly every increment of a smoothly curved material, and a
+            # filter on the state leaving zero misses the flow reversal at step
+            # 4 increment 1 (0.176 with EQPLAS moving on both sides). So a
+            # secant disagreement on such a material is not blamed on the
+            # tangent: it is NOT ESTABLISHED until the update is re-evaluated.
+            measured["state_movement"] = moved
+            return Finding(
+                "constitutive_derivative", NOT_ESTABLISHED,
+                detail + f" But this material's state moves by {moved:.3e} "
+                         f"over the window, so the secant across an increment "
+                         f"is not a derivative where the regime changes inside "
+                         f"it, and this disagreement cannot be attributed to "
+                         f"the tangent from the recorded history alone.",
+                measured,
+                would_establish=("a material_update that re-evaluates one "
+                                 "increment from a given start, so the tangent "
+                                 "is compared with a derivative rather than a "
+                                 "secant (residual_core.core."
+                                 "fixture_residual_check does this for the "
+                                 "bundled J2)"))
         return Finding("constitutive_derivative", FAILS, detail, measured)
     return Finding(
         "constitutive_derivative", HOLDS,
@@ -349,6 +475,88 @@ def _check_state_sensitivity(fixture,
         f"{probe.label} {sweep.verdict()}",
         {"best": sweep.best, "plateau": sweep.plateau,
          "plateau_span": list(sweep.plateau_span)})
+
+
+def _check_parameter_sensitivity(fixture, probe, steps) -> Finding:
+    if probe is None:
+        return Finding(
+            "parameter_sensitivity", NOT_ESTABLISHED,
+            f"no dR/dp was offered to difference. The fixture carries "
+            f"{len(fixture.props)} material constants and no d sigma/d p.",
+            {"constants": len(fixture.props)},
+            would_establish=("a dR/dp assembled from a d sigma/d p, with a way "
+                             "to re-assemble R at a perturbed constant"))
+    from residual_core.core.finite_difference import sweep_steps
+
+    sweep = sweep_steps(probe.analytic, probe.difference_at, steps=steps,
+                        tolerance=probe.tolerance, scale=probe.scale)
+    measured = {"best": sweep.best, "plateau": sweep.plateau,
+                "errors": list(sweep.errors),
+                "plateau_span": list(sweep.plateau_span)}
+    if not sweep.converged:
+        measured["worst_components"] = sweep.worst_components()
+        return Finding("parameter_sensitivity", FAILS,
+                       f"{probe.label} does not differentiate the residual: "
+                       f"{sweep.verdict()}.", measured)
+    return Finding("parameter_sensitivity", HOLDS,
+                   f"{probe.label} {sweep.verdict()}", measured)
+
+
+def _check_element_jacobian(fixture, coordinates, gauss, stiffness,
+                            tolerance: float) -> Finding:
+    """The element stiffness is the derivative of the element force.
+
+    The force is ``sum_k w_k detJ_k B_k^T (sigma_n + D B_k du)`` with the
+    fixture's own last tangent held fixed; its centred difference in every
+    nodal degree of freedom, over a sweep, against ``stiffness(D)``.
+    """
+    from residual_core.core.finite_difference import sweep_steps
+    from residual_core.formulations import c3d8_kernel as kernel
+
+    record = next((r for r in reversed(fixture.converted)
+                   if r.tangent is not None), None)
+    if record is None or fixture.ntens != 6 or np.asarray(coordinates).shape != (8, 3):
+        return Finding(
+            "element_jacobian", NOT_ESTABLISHED,
+            "no six-component tangent on an eight-node element to build a "
+            "stiffness from", {"ntens": fixture.ntens},
+            would_establish="a C3D8 fixture carrying DDSDDE")
+    Xe = np.asarray(coordinates, dtype=float)
+    D = np.asarray(record.tangent, dtype=float)
+    sigma = np.asarray(record.stress, dtype=float)
+    stiffness = stiffness or (lambda Dm: kernel.element_tangent(
+        Xe, None, np.broadcast_to(Dm, (8, 6, 6)), mode="small", gauss=gauss))
+    K = np.asarray(stiffness(D), dtype=float)
+    Bs = [kernel.b_matrix_reference(Xe, p)[0] for p in gauss.points]
+
+    def force(u):
+        return kernel.element_internal_force_small_strain(
+            Xe, np.array([sigma + D @ (B @ u) for B in Bs]), gauss=gauss)
+
+    def difference(h):
+        out = np.zeros((24, 24))
+        for dof in range(24):
+            e = np.zeros(24)
+            e[dof] = h
+            out[:, dof] = (force(e) - force(-e)) / (2.0 * h)
+        return out
+
+    sweep = sweep_steps(K, difference, steps=(1e-2, 1e-3, 1e-4, 1e-5, 1e-6),
+                        tolerance=tolerance, scale=1e-3)
+    measured = {"best": sweep.best, "plateau": sweep.plateau,
+                "errors": list(sweep.errors), "increment": record.increment,
+                "symmetric": float(np.max(np.abs(K - K.T)))
+                / max(float(np.max(np.abs(K))), 1e-300)}
+    if not sweep.converged:
+        measured["worst_components"] = sweep.worst_components()
+        return Finding("element_jacobian", FAILS,
+                       f"the element stiffness is not the derivative of the "
+                       f"element force built from the same tangent: "
+                       f"{sweep.verdict()}", measured)
+    return Finding("element_jacobian", HOLDS,
+                   f"B^T D B is the derivative of the element force with the "
+                   f"increment-{record.increment} tangent: {sweep.verdict()}",
+                   measured)
 
 
 def _check_mapping(fixture) -> Finding:
@@ -423,6 +631,28 @@ def _check_element_integration(coordinates, gauss) -> Finding:
             f"has the wrong sign or none.",
             {"min_detJ": min(volumes), "max_detJ": max(volumes)})
 
+    # Shape functions first: a partition of unity at every point, and a
+    # linear field reproduced with its exact gradient. Quadrature cannot fix
+    # a shape function that fails either, so a failure here is named as the
+    # shape functions and not as the integration.
+    linear = np.array([0.3, -0.7, 1.1])
+    unity, gradient = 0.0, 0.0
+    for point in gauss.points:
+        N = kernel.shape_functions(point)
+        unity = max(unity, abs(float(np.sum(N)) - 1.0))
+        _B, _detJ, dNdx = kernel._b_from_coords(Xe, point)
+        field_values = Xe @ linear
+        gradient = max(gradient, float(np.max(np.abs(
+            np.asarray(dNdx).T @ field_values - linear))))
+    if unity > 1e-12 or gradient > 1e-10:
+        return Finding(
+            "element_integration", FAILS,
+            f"the shape functions are wrong before any quadrature: the sum "
+            f"of N departs from one by {unity:.3e} and a linear field's "
+            f"gradient is reproduced to {gradient:.3e}",
+            {"sub_layer": "shape_functions", "partition_of_unity": unity,
+             "linear_gradient": gradient})
+
     uniform = np.array([120.0, -45.0, 33.0, 17.0, -8.0, 5.0])
     mine = kernel.element_internal_force_small_strain(
         Xe, np.tile(uniform, (len(gauss.weights), 1)), gauss=gauss)
@@ -449,6 +679,8 @@ def _check_element_integration(coordinates, gauss) -> Finding:
     measured = {"uniform_stress_vs_tractions": uniform_error,
                 "linear_stress_vs_independent_target": varying_error,
                 "rigid_translation_strain": translation_error,
+                "partition_of_unity": unity, "linear_gradient": gradient,
+                "sub_layer": "quadrature",
                 "points": int(len(gauss.points))}
     if uniform_error > 1e-10:
         return Finding("element_integration", FAILS,
@@ -613,6 +845,9 @@ def _check_global_dof_mapping(replay) -> Finding:
 def diagnose(fixture, *, assemble: Optional[Callable] = None,
              reference: Optional[Callable] = None,
              state_probe: Optional[StateSensitivityProbe] = None,
+             parameter_probe: Optional[StateSensitivityProbe] = None,
+             material_update: Optional[Callable] = None,
+             stiffness: Optional[Callable] = None,
              replay=None, use_deck: bool = True,
              coordinates=None, gauss=None,
              steps: Sequence[float] = (1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8),
@@ -645,12 +880,17 @@ def diagnose(fixture, *, assemble: Optional[Callable] = None,
     if findings[-1].failed:
         return Diagnosis(findings)
 
-    findings.append(_check_constitutive_derivative(fixture,
-                                                   derivative_tolerance))
+    findings.append(_check_constitutive_derivative(
+        fixture, derivative_tolerance, material_update))
     if findings[-1].failed:
         return Diagnosis(findings)
 
     findings.append(_check_state_sensitivity(fixture, state_probe, steps))
+    if findings[-1].failed:
+        return Diagnosis(findings)
+
+    findings.append(_check_parameter_sensitivity(fixture, parameter_probe,
+                                                 steps))
     if findings[-1].failed:
         return Diagnosis(findings)
 
@@ -669,6 +909,11 @@ def diagnose(fixture, *, assemble: Optional[Callable] = None,
 
     findings.append(_check_residual_assembly(fixture, assemble, reference,
                                              gauss, assembly_tolerance))
+    if findings[-1].failed:
+        return Diagnosis(findings)
+
+    findings.append(_check_element_jacobian(fixture, coordinates, gauss,
+                                            stiffness, 1e-6))
     if findings[-1].failed:
         return Diagnosis(findings)
 
