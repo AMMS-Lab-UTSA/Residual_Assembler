@@ -21,3 +21,6 @@ abq_val_log.txt
 *.o
 *.mod
 *.so
+
+# Scratch workspace written by the optional Streamlit GUI (residual_core/app).
+resasm_gui_workspace/

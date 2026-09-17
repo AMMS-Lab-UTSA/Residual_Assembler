@@ -13,6 +13,11 @@ dependencies = ["numpy"]
 
 [project.optional-dependencies]
 yaml = ["PyYAML"]
+# Optional Streamlit front end (residual_core/app, launched by scripts/app.py).
+# It is an extra, not a dependency: the GUI only builds argv lists and calls
+# residual_core.ui.cli.main in-process, so the CLI and the Python API must stay
+# installable without pulling a web framework in.
+gui = ["streamlit>=1.30"]
 # The companion product. Residual_Assembler and UMAT-OTI are separate packages
 # connected by a versioned contract, so the bridge tests need umat_oti present.
 # The pin is a commit, not a branch: a moving branch would make this repository's
