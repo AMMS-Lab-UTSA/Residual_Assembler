@@ -148,6 +148,24 @@ inspector), `resasm doctor <model>` (per-mode readiness, and
 `--write-config-template` to emit a config), `resasm backends` (what every backend
 declares), `resasm modes`, `resasm template --formulation <name>`.
 
+### The GUI
+
+There is an optional Streamlit front end over the same commands:
+
+```
+pip install -e ".[gui]"
+streamlit run scripts/app.py
+```
+
+Six tabs — Model, Requirements, Assemble, Sensitivity, Job, Backends — mirroring
+the CLI one-for-one. It is deliberately thin: every button builds an argv list
+and calls `residual_core.ui.cli.main` in-process, then shows the command it ran,
+the real exit code, and the captured output verbatim. It cannot show you a
+number the CLI would refuse to produce, and it cannot drift from the CLI as the
+CLI changes (`tests/framework/test_gui_is_a_thin_cli_front_end.py` pins that).
+The interactive `resasm init` wizard stays CLI-only, because a web page has no
+terminal to answer its prompts; use a template from the Job tab instead.
+
 ## The three paths
 
 ### Path A — assembly from ingredients (the main path)
@@ -256,7 +274,8 @@ pip install -e .            # exposes the `resasm` command
 ```
 
 Requires Python ≥ 3.9 and numpy. `PyYAML` is optional (`pip install -e .[yaml]`); a
-minimal YAML reader is bundled.
+minimal YAML reader is bundled. The Streamlit GUI is also optional
+(`pip install -e ".[gui]"`); nothing in `residual_core` imports it.
 
 Path A (assembly, inspection, verification) needs nothing else from PyPI, but
 the offline test suite reads one **external source submodule**. A fresh clone
