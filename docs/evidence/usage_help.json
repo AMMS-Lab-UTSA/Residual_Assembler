@@ -294,15 +294,15 @@
       "seconds": 0.21474947803653777
     },
     {
-      "name": "scripts/reproduce_imqcam_pipeline.py --help",
+      "name": "scripts/reproduce_connected_pipeline.py --help",
       "argv": [
         "/home/ammslab3/softwarex_work/.venv/bin/python",
-        "scripts/reproduce_imqcam_pipeline.py",
+        "scripts/reproduce_connected_pipeline.py",
         "--help"
       ],
       "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
       "returncode": 0,
-      "stdout": "usage: reproduce_imqcam_pipeline.py [-h] --out OUT\n                                    [--provider-repo PROVIDER_REPO]\n                                    [--model MODEL] [--skip-abaqus]\n\nRebuild Program 1, run Program 2, and independently verify a bounded J2 slice.\n\noptions:\n  -h, --help            show this help message and exit\n  --out OUT             fresh output directory; existing paths are refused\n  --provider-repo PROVIDER_REPO\n  --model MODEL\n  --skip-abaqus         use genuine archived elastic Abaqus exports; J2 is a\n                        synthetic converged FE solve\n",
+      "stdout": "usage: reproduce_connected_pipeline.py [-h] --out OUT\n                                    [--provider-repo PROVIDER_REPO]\n                                    [--model MODEL] [--skip-abaqus]\n\nRebuild Program 1, run Program 2, and independently verify a bounded J2 slice.\n\noptions:\n  -h, --help            show this help message and exit\n  --out OUT             fresh output directory; existing paths are refused\n  --provider-repo PROVIDER_REPO\n  --model MODEL\n  --skip-abaqus         use genuine archived elastic Abaqus exports; J2 is a\n                        synthetic converged FE solve\n",
       "stderr": "",
       "seconds": 0.06833478499902412
     },

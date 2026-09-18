@@ -6,7 +6,7 @@ public interfaces may still change.
 
 ## [Unreleased]
 
-### IMQCAM integration (2026-09-18)
+### Connected workflow (2026-09-18)
 - **`resasm history`**: total-history sensitivities of small-strain C3D8
   analyses for any UMAT-OTI provider (entry point `UMAT_OTI_EVAL_TOTAL`),
   with prescribed displacements, many increments, sparse assembly, von Mises
@@ -14,7 +14,7 @@ public interfaces may still change.
   `--verify tangent|fd`. `resasm request` hands every readable model outside
   its bounded scope to it and says so. Both presentation cantilevers (J2,
   1,536 C3D8 / 40 increments; FCC, 384 C3D8 / 25 increments) run through it;
-  see `docs/REPLAY_HISTORY.md` and `examples/presentation_cantilevers/`.
+  see `docs/REPLAY_HISTORY.md` and `examples/cantilevers/`.
 - **Independent checks** of those sensitivities: whole-model central
   differences of the ORIGINAL UMAT, Abaqus reruns, and Euler's homogeneity
   identity at every increment (`tests/replay_history/test_history_example.py`).
@@ -22,10 +22,12 @@ public interfaces may still change.
   `Mapping.json`, chooses outputs and region, and shows full-field results.
 - **Clean-install gate** (`scripts/clean_install_gate.py`) runs on any clean
   branch (`--branch`) and adds the full-size J2 cantilever (`--cantilever`).
-- **Presentation claims** reproduced claim by claim (`presentation/run_all.py`,
-  `docs/PRESENTATION_CLAIMS.md`), including what did not reproduce.
+- **Presentation claims** reproduced claim by claim (`verification/run_all.py`,
+  `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
 - Shared transform generation re-frozen at `da1f183708c19072` with the two
   current fixtures regenerated in Abaqus (`docs/evidence/final_refreeze.md`).
+- The `bridge` extra pins UMAT-OTI `4822108`; CI checks the companion out at
+  that commit beside this repository (`docs/COMPATIBILITY.md`).
 
 ### Added
 - **Fixture provenance gate.** `verified_fixture.load()` refuses a fixture

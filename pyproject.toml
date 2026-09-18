@@ -25,7 +25,7 @@ gui = ["streamlit>=1.30"]
 # CI result depend on when it ran. Bump it deliberately when the contract moves,
 # and record the pair in the compatibility matrix.
 bridge = [
-	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@5fb7b434fc12d0b2cc0ebb101b70cdd9754fbcce",
+	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@4822108cb977160f5b66d46d50753bb9ad41e848",
 ]
 
 [project.scripts]
@@ -65,5 +65,5 @@ markers = [
 	"abaqus: needs a licensed Abaqus installation; cannot run in public CI",
 	"arc: needs the documented HPC environment and its scheduler",
 	"publication: regenerates or checks a published artefact",
-	"gui: an IMQCAM GUI workflow driven in a headless browser; deselected unless selected with -m gui (tests/gui/conftest.py)",
+	"gui: a GUI workflow driven in a headless browser; deselected unless selected with -m gui (tests/gui/conftest.py)",
 ]

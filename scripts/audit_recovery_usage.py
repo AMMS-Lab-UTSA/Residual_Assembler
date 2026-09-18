@@ -104,7 +104,7 @@ def main(argv=None):
             run("UMAT", "umat-oti " + subcommand + " --help", [python, "-m", "umat_oti.cli", subcommand, "--help"])
         run("UMAT", "provider build --help", [python, "-m", "umat_oti.provider", "build", "--help"])
         run("UMAT", "internal Jacobian --help", [python, "examples/verify_internal_jacobian.py", "--help"])
-        for script in ("scripts/reproduce_imqcam_pipeline.py", "scripts/reproduce_presentation_request.py",
+        for script in ("scripts/reproduce_connected_pipeline.py", "scripts/reproduce_presentation_request.py",
                        "scripts/check_presentation_browser.py", "scripts/clean_install_gate.py",
                        "examples/finite_strain_c3d8/benchmark.py"):
             run("RA", script + " --help", [python, script, "--help"])
@@ -154,7 +154,7 @@ def main(argv=None):
                            and np.allclose(np.max(np.abs(residual)), 25, atol=1e-10, rtol=0))}
         save()
         assert record["verification"]["passed"]
-        record = run("RA", "R-X4", [python, "scripts/reproduce_imqcam_pipeline.py", "--skip-abaqus",
+        record = run("RA", "R-X4", [python, "scripts/reproduce_connected_pipeline.py", "--skip-abaqus",
                  "--provider-repo", umat, "--imports", args.imports, "--out", work / "R-X4"])
         proof("RA", record, work / "R-X4/private/manifest.json")
         assert record["proof"]["data"]["passed"]

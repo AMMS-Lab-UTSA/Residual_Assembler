@@ -3,10 +3,10 @@
 ## Scope and status
 
 Checkout: `/home/ammslab3/softwarex_work/imq-ra-recovery`.
-Branch: `integration/imqcam-recovery-2026-09-18`.
+Branch: `integration/recovery-2026-09-18`.
 Read the shared `imq_BRIEF.md` and `docs/BRANCH_IMPLEMENTATION_AUDIT.md`.
 No agents, commits, pushes, branch changes, Abaqus jobs, network jobs, or
-whole-corpus runs. Original Claude worktrees were not changed. Other workers'
+whole-corpus runs. Original development worktrees were not changed. Other workers'
 changes in `resasm_user/__init__.py`, `residual_core/ui/cli.py`, and
 `tests/framework/test_user_layer.py` were preserved; none was edited by W1.
 No replay, IO, UI, report implementation, or packaging files were edited.

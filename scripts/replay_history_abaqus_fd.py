@@ -11,7 +11,7 @@ one at a time; success is judged from the .sta file; each ODB is exported
 with ``residual_core/replay/odb_export_npz.py`` and then deleted.
 
     python scripts/replay_history_abaqus_fd.py --deck Analysis.inp --umat umat.for \\
-        --contract umat_m3_j2_oti.json --steps 5e-3,2e-3,1e-3 --tight --prefix claudeC_j2cant \\
+        --contract umat_m3_j2_oti.json --steps 5e-3,2e-3,1e-3 --tight --prefix j2cant \\
         --work /scratch/j2_fd_tight
 
 Writes ``manifest.tsv`` (job, parameter, sign, step, value, status, seconds).
