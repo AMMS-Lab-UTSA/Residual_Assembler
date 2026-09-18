@@ -18,7 +18,7 @@ def node_id(i, j, k, nx, ny):
     return 1 + i + (nx + 1) * (j + (ny + 1) * k)
 
 
-def deck(n, push, steps, props, depvar, cload=None, controls=False):
+def deck(n, push, steps, props, depvar, cload=None, controls=False, tight=False):
     nx, ny, nz = n
     lines = ["*Heading", "history replay beam %dx%dx%d C3D8, %d steps" % (nx, ny, nz, steps), "*Node"]
     for k in range(nz + 1):
@@ -53,6 +53,11 @@ def deck(n, push, steps, props, depvar, cload=None, controls=False):
               "%r, 1.0" % (1.0 / steps)]
     if controls:
         lines += ["*Controls, parameters=time incrementation", "50, 60, , 400, , , , , , "]
+    if tight:
+        # force residual R_n = 1e-9 and correction C_n = 1e-8 of the time-averaged
+        # values (Abaqus defaults 5e-3 and 1e-2): equilibria converged far below
+        # the single-precision resolution of the ODB, for finite differences
+        lines += ["*Controls, parameters=field, field=global", "1e-9, 1e-8"]
     if cload is None:
         lines += ["*Boundary", "TIP, 2, 2, %r" % (-push)]
     else:
@@ -71,11 +76,12 @@ def main(argv=None):
     ap.add_argument("--props", required=True)
     ap.add_argument("--depvar", type=int, required=True)
     ap.add_argument("--controls", action="store_true", help="raise Abaqus iteration limits")
+    ap.add_argument("--tight", action="store_true", help="tight Abaqus force/correction tolerances")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     props = [float(x) for x in a.props.split(",")]
     with open(a.out, "w") as stream:
-        stream.write(deck(a.n, a.push, a.steps, props, a.depvar, a.cload, a.controls))
+        stream.write(deck(a.n, a.push, a.steps, props, a.depvar, a.cload, a.controls, a.tight))
 
 
 if __name__ == "__main__":
