@@ -278,8 +278,17 @@ def bounded_scope_reason(args):
     try:
         model = read_model(Path(args.model))
         mapping_for(Path(args.material), getattr(args, "mapping", None))
-    except (ValueError, OSError, KeyError) as error:
-        return str(error)
+    except (ValueError, OSError, KeyError):
+        # Inputs the bounded engine cannot read are its to diagnose: it owns
+        # the presentation interface's categorised, private-by-default error
+        # reports, so an unreadable deck or a missing mapping is reported by it
+        # rather than being forwarded to the history engine as a scope reason.
+        try:
+            read_model(Path(args.model))
+        except (ValueError, OSError, KeyError) as error:
+            if "unsupported" in str(error).lower() and Path(args.model).is_file():
+                return str(error)
+        return None
     if any(boundary.value != 0 for boundary in model.boundaries):
         return "nonzero prescribed displacements"
     if not model.cloads:
