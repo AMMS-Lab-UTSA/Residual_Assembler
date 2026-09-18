@@ -38,7 +38,10 @@ def repository_info(path, patterns):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True, help="fresh output directory; existing paths are refused")
-    parser.add_argument("--provider-repo", type=Path, default=ROOT.parent / "imq-umat-recovery")
+    parser.add_argument("--provider-repo", type=Path,
+                        default=Path(os.environ.get("UMAT_OTI_REPO", ROOT.parent / "UMAT_source_transformation")))
+    parser.add_argument("--imports", choices=("installed", "environment"), default="installed",
+                        help="installed isolates backend imports; environment uses the caller's configured Python paths")
     parser.add_argument("--model", type=Path, default=ROOT / "examples/imqcam_j2_cantilever/model.json")
     parser.add_argument("--skip-abaqus", action="store_true", help="use genuine archived elastic Abaqus exports; J2 is a synthetic converged FE solve")
     args = parser.parse_args(argv)
@@ -55,9 +58,9 @@ def main(argv=None):
                 "abaqus_execution": "not_run", "j2_primal_origin": "synthetic_converged_fe"}
 
     def command(arguments, environment):
-        entry = {"argv": [str(value) for value in arguments], "cwd": str(ROOT)}
+        entry = {"argv": [str(value) for value in arguments], "cwd": str(private)}
         manifest["commands"].append(entry)
-        completed = subprocess.run(entry["argv"], cwd=ROOT, env=environment,
+        completed = subprocess.run(entry["argv"], cwd=private, env=environment,
                                    capture_output=True, text=True)
         entry["returncode"] = completed.returncode
         log = private / f"command-{len(manifest['commands'])}.log"
@@ -72,14 +75,19 @@ def main(argv=None):
             raise ValueError("This bounded reproducer does not launch Abaqus. Pass --skip-abaqus to verify the genuine archived elastic export; it does not claim J2 Abaqus validation.")
         provider = args.provider_repo.resolve(strict=True)
         model_path = args.model.resolve(strict=True)
-        if ROOT != Path.cwd().resolve():
-            raise ValueError(f"run with explicit recovery cwd: {ROOT}")
         if shutil.which("gfortran") is None:
             raise ValueError("gfortran is required; no prebuilt-object fallback")
         environment = os.environ.copy()
-        environment["PYTHONPATH"] = os.pathsep.join([str(ROOT), str(provider / "src"),
-                                                      environment.get("PYTHONPATH", "")])
+        python = [sys.executable]
+        if args.imports == "installed":
+            python.append("-I")
+            environment.pop("PYTHONPATH", None)
+            environment.pop("PYTHONHOME", None)
         environment["UMAT_OTI_REPO"] = str(provider)
+        manifest["imports"] = args.imports
+        manifest["backend_modules"] = json.loads(command(python + ["-c",
+            "import json,residual_core,umat_oti; print(json.dumps({"
+            "'residual_core':residual_core.__file__,'umat_oti':umat_oti.__file__}))"], environment))
         manifest["environment"] = {key: environment.get(key) for key in
                        ("PYTHONPATH", "UMAT_OTI_REPO", "PYOTI_PATH", "OTILIB_ROOT", "RUN_OTILIB_TESTS", "FC")}
         manifest["python"] = {"executable": sys.executable, "version": sys.version, "platform": platform.platform()}
@@ -91,7 +99,7 @@ def main(argv=None):
             "umat_oti": repository_info(provider, ["src/umat_oti/**/*.py", "parameter_sensitivity/models/m3_j2/*"])}
         manifest["model"] = {"path": str(model_path), "sha256": digest(model_path)}
         provider_contract = provider / "parameter_sensitivity/models/m3_j2/contract_v2.json"
-        built = json.loads(command([sys.executable, "-m", "umat_oti.provider", "build", provider_contract,
+        built = json.loads(command(python + ["-m", "umat_oti.provider", "build", provider_contract,
                                     "--out", private / "provider"], environment))
         contract = json.loads(Path(built["contract"]).read_text())
         manifest["provider"] = {"object_sha256": digest(built["object"]),
@@ -100,13 +108,14 @@ def main(argv=None):
                                 "abi": contract["symbols"], "march": contract["march"]}
         job = private / "solve"
         common = ["--object", built["object"], "--contract", built["contract"]]
-        command([sys.executable, "-m", "residual_core.ui.cli", "replay", model_path, *common,
+        command(python + ["-m", "residual_core.ui.cli", "replay", model_path, *common,
                  "--solve", "--verify", "--out", job], environment)
-        command([sys.executable, "-m", "residual_core.ui.cli", "replay", job / "private/record.json",
+        command(python + ["-m", "residual_core.ui.cli", "replay", job / "private/record.json",
                  *common, "--out", private / "replay"], environment)
-        sys.path.insert(0, str(ROOT))
-        from residual_core.replay.verification import verify_abaqus_fixture
-        fixture_report = verify_abaqus_fixture(ROOT / "tests/abaqus_derivative_export")
+        fixture_report = json.loads(command(python + ["-c",
+            "import json,sys; from residual_core.replay.verification import verify_abaqus_fixture; "
+            "print(json.dumps(verify_abaqus_fixture(sys.argv[1])))",
+            ROOT / "tests/abaqus_derivative_export"], environment))
         manifest["abaqus_fixture"] = fixture_report
         summary = json.loads((job / "public/summary.json").read_text())
         result = json.loads((job / "private/result.json").read_text())

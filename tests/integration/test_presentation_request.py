@@ -139,7 +139,8 @@ def compiled(tmp_path_factory):
     from residual_core.replay.record import ReplayRecord
     from residual_core.replay.presentation_inputs import read_model, target_nodes
     directory = tmp_path_factory.mktemp("presentation_provider")
-    built = build_provider(ROOT.parent / "imq-umat-recovery/parameter_sensitivity/models/m3_j2/contract_v2.json", directory)
+    from repository_paths import umat_repo_root
+    built = build_provider(umat_repo_root() / "parameter_sensitivity/models/m3_j2/contract_v2.json", directory)
     contract = json.loads(Path(built["contract"]).read_text())
     material = PathMaterial(built["object"], contract, str(directory / "link"))
     model = read_model(EXAMPLE / "Analysis.inp")

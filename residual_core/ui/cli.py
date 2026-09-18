@@ -336,10 +336,13 @@ _TEMPLATES = {
 
 
 def _templates_root():
-    """Locate the templates/ directory (repo root; works for `pip install -e .`)."""
+    """Locate installed template data or the source checkout templates."""
+    import sysconfig
+
     here = os.path.dirname(os.path.abspath(__file__))            # residual_core/ui
     root = os.path.dirname(os.path.dirname(here))                # repo root
-    for cand in (os.path.join(root, "templates"),
+    for cand in (os.path.join(sysconfig.get_path("data"), "share", "residual-assembler", "templates"),
+                 os.path.join(root, "templates"),
                  os.path.join(os.getcwd(), "templates")):
         if os.path.isdir(cand):
             return cand
@@ -354,7 +357,7 @@ def _cmd_init(args):
         root = _templates_root()
         if root is None:
             print("ERROR: could not locate the templates/ directory.\n"
-                  "Run from a checkout, or `pip install -e .` from the repo root.",
+                  "Reinstall residual-assembler with its template data.",
                   file=sys.stderr)
             return 2
         src = os.path.join(root, _TEMPLATES[args.template])

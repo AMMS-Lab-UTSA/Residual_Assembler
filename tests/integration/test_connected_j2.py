@@ -5,10 +5,11 @@ import numpy as np
 import pytest
 
 from residual_core.replay.path_material import PathMaterial
+from repository_paths import umat_repo_root
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PROVIDER = ROOT.parent / "imq-umat-recovery"
+PROVIDER = umat_repo_root()
 CONTRACT = PROVIDER / "parameter_sensitivity/models/m3_j2/contract_v2.json"
 PROPS = np.array([210000., 0.3, 250., 2000.])
 PATH = np.array([[0.0002, 0, 0, 0, 0, 0],
@@ -217,10 +218,13 @@ def test_reproducer_fresh_build_and_nonzero_failure(tmp_path):
     script = ROOT / "scripts/reproduce_imqcam_pipeline.py"
     output = tmp_path / "reproduction"
     command = [sys.executable, str(script), "--skip-abaqus", "--provider-repo", str(PROVIDER), "--out", str(output)]
-    completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    completed = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     manifest = json.loads((output / "private/manifest.json").read_text())
     assert manifest["passed"]
+    assert manifest["imports"] == "installed"
+    assert all("site-packages" in path for path in manifest["backend_modules"].values())
+    assert manifest["environment"]["PYTHONPATH"] is None
     assert all(len(repo["commit"]) == 40 for repo in manifest["repositories"].values())
     assert len(manifest["provider"]["object_sha256"]) == 64
     assert manifest["abaqus_fixture"]["passed"]

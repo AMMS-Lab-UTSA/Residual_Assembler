@@ -28,7 +28,8 @@ def prepare(work):
     work.mkdir(parents=True)
     developer = work / "developer"
     developer.mkdir()
-    source = ROOT.parent / "imq-umat-recovery/parameter_sensitivity/models/m3_j2/umat.for"
+    provider = Path(os.environ.get("UMAT_OTI_REPO", ROOT.parent / "UMAT_source_transformation")).expanduser().resolve()
+    source = provider / "parameter_sensitivity/models/m3_j2/umat.for"
     built = build_provider(source.with_name("contract_v2.json"), developer / "provider")
     job_directory = developer / JOB
     job_directory.mkdir()
@@ -75,9 +76,11 @@ print("COLLABORATOR INPUTS", sorted(path.name for path in Path.cwd().iterdir() i
 from residual_core.ui.cli import main
 sys.exit(main(sys.argv[1:]))
 '''
-    command = [sys.executable, "-c", code, "request", "--model", "Analysis.inp", "--odb", "Analysis.odb",
+    command = [sys.executable, "-I", "-c", code, "request", "--model", "Analysis.inp", "--odb", "Analysis.odb",
                "--material", "OTI_UMAT.obj", "--request", "sensitivity_request.json", "--out", output]
-    environment = dict(os.environ, PYTHONPATH=str(ROOT) + ":" + str(ROOT.parent / "imq-umat-recovery/src"))
+    environment = dict(os.environ)
+    environment.pop("PYTHONPATH", None)
+    environment.pop("PYTHONHOME", None)
     completed = subprocess.run(command, cwd=collaborator, env=environment, capture_output=True, text=True)
     (work / "collaborator_invocation.log").write_text(completed.stdout + completed.stderr)
     (work / "collaborator_command.json").write_text(json.dumps(command, indent=2) + "\n")
