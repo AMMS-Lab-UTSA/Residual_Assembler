@@ -511,6 +511,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
     from .cmd_replay import register; register(sub)
     from .cmd_request import register; register(sub)
+    from .cmd_history import register; register(sub)
 
     s = sub.add_parser("inspect", help="model inspection summary")
     s.add_argument("model")
