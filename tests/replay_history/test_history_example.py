@@ -44,6 +44,7 @@ def test_public_private_outputs_and_report(replayed):
     assert {p.name for p in out.iterdir()} == {"sensitivity_results.json", "sensitivity_tables.csv",
                                                "run_report.txt", "sensitivity_shares.csv", "private"}
     report = (out / "run_report.txt").read_text()
+    assert "Command executed: yes: resasm history --model " in report
     for line in ("Status: executed successfully", "Equilibrium passed: yes", "Tangent available: yes",
                  "Derivative calculated: yes", "Unsupported feature detected: none",
                  "Abaqus comparison available: yes (primal)", "Public and private outputs separated: yes"):

@@ -58,7 +58,7 @@ document): new modules only, Copilot's `connected.py`, `presentation*.py`,
   declared in `pyproject.toml`.
 - `docs/REPLAY_HISTORY.md` (usage, mathematics, tolerances, the exact
   `cmd_request.py` edit for routing).
-- `tests/replay_history/` (32 tests), `examples/replay_history/` (generator,
+- `tests/replay_history/` (48 tests), `examples/replay_history/` (generator,
   regeneration script and a committed 138 KB Abaqus example),
   `scripts/replay_history_cantilevers.py`, `replay_history_abaqus_fd.py`,
   `replay_history_fd_fullsize.py` (evidence drivers).
@@ -321,9 +321,19 @@ a 6.4, C44 3.3, gd0 2.5, m 1.9. (The presentation prints no FCC share numbers.)
 - UMAT: `tests/test_provider_eval_total.py` 16 passed; with the existing
   provider tests 34 passed (`tests/test_provider_recovery.py` unchanged).
   Measured EVAL_TOTAL vs ORIGINAL-UMAT FD: <= 8.4e-10 (J2, FCC at a
-  slip-hardening point, damage fixture). Full UMAT suite: UMAT_SUITE_PLACEHOLDER
-- RA: `tests/replay_history` 31 offline tests passed (provider 6, engine 16,
-  example 9) plus 1 `abaqus`-marked live test passed
+  slip-hardening point, damage fixture). Full UMAT suite on this branch:
+  3341 passed, 125 skipped, 3 failed (516 s). Failures: (1)
+  `test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
+  - caused by this branch: the provider code is part of the transform
+  fingerprint (6aa20d22e37f14c9 -> d8a3d2445fda0b26) and
+  `schemas/transform_generation.json` is only changed at a lead re-freeze;
+  (2) `test_repository_standards.py::test_repository_standards_audit_passes`
+  and (3) `::test_documented_commands_and_links_resolve` - pre-existing in the
+  snapshot (absolute home paths and RA-path references in `docs/PROVIDER.md`,
+  `docs/evidence/recovery_W3.md`, `docs/evidence/recovery_install.md`, files
+  not changed here).
+- RA: `tests/replay_history` 47 offline tests passed (provider 6, engine 16,
+  outputs 16, example 9) plus 1 `abaqus`-marked live test passed
   (`RESASM_ABAQUS_JOB_PREFIX=claudeC_`, 21.6 s). Full offline RA suite
   (`-m "not abaqus and not arc and not network"`): 324 passed, 19 skipped,
   56 failed, 5 errors; all 61 failures/errors are the snapshot's pre-existing

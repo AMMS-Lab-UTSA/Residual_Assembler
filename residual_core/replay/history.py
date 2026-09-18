@@ -324,12 +324,20 @@ def run_history(engine: HistoryEngine, *, fields: Optional[RecordedFields] = Non
                 step = spla.splu(matrix).solve(-residual[engine.free])
                 timings["factorisation_and_solve"] += _time.perf_counter() - tic
                 baseline = np.linalg.norm(residual[engine.free])
-                for halving in range(30):
+                for halving in range(12):
                     trial = u.copy()
                     trial[engine.free] += 0.5 ** halving * step
                     trial_out, trial_residual, trial_stiffness = evaluate(trial)
-                    if np.linalg.norm(trial_residual[engine.free]) < baseline or halving == 29:
+                    if np.linalg.norm(trial_residual[engine.free]) < baseline:
                         break
+                else:
+                    # no step along the Newton direction lowers the residual: the model
+                    # has reached its roundoff floor (or the tangent is wrong); stop
+                    # instead of iterating on noise
+                    raise ReplayMismatch(
+                        "increment %d: Newton stagnated at max|R_free| = %.3e (requested %.1e x %.3e = "
+                        "%.3e); a tolerance below this model's roundoff floor cannot be met"
+                        % (number, np.abs(residual[engine.free]).max(), rtol, scale, rtol * scale))
                 if not np.all(np.isfinite(trial_residual)):
                     raise ReplayMismatch("increment %d: Newton reached non-finite stresses" % number)
                 u, out, residual, stiffness = trial, trial_out, trial_residual, trial_stiffness
