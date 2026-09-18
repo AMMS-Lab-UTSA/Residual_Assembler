@@ -21,8 +21,8 @@ the load average is recorded beside them.
 
 Abaqus: one job at a time, every job named `claudeP_*`, judged by
 "THE ANALYSIS HAS COMPLETED SUCCESSFULLY" in the .sta. Jobs run: claim 3, 26 per
-run (nominal, 24 perturbed, 4×4×4), two runs; claim 4, 2 per case (19 cases + 4
-documented variants) over two full runs and the NKH variant reruns.
+run (nominal, 24 perturbed, 4×4×4), two runs; claim 4, 2 per case (19 cases + the
+labelled variants) over three full runs and the NKH variant reruns.
 
 ## Recovered provenance of each slide
 
@@ -63,7 +63,9 @@ RA (`claude-ra-P`):
 | `docs/PRESENTATION_CLAIMS.md`, `docs/evidence/claude_P.md` | documentation |
 
 UMAT (`claude-umat-P`): `docs/PRESENTATION_CLAIMS.md`,
-`tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py`.
+`tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py`,
+`tests/test_a_data_constant_in_the_promote_list_stays_real.py`,
+`tests/test_a_contract_resolves_its_helper_closure.py`.
 
 ## Edits to existing files (future merge points)
 
@@ -73,7 +75,12 @@ UMAT (`claude-umat-P`): `docs/PRESENTATION_CLAIMS.md`,
 | UMAT | `src/umat_oti/transform/source_transform.py` | new `_logical_line_prefix`, `_statement_label`, `_restore_statement_label`; the three logical-line helpers use the prefix; the branch and assignment rewrite sites restore the label | a labelled IF reading a promoted variable (`  802 IF (IFLAG.EQ.1) THEN`) lost its label and started in the label field: UMAT_PCL, PCLI, PCLI_R, PCLK did not compile in Abaqus |
 | UMAT | `src/umat_oti/fortran/regions.py` | in `_dependency_summary`, inputs of DDSDDE writes that precede the first stress use of DDSDDE count as stress inputs | ELAM/EBULK3 were classed tangent-only and skipped while the kept predictor block read them: UMAT_VPDCL and UMAT_NKH_1.02 returned a stress off by a hydrostatic offset |
 
-Both UMAT edits move the transform fingerprint. The lead owns
+| UMAT | `src/umat_oti/transform/source_transform.py` (`1cd2e58`) | in `_roles_with_stress_path_promotions`, a DATA-initialised name that nothing assigns is moved from `promote` to `constant` (10 lines) | UMAT_HIN's committed contract promotes ONE, TWO, ZERO (DATA constants of its helpers) and the DATA blocker refused the file |
+| UMAT | `src/umat_oti/services/transformation.py` (`0b075b4`) | new `_payload_with_resolved_closure`: a compact contract may declare `dependency_roots`; the closure is resolved, written entry-first to `<out>/<stem>_resolved.<ext>` and transformed; recorded as `dependency_closure` in the summary | UMAT_PCO.for calls helpers it does not define |
+| UMAT | `benchmarks/UMAT_PCO.json` (`0b075b4`) | `"dependency_roots": ["../UMATs/UMATs/ICP"]` | as above |
+| UMAT | `tools/run_completed_json_batch.py` (`0b075b4`) | the original UMAT of the paired validation is the resolved closure when the summary has one (one statement) | the original needs the helpers to link in Abaqus |
+
+All UMAT transformer edits move the transform fingerprint. The lead owns
 `transform_generation.json`; until it is re-frozen,
 `tests/test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
 fails (it passes on the snapshot without these edits). Copilot edits the same two
@@ -88,7 +95,14 @@ files in `imq-umat-recovery`; the edits are small and self-contained.
   contract declares 6.
 * UMAT_PCLI, PCLI_R: plane-strain sources (shear stiffness for component 4 only);
   at NTENS = 6 the probe returns NaN state.
-* UMAT_PCO calls helpers it does not define; its closure resolves.
+* UMAT_PCO calls helpers it does not define; its family defines them in sibling
+  files and the committed contract now names that root (fixed, above).
+* Licence: `UMATs/UMATs/ICP/*.for` are, after line-ending normalisation,
+  byte-identical to `UMATS/*.for` of the MIT-licensed
+  `https://github.com/jgomezc1/ABAQUS-US` ("Copyright (c) 2015 Juan Gomez",
+  Universidad EAFIT); `THIRD_PARTY_NOTICES.md` describes them as the authors' own
+  under GPL-3.0-only. MIT allows their inclusion with its notice kept; the notice
+  text is left for the lead.
 * Hand-coded internal Jacobians wrong when damage is active (confirmed by FD, OTI
   agrees with FD): NKH ANP1P/BNP1P (1.9e-4), VPDCO and VPDCL_R GDIA(3,3) (6.7e-5)
   and FJAC (2.6e-3).
@@ -102,7 +116,9 @@ files in `imq-umat-recovery`; the edits are small and self-contained.
 | RA `tests/presentation`, offline incl. `slow` | `pytest -q tests/presentation -m "not abaqus"` | 7 passed (4 min 53 s) |
 | RA `tests/presentation`, Abaqus | `pytest -q tests/presentation -m abaqus` | 2 passed (claim-3 nominal job, claim-4 `elastic` pair) |
 | UMAT new regression file | `pytest -q tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py` | 4 passed; the same 4 fail without the two fixes |
-| UMAT offline suite, with the fixes | `pytest -q -m "not abaqus and not corpus_pass and not network and not browser and not arc"` | 3315 passed, 3 failed, 125 skipped: `test_the_recorded_generation_is_this_worktrees_actual_transform` (the fixes move the fingerprint; re-freeze reserved to the lead) and two `test_repository_standards.py` checks that fail on files this agent did not touch (absolute home paths and stale references in `docs/PROVIDER.md`, `docs/evidence/recovery_*.md`) |
+| UMAT new regression files (HIN, PCO) | `pytest -q tests/test_a_data_constant_in_the_promote_list_stays_real.py tests/test_a_contract_resolves_its_helper_closure.py` | 8 passed; 3 of the 4 DATA tests fail without the change (the fourth checks the assigned case stays refused) |
+| UMAT offline suite, with all four fixes | same command | 3327 passed, 3 failed, 125 skipped (same three as below) |
+| UMAT offline suite, with the first two fixes | `pytest -q -m "not abaqus and not corpus_pass and not network and not browser and not arc"` | 3315 passed, 3 failed, 125 skipped: `test_the_recorded_generation_is_this_worktrees_actual_transform` (the fixes move the fingerprint; re-freeze reserved to the lead) and two `test_repository_standards.py` checks that fail on files this agent did not touch (absolute home paths and stale references in `docs/PROVIDER.md`, `docs/evidence/recovery_*.md`) |
 | RA offline suite | `pytest -q -m "not abaqus and not arc and not network" --continue-on-collection-errors` | 299 passed, 57 failed, 19 skipped, 5 errors; 56 failures and the 5 errors are `FixtureError` (the verified fixtures are frozen at transform fingerprint `94a92c01814f107a`, `schemas/transform_generation.json` of the snapshot says `6aa20d22e37f14c9`), present in the snapshot and unrelated to this work; the remaining failure was the claim-5 test's FD threshold, fixed (noise-aware plateau) and passing in the presentation run above. Without `--continue-on-collection-errors` the suite stops at the collection error of `tests/framework/test_a_verified_deck_drives_the_global_assembly.py` (same cause) |
 
 ## Measured values of the recorded run
@@ -112,6 +128,7 @@ files in `imq-umat-recovery`; the edits are small and self-contained.
 worst 1.56e-7; claim 2, OTI vs hand-coded 7.1e-15, FD/OTI error 4.5e5–1.7e8, FD
 time 6.0× OTI with a known step (41.9× with the step search); claim 3, OTI vs
 chain rule 2.9e-16, mesh 1.0e-14, Abaqus 1.1e-15, FD of Abaqus 6.2e-11, HYPAD
-9.2–10.0× plain vs FD 13×; claim 4, 18/18 with three documented variants (12
-exact, 6 within tolerance), 15/16 on the committed contracts; claim 5, 21 pairs,
+9.2–10.0× plain vs FD 13×; claim 4, 17 of 18 slide cases pass from the committed contracts (12
+exact, 5 within tolerance), 18/18 with NKH's labelled source-defect variant (12
+exact, 6 within tolerance); claim 5, 21 pairs,
 OTI = FD everywhere, hand-coded: 5 exact, 10 within 1e-5, 6 wrong.
