@@ -47,6 +47,10 @@ uploads and local paths. Advanced contains the optional mapping selector.
 Downloads have the three exact slide names. It calls the existing CLI bridge:
 `cli.main -> cmd_request -> presentation.run_request`, the same application
 service as the CLI. Legacy functionality remains under **Advanced Replay**.
+The screen also has the slide-18 widgets: parameter ticks read from Mapping.json,
+an output and a region. When no request file is given, they write
+`sensitivity_request.json`. The button is **Solve**, and a full-field table
+follows the run. See [GUI.md](GUI.md).
 
 ## Slide-To-Implementation Map
 

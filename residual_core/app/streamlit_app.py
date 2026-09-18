@@ -1112,6 +1112,8 @@ def _tab_request() -> None:
     import json
     import tempfile
 
+    from residual_core.app import request_screen
+
     st.header("Residual Sensitivity Solver")
     inputs = {}
     uploads = {}
@@ -1124,14 +1126,20 @@ def _tab_request() -> None:
             uploads[key] = st.file_uploader(label, type=[extension], key="request_upload_" + key)
         with right:
             inputs[key] = st.text_input(label + " path", key="request_path_" + key)
+    generated = request_screen.render_outputs_and_parameters(
+        st, inputs["material"], st.session_state.get("request_mapping"), inputs["model"],
+        mapping_upload=st.session_state.get("request_upload_mapping"),
+        request_supplied=bool(inputs["request"] or uploads["request"] is not None))
     output = st.text_input("Output directory", str(DEFAULT_WORKDIR / "request"), key="request_output")
     with st.expander("Advanced"):
         mapping = st.text_input("Mapping.json path (optional with adjacent generated sidecar)", key="request_mapping")
         mapping_upload = st.file_uploader("Mapping.json", type=["json"], key="request_upload_mapping")
         abaqus = st.text_input("Abaqus executable", "abaqus", key="request_abaqus")
         validate = st.checkbox("Independent finite-difference validation", value=False, key="request_validate")
-    if st.button("Run sensitivity request", key="btn_request_run",
-                 disabled=not output or not all(inputs[key] or uploads[key] is not None for key in inputs)):
+    if st.button("Solve", key="btn_request_run", type="primary",
+                 disabled=not output or not all(inputs[key] or uploads[key] is not None for key in inputs
+                                                if key != "request")
+                 or not (inputs["request"] or uploads["request"] is not None or generated)):
         st.session_state.pop("request_completed_output", None)
         st.session_state.pop("request_completed_message", None)
         try:
@@ -1142,6 +1150,8 @@ def _tab_request() -> None:
                                                  "odb": "Analysis.odb", "request": "sensitivity_request.json"}[key]
                         path.write_bytes(upload.getvalue())
                         inputs[key] = str(path)
+                if not inputs["request"] and generated:
+                    inputs["request"] = str(request_screen.write_request(generated, Path(temporary)))
                 if mapping_upload is not None:
                     path = Path(temporary) / "Mapping.json"
                     path.write_bytes(mapping_upload.getvalue())
@@ -1169,6 +1179,7 @@ def _tab_request() -> None:
             path = Path(completed) / filename
             if path.is_file():
                 st.download_button(filename, path.read_bytes(), file_name=filename, key="request_download_" + filename)
+    request_screen.render_full_field(st, completed)
 
 
 def _tab_replay() -> None:

@@ -51,7 +51,7 @@ def main():
                 for name in ("OTI_UMAT.obj", "Analysis.inp", "Analysis.odb", "sensitivity_request.json"):
                     page.get_by_label(name + " path", exact=True).fill(str((args.inputs / name).resolve()))
                 page.get_by_label("Output directory", exact=True).fill(str((args.out / "results").resolve()))
-                page.get_by_role("button", name="Run sensitivity request", exact=True).click()
+                page.get_by_role("button", name="Solve", exact=True).click()
                 expect(page.get_by_text("Executed: 4 scalar results. Independent validation: not run.", exact=True)).to_be_visible(timeout=90000)
                 filenames = ["sensitivity_results.json", "sensitivity_tables.csv", "run_report.txt"]
                 for filename in filenames:
