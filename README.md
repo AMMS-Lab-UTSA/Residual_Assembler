@@ -1,13 +1,33 @@
 # Residual_Assembler
 
-**Current recovery usage (2026-09-18):** start with the
-[verified usage report](docs/USAGE_REPORT.md). Five bounded examples and the
-artifact-only J2 presentation path have executable evidence. C3D8 first-order
-J2 and bounded finite neo-Hookean sensitivities now work; generic FCC,
-stateful finite UMATs and higher-order full FE are not claimed. The older
-overview below is historical where it conflicts with that report.
-[Requirement audit](docs/COMPLETION_LEDGER.md): 104 bounded implemented,
-159 partial, 11 unestablished; **0 clean-install complete, 274 outstanding**.
+Residual_Assembler computes **parameter sensitivities of a converged
+finite-element analysis without re-running it**. Given the saved analysis
+(`Analysis.inp` + `Analysis.odb`), a compiled OTI material provider
+(`OTI_UMAT.obj` + `Mapping.json`, built by the companion
+[UMAT-OTI](https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation)
+project) and a `sensitivity_request.json`, it replays the material at every
+integration point and increment, assembles the residual `R`, its tangent `K`
+and `dR/dp`, solves `K du/dp = -dR/dp`, and writes full-field sensitivities
+(`sensitivity_results.json`, `sensitivity_tables.csv`, `run_report.txt`; full
+arrays under `private/`). The material source never reaches the collaborator.
+
+```bash
+resasm request --model Analysis.inp --odb Analysis.odb \
+    --material OTI_UMAT.obj --request sensitivity_request.json --out results
+```
+
+Measured on the two IMQCAM Annual Meeting cantilevers (Abaqus 2021 runs of
+1,536 C3D8 / 40 steps with J2 plasticity and 384 C3D8 / 25 steps with FCC
+crystal plasticity): replayed stress, state and reactions match the ODB at
+every integration point; the J2 case runs in about 10 s (25 s re-equilibrated);
+OTI sensitivities agree with whole-model central finite differences of the
+original UMAT to 6.6e-8 (E), 5.8e-8 (nu), 7.9e-9 (sigma_y) and 5.4e-6 (H), and
+to at most 6.7e-7 for all ten FCC parameters. Details and what did not
+reproduce: [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md),
+[docs/PRESENTATION_CLAIMS.md](docs/PRESENTATION_CLAIMS.md).
+
+**New here?** Read [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — installation,
+every command with its real output, the GUI, examples and troubleshooting.
 
 **You should not have to provide R. You provide the ingredients, and
 Residual_Assembler builds R.**
@@ -166,14 +186,18 @@ pip install -e ".[gui]"
 streamlit run scripts/app.py
 ```
 
-Six tabs — Model, Requirements, Assemble, Sensitivity, Job, Backends — mirroring
-the CLI one-for-one. It is deliberately thin: every button builds an argv list
-and calls `residual_core.ui.cli.main` in-process, then shows the command it ran,
-the real exit code, and the captured output verbatim. It cannot show you a
-number the CLI would refuse to produce, and it cannot drift from the CLI as the
-CLI changes (`tests/framework/test_gui_is_a_thin_cli_front_end.py` pins that).
-The interactive `resasm init` wizard stays CLI-only, because a web page has no
-terminal to answer its prompts; use a template from the Job tab instead.
+The first tab, **Sensitivity Request**, is the collaborator screen of the
+presentation: point at `OTI_UMAT.obj` (its `Mapping.json` beside it), the
+saved `Analysis.inp` and `Analysis.odb`, tick the parameters, choose the output
+and the region, and press **Solve** — it runs `resasm request` and shows the
+full-field result ([docs/GUI.md](docs/GUI.md), screenshots in
+`docs/screenshots/`). The other tabs — Start here, Model, Requirements,
+Assemble, Sensitivity, Job, Backends, Advanced Replay — mirror the CLI one-for-one. The
+GUI is deliberately thin: every button builds an argv list and calls
+`residual_core.ui.cli.main` in-process, then shows the command it ran, the real
+exit code and the captured output verbatim, so it cannot show a number the CLI
+would refuse to produce (`tests/framework/test_gui_is_a_thin_cli_front_end.py`
+pins that). The interactive `resasm init` wizard stays CLI-only.
 
 ## The three paths
 
@@ -356,35 +380,23 @@ neutral-model IO are all exercised by tests.
 the OTILib suite passing in WSL (11 passed, `RUN_OTILIB_TESTS=1`, so a skip would
 have been a failure), including the order-2 recovery-factor proof.
 
-### The gap you need to know about
+### Sensitivities of C3D8 models with a UMAT
 
-**You cannot yet OTI-differentiate a C3D8+UMAT model through Path A.**
+**The shipped route is the compiled OTI provider.** `resasm request` (bounded
+J2 presentation engine) and `resasm history` (any provider, prescribed
+displacements, long histories, sparse assembly) replay an OTI-transformed UMAT
+built by UMAT-OTI and solve for full-field sensitivities; `resasm request`
+hands a model to the history engine when it is outside the bounded scope and
+says so. Verified against whole-model finite differences of the original UMAT
+and against Abaqus reruns — see [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md).
 
-| backend | assemble R | OTI-differentiate R |
-|---|---|---|
-| `solid_c3d8_finite_strain`, `solid_c3d8_small_strain` | yes (verified) | **no** |
-| `stress_driven_c3d8` | yes (verified) | **no** — σ is a frozen exported field |
-| `truss2`, `beam2` | yes | **no** |
-| `nonlinear_spring1`, `nonlinear_bar1` | yes | **yes** (proven in WSL) |
-
-**Why:** the element and material kernels allocate numpy **float** arrays. For
-example `residual_core/core/voigt.py::isotropic_D` builds
-`np.zeros((6, 6), dtype=float)`, so a hypercomplex number cannot be stored in it and
-the call fails. This is a concrete, fixable engineering gap — **not** a physics
-limit.
-
-The tool states this itself rather than failing late: `resasm init-assembly` /
-`inspect-model` / `check` print a **Capability** block
-(`assemble R: yes` / `OTI-differentiate R: NO`, naming the blocking backend), gated
-in `resasm_user/recipe.py::sensitivity_capability`. `stress_driven_c3d8` is doubly
-blocked — its σ is a frozen exported field, so it carries no parameter dependence to
-differentiate.
-
-**So, plainly, for an Abaqus user today:** you can **assemble and verify R** from
-exported ingredients — that is the verified part. For *sensitivities* the routes are
-Path B (black-box), or an **OTI-transformed UMAT** (the companion UMAT
-source-transformation project) plugged into this assembler. That integration is the
-intended design and the **next step — it is not a shipped feature.**
+**Path A with the Python OTILib backend** (the `resasm.yml` recipe that
+differentiates the built-in C3D8 kernels in pyoti) is still reported as
+`OTI-differentiate R: NO` for the C3D8 backends by `init-assembly` /
+`inspect-model` / `check`; that capability gate
+(`resasm_user/recipe.py::sensitivity_capability`) is deliberate and stays until
+that path is verified. `stress_driven_c3d8` carries a frozen exported stress
+and therefore no parameter dependence to differentiate.
 
 ### Other real limits
 
@@ -397,10 +409,11 @@ intended design and the **next step — it is not a shipped feature.**
   **parsed but not applied** (`residual_core/core/constraints.py`).
 - **The real CP UMAT** does not compile under gfortran (Cray pointers + an ifort
   `trace()` kind mismatch). It needs **Intel ifort + Abaqus**.
-- **The comparison of our assembled R against Abaqus reaction forces is built but
-  has never been executed** — Abaqus is not installed in this environment. ODB
-  export, real-UMAT replay and the RF comparison are ready to run, not run. They are
-  marked pending, never passing.
+- **Abaqus comparisons** run where Abaqus 2021 is licensed: the replay engines
+  check replayed stress, state and reaction forces against the ODB at every
+  integration point and increment (single-precision ODB tolerances are
+  documented in each run report). Without Abaqus, an ODB cannot be exported and
+  the command says so.
 - **The finite-strain consistent tangent** is analytic but approximate, pending the
   Abaqus `AMATRX` comparison.
 - **On Windows the Python residual path cannot run at all**: `oti_global.solve_python`
