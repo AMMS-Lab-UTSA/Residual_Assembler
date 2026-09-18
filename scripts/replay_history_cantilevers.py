@@ -107,19 +107,22 @@ def fd_outputs(npz, model):
             "_region": region, "_root": root_col}
 
 
-def fd_reference(data, model, names, values):
-    manifest = data / MODELS[model]["fd_dir"] / "fd_manifest.tsv"
-    if not manifest.is_file():
+def fd_reference(directory, names, values, model):
+    """Central differences from a rerun directory (lead's fd_manifest.tsv or our manifest.tsv)."""
+    manifest = next((directory / name for name in ("fd_manifest.tsv", "manifest.tsv")
+                     if (directory / name).is_file()), None)
+    if manifest is None:
         return None
     rows = [line.split("\t") for line in manifest.read_text().splitlines()[1:] if line.strip()]
     done = {(r[1], r[2], r[3]): r[0] for r in rows if len(r) > 5 and r[5] == "completed"}
+    steps = sorted({r[3] for r in rows if r[1] != "nominal"}, key=float, reverse=True)
     reference = {}
     for j, name in enumerate(names):
         per_h = {}
-        for h in ("0.02", "0.01", "0.005"):
+        for h in steps:
             if (name, "p", h) in done and (name, "m", h) in done:
-                plus = fd_outputs(data / MODELS[model]["fd_dir"] / (done[(name, "p", h)] + "_fields.npz"), model)
-                minus = fd_outputs(data / MODELS[model]["fd_dir"] / (done[(name, "m", h)] + "_fields.npz"), model)
+                plus = fd_outputs(directory / (done[(name, "p", h)] + "_fields.npz"), model)
+                minus = fd_outputs(directory / (done[(name, "m", h)] + "_fields.npz"), model)
                 per_h[h] = {k: (plus[k] - minus[k]) / (2 * float(h) * values[j])
                             for k in plus if not k.startswith("_")}
         if len(per_h) >= 2:
@@ -127,18 +130,17 @@ def fd_reference(data, model, names, values):
     return reference
 
 
-def compare_with_abaqus(result_dir, data, model, names, values):
-    reference = fd_reference(data, model, names, values)
+def compare_with_abaqus(result_dir, data, model, names, values, directory):
+    reference = fd_reference(directory, names, values, model)
     if not reference:
         return None
     fields = np.load(result_dir / "fields.npz")
     base = fd_outputs(data / MODELS[model]["fields"], model)
     region, root = base["_region"], base["_root"]
     dU, dRF, dS = fields["dU"], fields["dRF"], fields["dS"]
-    tip = np.isclose(np.load(data / MODELS[model]["fields"])["coords"][:, 0],
-                     np.load(data / MODELS[model]["fields"])["coords"][:, 0].max())
-    S = fields["S"]
-    dvm = np.einsum("neqa,neqam->neqm", von_mises_gradient(S), dS)
+    coords = np.load(data / MODELS[model]["fields"])["coords"]
+    tip = np.isclose(coords[:, 0], coords[:, 0].max())
+    dvm = np.einsum("neqa,neqam->neqm", von_mises_gradient(fields["S"]), dS)
     count = dU.shape[0]
     ours_all = {
         "tip_RF2": dRF[:, tip, 1, :].sum(axis=1),
@@ -156,18 +158,22 @@ def compare_with_abaqus(result_dir, data, model, names, values):
             for n in range(1, count):
                 estimates = [np.atleast_1d(reference[name][h][key][n]) for h in steps]
                 mine = np.atleast_1d(ours[n][..., j])
-                fine, finer = estimates[-2], estimates[-1]
+                pairs = []
+                for k in range(len(steps) - 1):
+                    scale_k = max(np.abs(estimates[k + 1]).max(), 1e-300)
+                    pairs.append((float(np.abs(estimates[k] - estimates[k + 1]).max() / scale_k), k))
+                spread, k = min(pairs)
+                finer = estimates[k + 1]
                 scale = max(np.abs(finer).max(), 1e-300)
                 natural = max(np.abs(np.atleast_1d(q[n])).max(), 1e-300) / abs(values[j])
-                floor = EPS32 * np.abs(np.atleast_1d(q[n])).max() / (2 * float(steps[-1]) * abs(values[j]))
+                floor = EPS32 * np.abs(np.atleast_1d(q[n])).max() / (2 * float(steps[k + 1]) * abs(values[j]))
                 table.append({
-                    "output": key, "parameter": name, "increment": n,
+                    "output": key, "parameter": name, "increment": n, "steps": "%s/%s" % (steps[k], steps[k + 1]),
                     "fd": float(finer.flat[np.abs(finer).argmax()]),
                     "oti": float(mine.flat[np.abs(finer).argmax()]),
-                    "rel_error": float(np.abs(mine - finer).max() / scale),
-                    "plateau_spread": float(np.abs(fine - finer).max() / scale),
-                    "truncation_spread": float(np.abs(estimates[0] - finer).max() / scale),
+                    "rel_error": float(np.abs(mine - finer).max() / scale), "plateau_spread": spread,
                     "weighted_fd": float(scale / natural), "float32_floor_rel": float(floor / scale),
+                    "weighted_error": float(np.abs(mine - finer).max() / natural),
                 })
     return table
 
@@ -177,16 +183,18 @@ def summarize_abaqus(table, resolved_spread=1e-3):
     for row in table:
         entry = summary.setdefault((row["output"], row["parameter"]), {
             "resolved": 0, "unresolved": 0, "zero": 0, "max_rel_error": 0.0, "max_spread": 0.0,
-            "max_error_over_spread": 0.0, "zero_max_weighted_oti": 0.0})
+            "max_error_over_spread": 0.0, "max_weighted_error": 0.0, "max_weighted_error_resolved": 0.0})
+        entry["max_weighted_error"] = max(entry["max_weighted_error"], row["weighted_error"])
         if row["weighted_fd"] < 1e-5:
             entry["zero"] += 1
             continue
-        if row["plateau_spread"] <= resolved_spread and row["float32_floor_rel"] < 1e-4:
+        if row["plateau_spread"] <= resolved_spread and row["float32_floor_rel"] < 1e-3:
             entry["resolved"] += 1
             entry["max_rel_error"] = max(entry["max_rel_error"], row["rel_error"])
             entry["max_spread"] = max(entry["max_spread"], row["plateau_spread"])
+            entry["max_weighted_error_resolved"] = max(entry["max_weighted_error_resolved"], row["weighted_error"])
             entry["max_error_over_spread"] = max(entry["max_error_over_spread"],
-                                                 row["rel_error"] / max(row["plateau_spread"], row["float32_floor_rel"]))
+                                                 row["rel_error"] / (row["plateau_spread"] + row["float32_floor_rel"]))
         else:
             entry["unresolved"] += 1
     return summary
@@ -219,7 +227,7 @@ def shares_figure(results, model, path, title):
         series.append(("other (%s)" % ", ".join(labels[names[i]] for i in other), data[:, other].sum(axis=1), OTHER))
     else:
         series = [(labels[names[i]], data[:, i], SERIES[k]) for k, i in enumerate(order)]
-    fig, ax = plt.subplots(figsize=(7.4, 3.6), dpi=130)
+    fig, ax = plt.subplots(figsize=(7.4, 4.0), dpi=130)
     bottom = np.zeros(len(steps))
     for label, values, color in series:
         ax.bar(steps, values, bottom=bottom, width=0.82, color=color, edgecolor=SURFACE, linewidth=0.6,
@@ -232,12 +240,12 @@ def shares_figure(results, model, path, title):
     ax.set_title(title, loc="left", color=INK, fontsize=10)
     ax.grid(axis="y", color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
-    handles, texts = ax.get_legend_handles_labels()            # legend top = stack top
-    ax.legend(handles[::-1], texts[::-1], loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False,
-              fontsize=8, labelcolor=INK)
+    handles, texts = ax.get_legend_handles_labels()            # stack order, bottom segment first
+    ax.legend(handles, texts, loc="upper center", bbox_to_anchor=(0.5, -0.16), frameon=False,
+              fontsize=8, labelcolor=INK, ncol=min(len(texts), 5))
     last = 0.0
-    for label, values, color in series:                          # direct labels for segments >= 6 %
-        if values[-1] >= 6:
+    for label, values, color in series:                          # direct labels for segments >= 10 %
+        if values[-1] >= 10:
             ax.text(steps[-1] + 0.55, last + values[-1] / 2, "%s %.0f%%" % (label.split(" (")[0], values[-1]),
                     va="center", ha="left", fontsize=7, color=INK)
         last += values[-1]
@@ -274,8 +282,8 @@ def field_figure(result_dir, deck, model, path, title):
     cmap = LinearSegmentedColormap.from_list("div", ["#1c5cab", "#86b6ef", "#f0efec", "#f19a8e", "#b3261e"])
     columns = 2
     rows = int(np.ceil(len(order) / columns))
-    fig, axes = plt.subplots(rows, columns, figsize=(7.4, 0.2 + rows * (7.4 / columns) * ny / nx * 1.25 + 0.3),
-                             dpi=130, squeeze=False)
+    fig, axes = plt.subplots(rows, columns, figsize=(7.4, 0.9 + rows * (7.4 / columns) * ny / nx * 1.15),
+                             dpi=130, squeeze=False, layout="constrained")
     norm = TwoSlopeNorm(vmin=-limit, vcenter=0.0, vmax=limit)
     for ax, name in zip(axes.flat, order):
         image = ax.imshow(maps[name], origin="lower", cmap=cmap, norm=norm, extent=(0, nx, 0, ny),
@@ -288,7 +296,7 @@ def field_figure(result_dir, deck, model, path, title):
     for ax in axes.flat[len(order):]:
         ax.axis("off")
     fig.suptitle(title, x=0.01, ha="left", fontsize=10, color=INK)
-    bar = fig.colorbar(image, ax=axes, orientation="horizontal", fraction=0.04, pad=0.04, aspect=50)
+    bar = fig.colorbar(image, ax=axes, orientation="horizontal", fraction=0.04, aspect=50)
     bar.set_label("MPa  (element average over the 8 IPs, z = 0 layer; root at left, tip at right)",
                   color=INK2, fontsize=8)
     fig.savefig(path, dpi=130, bbox_inches="tight", pad_inches=0.08)
@@ -320,8 +328,8 @@ def steps_figure(result_dir, deck, model, path, parameter, steps, title):
     cmap = LinearSegmentedColormap.from_list("div", ["#1c5cab", "#86b6ef", "#f0efec", "#f19a8e", "#b3261e"])
     columns = 3
     rows = int(np.ceil(len(steps) / columns))
-    fig, axes = plt.subplots(rows, columns, figsize=(7.4, 0.5 + rows * (7.4 / columns) * ny / nx * 1.35 + 0.3),
-                             dpi=130, squeeze=False)
+    fig, axes = plt.subplots(rows, columns, figsize=(7.4, 1.0 + rows * (7.4 / columns) * ny / nx * 1.25),
+                             dpi=130, squeeze=False, layout="constrained")
     norm = TwoSlopeNorm(vmin=-limit, vcenter=0.0, vmax=limit)
     for ax, n, grid in zip(axes.flat, steps, maps):
         image = ax.imshow(grid, origin="lower", cmap=cmap, norm=norm, extent=(0, nx, 0, ny),
@@ -333,7 +341,7 @@ def steps_figure(result_dir, deck, model, path, parameter, steps, title):
     for ax in axes.flat[len(steps):]:
         ax.axis("off")
     fig.suptitle(title, x=0.01, ha="left", fontsize=10, color=INK)
-    bar = fig.colorbar(image, ax=axes, orientation="horizontal", fraction=0.05, pad=0.05, aspect=50)
+    bar = fig.colorbar(image, ax=axes, orientation="horizontal", fraction=0.05, aspect=50)
     bar.set_label("MPa  (element average, z = 0 layer; root at left)", color=INK2, fontsize=8)
     fig.savefig(path, dpi=130, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
@@ -359,9 +367,13 @@ def main(argv=None):
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--evidence", required=True, type=Path)
     ap.add_argument("--models", default="j2,fcc")
+    ap.add_argument("--tight-fd", action="append", default=[], metavar="MODEL=DIR",
+                    help="tight-tolerance Abaqus reruns (scripts/replay_history_abaqus_fd.py --tight)")
     a = ap.parse_args(argv)
+    a.tight_fd = dict(item.split("=", 1) for item in a.tight_fd)
     a.evidence.mkdir(parents=True, exist_ok=True)
-    summary = {}
+    summary_path = a.evidence / "cantilever_summary.json"
+    summary = json.loads(summary_path.read_text()) if summary_path.is_file() else {}
     for model in a.models.split(","):
         deck = read_history_model(a.abaqus_data / MODELS[model]["deck"])
         entry = summary[model] = {}
@@ -384,14 +396,18 @@ def main(argv=None):
                 "shares_field": {r["increment"]: r["field_share_percent"] for r in rows},
                 "shares_scalar": {r["increment"]: r["scalar_share_percent"] for r in rows},
                 "wall_s": round(time.perf_counter() - started, 1)}
-            abaqus = compare_with_abaqus(out, a.abaqus_data, model, names, values)
-            if abaqus:
-                with open(a.evidence / ("%s_abaqus_fd_%s.csv" % (model, tag)), "w", newline="") as stream:
-                    writer = csv.DictWriter(stream, fieldnames=list(abaqus[0]))
-                    writer.writeheader()
-                    writer.writerows(abaqus)
-                entry[tag]["abaqus_fd"] = {"%s/%s" % key: value
-                                           for key, value in summarize_abaqus(abaqus).items()}
+            sources = [("abaqus_fd", a.abaqus_data / MODELS[model]["fd_dir"])]
+            if a.tight_fd and model in a.tight_fd:
+                sources.append(("abaqus_fd_tight", Path(a.tight_fd[model])))
+            for label, directory in sources:
+                abaqus = compare_with_abaqus(out, a.abaqus_data, model, names, values, directory)
+                if abaqus and reequilibrate:                       # rows for the primary mode only
+                    with open(a.evidence / ("%s_%s_%s.csv" % (model, label, tag)), "w", newline="") as stream:
+                        writer = csv.DictWriter(stream, fieldnames=list(abaqus[0]))
+                        writer.writeheader()
+                        writer.writerows(abaqus)
+                if abaqus:
+                    entry[tag][label] = {"%s/%s" % key: value for key, value in summarize_abaqus(abaqus).items()}
             if reequilibrate:
                 title = {"j2": "J2 cantilever (slide 39): weighted σvM sensitivity shares per load step",
                          "fcc": "FCC cantilever (slide 15): weighted σvM sensitivity shares per load step"}[model]
@@ -415,7 +431,7 @@ def main(argv=None):
             key: (np.abs(recorded[key] - polished[key]).max(axis=tuple(range(recorded[key].ndim - 1)))
                   / np.maximum(np.abs(polished[key]).max(axis=tuple(range(polished[key].ndim - 1))), 1e-300)).tolist()
             for key in ("dU", "dRF", "dS", "dMISES")}
-    (a.evidence / "cantilever_summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    summary_path.write_text(json.dumps(summary, indent=1) + "\n")
     print(json.dumps({m: {t: {k: v for k, v in e.items() if k in ("timings_s", "max_scaled_free_residual")}
                           for t, e in summary[m].items() if isinstance(e, dict) and "timings_s" in e}
                       for m in summary}, indent=1))
