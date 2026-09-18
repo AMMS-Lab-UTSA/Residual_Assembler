@@ -92,7 +92,7 @@ def _snapshot(engine: HistoryEngine, result: HistoryResult):
 
 
 def whole_model_fd(engine: HistoryEngine, times, *, parameters: Sequence[str] = None,
-                   steps=(1e-3, 1e-4, 1e-5), rtol: float = 1e-13, reference: HistoryResult = None) -> Dict:
+                   steps=(1e-3, 3e-4, 1e-4, 3e-5, 1e-5), rtol: float = 1e-13, reference: HistoryResult = None) -> Dict:
     """Central FD of the whole equilibrated model with the ORIGINAL UMAT (see module doc)."""
     material, model = engine.material, engine.model
     parameters = list(parameters or material.params)
@@ -166,8 +166,8 @@ def summarize_fd(result: Dict, *, zero_level: float = 1e-6) -> Dict[str, Dict[st
     An increment whose FD derivative is below ``zero_level`` on the field's
     own scale (|p| max|dq/dp| / max|q|) is a zero reference (e.g. du/dE under
     pure displacement control while elastic, or a yield-stress derivative
-    before yield): there the OTI derivative must be below the same level, and
-    a relative error is not formed from FD noise.
+    before yield): there OTI and FD are compared on the field scale
+    (|OTI - FD| |p| / max|q|) instead of relative to FD noise.
     """
     summary = {}
     for name, rows in result["comparison"].items():
@@ -179,5 +179,6 @@ def summarize_fd(result: Dict, *, zero_level: float = 1e-6) -> Dict[str, Dict[st
                 "nonzero_increments": len(live), "zero_increments": len(zeros),
                 "max_error": max((v["error"] for v in live), default=0.0),
                 "max_spread": max((v["spread"] for v in live), default=0.0),
-                "zero_reference_max_weighted_oti": max((v["weighted_oti"] for v in zeros), default=0.0)}
+                "zero_reference_max_weighted_oti": max((v["weighted_oti"] for v in zeros), default=0.0),
+                "zero_reference_max_weighted_error": max((v["weighted_error"] for v in zeros), default=0.0)}
     return summary

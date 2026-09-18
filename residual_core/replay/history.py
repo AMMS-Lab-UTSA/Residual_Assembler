@@ -249,6 +249,7 @@ def run_history(engine: HistoryEngine, *, fields: Optional[RecordedFields] = Non
     timings = {"material": 0.0, "assembly": 0.0, "factorisation_and_solve": 0.0, "checks": 0.0}
     started = _time.perf_counter()
     b_norm = np.abs(engine.B).sum(axis=-1).max()
+    start_stiffness = None          # tangent at the start of the next increment (solve mode)
 
     for number in range(1, len(step_times)):
         t_prev, t_now = step_times[number - 1], step_times[number]
@@ -296,11 +297,24 @@ def run_history(engine: HistoryEngine, *, fields: Optional[RecordedFields] = Non
             u_recorded = u.copy()
             out, residual, stiffness = evaluate(u)
         else:
-            u = u_prev.copy()
-            u[engine.constrained] = prescribed
+            # Linear predictor (as Abaqus's first iteration of an increment): move the
+            # free DOFs with the start-of-increment tangent so the trial state the
+            # UMAT sees is near equilibrium, not a jump at the constrained DOFs only.
+            if start_stiffness is None:
+                start_stiffness = evaluate(u_prev)[2]
+            tic = _time.perf_counter()
+            jump = np.zeros(engine.ndof)
+            jump[engine.constrained] = prescribed - u_prev[engine.constrained]
+            rhs = (external - model.load_at(t_prev) - start_stiffness @ jump)[engine.free]
+            u = u_prev + jump
+            u[engine.free] += spla.splu(start_stiffness[engine.free][:, engine.free].tocsc()).solve(rhs)
+            timings["factorisation_and_solve"] += _time.perf_counter() - tic
             out, residual, stiffness = evaluate(u)
         scale = max(np.abs(residual[engine.constrained]).max(initial=0.0),
                     np.abs(external).max(initial=0.0), 1e-300)
+        if not np.all(np.isfinite(residual)):
+            raise ReplayMismatch("increment %d: the %s UMAT returned non-finite stresses at the %s state"
+                                 % (number, material_path.upper(), "recorded" if replay else "predicted"))
         if not replay or reequilibrate:
             for iterations in range(1, max_iterations + 1):
                 if np.abs(residual[engine.free]).max() <= rtol * scale:
@@ -316,6 +330,8 @@ def run_history(engine: HistoryEngine, *, fields: Optional[RecordedFields] = Non
                     trial_out, trial_residual, trial_stiffness = evaluate(trial)
                     if np.linalg.norm(trial_residual[engine.free]) < baseline or halving == 29:
                         break
+                if not np.all(np.isfinite(trial_residual)):
+                    raise ReplayMismatch("increment %d: Newton reached non-finite stresses" % number)
                 u, out, residual, stiffness = trial, trial_out, trial_residual, trial_stiffness
                 scale = max(np.abs(residual[engine.constrained]).max(initial=0.0),
                             np.abs(external).max(initial=0.0), 1e-300)
@@ -364,6 +380,7 @@ def run_history(engine: HistoryEngine, *, fields: Optional[RecordedFields] = Non
             record.dstress, record.dstate = engine.unflat(dstress), engine.unflat(dstate)
             du_prev = du
         stress, state, u_prev = out["stress"], out["state"], u
+        start_stiffness = stiffness
         records.append(record)
         if progress:
             progress(record)

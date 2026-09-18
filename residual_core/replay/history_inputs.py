@@ -46,7 +46,7 @@ SUPPORTED_KEYWORDS = {
     "instance": {"name", "part"}, "end instance": set(),
     "material": {"name"}, "user material": {"constants", "type"}, "depvar": set(),
     "solid section": {"elset", "material"}, "boundary": {"op"}, "cload": {"op"},
-    "step": {"name", "nlgeom", "inc"}, "static": {"direct"}, "controls": {"parameters", "reset"},
+    "step": {"name", "nlgeom", "inc"}, "static": {"direct"}, "controls": {"parameters", "reset", "field"},
     "end step": set(), "output": {"field", "history", "frequency", "variable"},
     "node output": {"nset", "frequency"}, "element output": {"elset", "position", "directions", "frequency"},
 }

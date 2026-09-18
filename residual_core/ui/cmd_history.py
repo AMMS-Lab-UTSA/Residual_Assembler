@@ -55,7 +55,7 @@ def register(subparsers):
     parser.add_argument("--verify", choices=("none", "tangent", "fd"), default="none",
                         help="independent checks with the ORIGINAL UMAT: tangent spot check, or "
                              "tangent + whole-model central finite differences (re-equilibrated in Python)")
-    parser.add_argument("--fd-steps", default="1e-3,1e-4,1e-5", help="relative FD step ladder")
+    parser.add_argument("--fd-steps", default="1e-3,3e-4,1e-4,3e-5,1e-5", help="relative FD step ladder")
     parser.add_argument("--abaqus", default="abaqus", help="Abaqus launcher for the ODB export")
     parser.set_defaults(func=run)
 
@@ -102,7 +102,7 @@ def _report_skeleton(command):
 
 
 def run_history_request(*, model, material, request, out, odb=None, fields=None, mapping=None,
-                        reequilibrate=False, verify="none", fd_steps=(1e-3, 1e-4, 1e-5),
+                        reequilibrate=False, verify="none", fd_steps=(1e-3, 3e-4, 1e-4, 3e-5, 1e-5),
                         abaqus="abaqus", command=None):
     model, material, request, out = map(Path, (model, material, request, out))
     command = command or "resasm history"
@@ -172,7 +172,7 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
                     if row["nonzero_increments"]]
             worst_error = max((row["max_error"] for _, _, row in live), default=0.0)
             worst_spread = max((row["max_spread"] for _, _, row in live), default=0.0)
-            zero_oti = max((row["zero_reference_max_weighted_oti"] for rows in summary.values()
+            zero_oti = max((row["zero_reference_max_weighted_error"] for rows in summary.values()
                             for row in rows.values()), default=0.0)
             reference = fd.pop("reference_result")
             replay_vs_solve = max(
@@ -184,8 +184,8 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
             passed = worst_error <= max(1e-6, 2 * worst_spread) and zero_oti <= 1e-6
             report["report_fields"]["derivative verified"] = (
                 "%s: whole-model central FD of the ORIGINAL UMAT re-equilibrated in Python; worst "
-                "nonzero-derivative error %.2e (plateau spread %.2e); zero references: OTI <= %.1e on "
-                "the field scale; the ODB-driven du/dp differs from the Python-equilibrium du/dp by "
+                "nonzero-derivative error %.2e (plateau spread %.2e); zero references: |OTI - FD| <= %.1e "
+                "on the field scale; the ODB-driven du/dp differs from the Python-equilibrium du/dp by "
                 "%.2e (relative)" % ("yes" if passed else "NO", worst_error, worst_spread, zero_oti,
                                      replay_vs_solve))
             report["report_fields"]["reference resolved"] = (
