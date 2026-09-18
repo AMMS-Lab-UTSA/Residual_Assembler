@@ -1,0 +1,2397 @@
+{
+  "key": "e183c1b9e13d41147688a974",
+  "source": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
+  "source_sha256": "27cda337a45be53431149436fbad42bd19da0bb5ec2a68f6370c17b608326a86",
+  "fingerprint": "6aa20d22e37f14c9",
+  "repository": "CAEAssistant-Group/UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine",
+  "stage": "verified",
+  "reason": "agreed at all 4 states where a difference could be taken (increments 1, 4, 2, 5); 4 smooth states on a material that never activates, which is the whole of it; worst of them: agreed to 1.069e-14 over a plateau of 2 step sizes, 0.01 to 0.1",
+  "warnings": [
+    "original: post_analysis_wrapup_failure",
+    "original: process_exit_code_1",
+    "transformed: post_analysis_wrapup_failure",
+    "transformed: process_exit_code_1"
+  ],
+  "deck": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/UMATmodel.inp",
+  "material_block": "Steel",
+  "material_provenance": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/UMATmodel.inp: UMATmodel.inp *MATERIAL Steel: 2 constants, *DEPVAR 0 -- a section in UMATmodel.inp attaches Steel to C3D8; the deck sits in the source's own directory",
+  "props_count": 2,
+  "nstatv": 1,
+  "unsymmetric": false,
+  "ntens": 6,
+  "element_type": "C3D8",
+  "kinematics": "small strain",
+  "kinematics_provenance": "no *STEP in UMATmodel.inp sets NLGEOM, which is Abaqus's default of NLGEOM=NO",
+  "kinematics_note": "",
+  "entry_classification": null,
+  "formulation": {
+    "element": "C3D8",
+    "family": "three-dimensional continuum",
+    "reason": "the author's deck runs this material on C3D8, which is three-dimensional continuum; the verification runs the same formulation on C3D8, whose NTENS=6 is the same tensor the UMAT is called with",
+    "provenance": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/UMATmodel.inp: line 3711: *Solid Section, elset=Set-1, material=Steel",
+    "agreement": "only the deck says which element is used",
+    "deck_elements": [
+      "C3D8"
+    ],
+    "source": {
+      "ntens": 0,
+      "family": "",
+      "evidence": []
+    }
+  },
+  "experiment": {
+    "family": {
+      "name": "strain driven",
+      "driver": "strain",
+      "evidence": [
+        "nothing in this routine reads the clock, a body force, a separation or a coordinate, so a prescribed strain path is what it is for"
+      ],
+      "notes": []
+    },
+    "criterion": "something in the routine must depart from linear-elastic inside the path: a state variable that moves, a tangent that changes, or a residual after reversal. An agreement reached where stress is linear in strain is an agreement about the part every build gets right",
+    "requirement": {
+      "total_time": 1.0,
+      "periods": [
+        1.0
+      ],
+      "reason": "this routine declares no time scale of its own; the author's deck runs 1 of step time and that is the history it was written against"
+    },
+    "reason": "the driver of this source is the strain increment, so the amplitude search chooses how far and this chooses the shape: extension, compression and shear, which is the smallest set that reaches a threshold in any of the three",
+    "refusal": "",
+    "warnings": [],
+    "manifest": {
+      "name": "ISOTROPIC-ELASTICITY",
+      "source": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
+      "bundle": [],
+      "source_form": "fixed",
+      "compiler_flags": [],
+      "element_type": "C3D8",
+      "element_label": 1,
+      "node_coordinates": [],
+      "node_provenance": "",
+      "isothermal_temperature": null,
+      "temperature_provenance": "this deck states no *INITIAL CONDITIONS, TYPE=TEMPERATURE, so there is no temperature of the author's to hold a single element at",
+      "plane_strain_directions": [],
+      "kinematics": "small strain",
+      "ntens": 6,
+      "ndi": 3,
+      "nshr": 3,
+      "nprops": 2,
+      "nstatv": 1,
+      "props": [
+        210000.0,
+        0.3
+      ],
+      "material_provenance": "UMATmodel.inp *MATERIAL Steel: 2 constants, *DEPVAR 0 -- a section in UMATmodel.inp attaches Steel to C3D8; the deck sits in the source's own directory",
+      "initial_statev": [],
+      "initial_statev_provenance": "",
+      "initial_state_from_user_subroutine": false,
+      "orientation": null,
+      "orientation_provenance": "",
+      "orientation_axes": null,
+      "orientation_rotation": null,
+      "unsymmetric": false,
+      "loading": [
+        {
+          "name": "uniaxial",
+          "strain": [
+            0.01,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 10,
+          "period": 1.0,
+          "description": "prescribed extension along x, lateral faces free to move only in their own plane",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "compression",
+          "strain": [
+            -0.01,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 10,
+          "period": 1.0,
+          "description": "prescribed shortening along x, lateral faces free to move only in their own plane",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "simple_shear",
+          "strain": [
+            0.0,
+            0.0,
+            0.0,
+            0.01,
+            0.0,
+            0.0
+          ],
+          "increments": 10,
+          "period": 1.0,
+          "description": "prescribed engineering shear in the x-y plane",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        }
+      ],
+      "outputs": [
+        "S",
+        "SDV"
+      ],
+      "perturbation_components": [],
+      "fd_steps": [
+        0.1,
+        0.01,
+        0.001,
+        0.0001,
+        1e-05,
+        1e-06,
+        1e-07,
+        1e-08
+      ],
+      "near_zero_fraction": 1e-08,
+      "primal_tolerance": 1e-10,
+      "notes": "",
+      "status": "ready"
+    }
+  },
+  "searched_for_material_data": null,
+  "source_form": "fixed",
+  "frozen": {
+    "from": "<home>/softwarex_work/corpus_run/_superseded/pass12/results/store_verification.jsonl",
+    "states": [
+      {
+        "against_the_authors_tangent": {
+          "adjudicated_entries": 0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "best_step": 0.0,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 0.0,
+          "resolved_worst_entry": [],
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "sweep": [
+            {
+              "absolute": 0.0,
+              "frobenius": 0.0,
+              "relative": 0.0,
+              "step": 0.0
+            }
+          ],
+          "unresolved_entries": 0,
+          "zero_difference_steps": 0
+        },
+        "comparison": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 3.8113796774148926e-10,
+          "best_relative": 1.6815546486112804e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 3.2759429950281687e-13,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 2.0372681319713593e-10,
+              "frobenius": 3.8113796774148926e-10,
+              "relative": 1.6815546486112804e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.1641532182693481e-09,
+              "frobenius": 2.0136401660938172e-09,
+              "relative": 7.566995918750762e-15,
+              "step": 0.01
+            },
+            {
+              "absolute": 2.1012965589761734e-08,
+              "frobenius": 2.3951121892335796e-08,
+              "relative": 7.433157895698028e-14,
+              "step": 0.001
+            },
+            {
+              "absolute": 9.266659617424011e-08,
+              "frobenius": 1.3914904145313752e-07,
+              "relative": 5.78935243307598e-13,
+              "step": 0.0001
+            },
+            {
+              "absolute": 1.990454620681703e-06,
+              "frobenius": 3.0633811956210973e-06,
+              "relative": 1.64291492500712e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 4.25399630330503e-05,
+              "frobenius": 4.462042682744952e-05,
+              "relative": 1.504815018856201e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.0002700989134609699,
+              "frobenius": 0.00031812981723035354,
+              "relative": 9.55451938773499e-10,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.001150986587163061,
+              "frobenius": 0.0017367124479593225,
+              "relative": 6.585001875276839e-09,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 31,
+          "zero_difference_steps": 0
+        },
+        "driven_through": "strain increment",
+        "failures": [],
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "increment": 1,
+        "perturbation_scale": 0.0010000000000000002,
+        "reason": "agreed to 1.682e-15 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "record_index": 0,
+        "regime": {
+          "activated_here": false,
+          "increment": 1,
+          "reason": "nothing has activated by here, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "regime": "smooth_elastic",
+          "rejected_steps": [
+            1e-08
+          ],
+          "selected_step": 0.1,
+          "smoothness": {
+            "0.0001": 0.0,
+            "0.001": 0.0,
+            "0.01": 0.0,
+            "0.1": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 2.010787614147512e-08
+          },
+          "unloading": false,
+          "verifiable": true
+        },
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "smoothness": {
+          "1e-08": 2.010787614147512e-08,
+          "1e-07": 0.0,
+          "1e-06": 0.0,
+          "1e-05": 0.0,
+          "0.0001": 0.0,
+          "0.001": 0.0,
+          "0.01": 0.0,
+          "0.1": 0.0
+        },
+        "the_references_own_error": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 3.8113796774148926e-10,
+          "best_relative": 1.6815546486112804e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 3.2759429950281687e-13,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 2.0372681319713593e-10,
+              "frobenius": 3.8113796774148926e-10,
+              "relative": 1.6815546486112804e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.1641532182693481e-09,
+              "frobenius": 2.0136401660938172e-09,
+              "relative": 7.566995918750762e-15,
+              "step": 0.01
+            },
+            {
+              "absolute": 2.1012965589761734e-08,
+              "frobenius": 2.3951121892335796e-08,
+              "relative": 7.433157895698028e-14,
+              "step": 0.001
+            },
+            {
+              "absolute": 9.266659617424011e-08,
+              "frobenius": 1.3914904145313752e-07,
+              "relative": 5.78935243307598e-13,
+              "step": 0.0001
+            },
+            {
+              "absolute": 1.990454620681703e-06,
+              "frobenius": 3.0633811956210973e-06,
+              "relative": 1.64291492500712e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 4.25399630330503e-05,
+              "frobenius": 4.462042682744952e-05,
+              "relative": 1.504815018856201e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.0002700989134609699,
+              "frobenius": 0.00031812981723035354,
+              "relative": 9.55451938773499e-10,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.001150986587163061,
+              "frobenius": 0.0017367124479593225,
+              "relative": 6.585001875276839e-09,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 31,
+          "zero_difference_steps": 0
+        },
+        "verified": true
+      },
+      {
+        "against_the_authors_tangent": {
+          "adjudicated_entries": 0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "best_step": 0.0,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 0.0,
+          "resolved_worst_entry": [],
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "sweep": [
+            {
+              "absolute": 0.0,
+              "frobenius": 0.0,
+              "relative": 0.0,
+              "step": 0.0
+            }
+          ],
+          "unresolved_entries": 0,
+          "zero_difference_steps": 0
+        },
+        "comparison": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 3.558530955528108e-10,
+          "best_relative": 1.4413325559525263e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202051716694046e-10,
+          "resolved_worst_entry": [
+            1,
+            2
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.7462298274040222e-10,
+              "frobenius": 3.558530955528108e-10,
+              "relative": 1.4413325559525263e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.5861587598919868e-09,
+              "frobenius": 2.748463494727675e-09,
+              "relative": 1.963815607485317e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 2.112938091158867e-08,
+              "frobenius": 2.549380924183076e-08,
+              "relative": 1.2503559922888165e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 4.75964043289423e-07,
+              "frobenius": 6.69362898169517e-07,
+              "relative": 2.338021572324492e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 3.6938436096534133e-06,
+              "frobenius": 6.318078131818262e-06,
+              "relative": 3.048886788920277e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 4.2725063394755125e-05,
+              "frobenius": 6.041176594511309e-05,
+              "relative": 2.510212167787055e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.00012799020623788238,
+              "frobenius": 0.00021302551975579682,
+              "relative": 7.202051716694046e-10,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.003993157704826444,
+              "frobenius": 0.0041143174925759125,
+              "relative": 1.4125455826596946e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 29,
+          "zero_difference_steps": 0
+        },
+        "driven_through": "strain increment",
+        "failures": [],
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "increment": 4,
+        "perturbation_scale": 0.0010000000000000007,
+        "reason": "agreed to 1.441e-15 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "record_index": 93,
+        "regime": {
+          "activated_here": false,
+          "increment": 4,
+          "reason": "the strain increment has reversed, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "regime": "smooth_unloading",
+          "rejected_steps": [
+            1e-08
+          ],
+          "selected_step": 0.1,
+          "smoothness": {
+            "0.0001": 0.0,
+            "0.001": 0.0,
+            "0.01": 0.0,
+            "0.1": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 7.037756543380543e-08
+          },
+          "unloading": true,
+          "verifiable": true
+        },
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "smoothness": {
+          "1e-08": 7.037756543380543e-08,
+          "1e-07": 0.0,
+          "1e-06": 0.0,
+          "1e-05": 0.0,
+          "0.0001": 0.0,
+          "0.001": 0.0,
+          "0.01": 0.0,
+          "0.1": 0.0
+        },
+        "the_references_own_error": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 3.558530955528108e-10,
+          "best_relative": 1.4413325559525263e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202051716694046e-10,
+          "resolved_worst_entry": [
+            1,
+            2
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.7462298274040222e-10,
+              "frobenius": 3.558530955528108e-10,
+              "relative": 1.4413325559525263e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.5861587598919868e-09,
+              "frobenius": 2.748463494727675e-09,
+              "relative": 1.963815607485317e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 2.112938091158867e-08,
+              "frobenius": 2.549380924183076e-08,
+              "relative": 1.2503559922888165e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 4.75964043289423e-07,
+              "frobenius": 6.69362898169517e-07,
+              "relative": 2.338021572324492e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 3.6938436096534133e-06,
+              "frobenius": 6.318078131818262e-06,
+              "relative": 3.048886788920277e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 4.2725063394755125e-05,
+              "frobenius": 6.041176594511309e-05,
+              "relative": 2.510212167787055e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.00012799020623788238,
+              "frobenius": 0.00021302551975579682,
+              "relative": 7.202051716694046e-10,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.003993157704826444,
+              "frobenius": 0.0041143174925759125,
+              "relative": 1.4125455826596946e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 29,
+          "zero_difference_steps": 0
+        },
+        "verified": true
+      },
+      {
+        "against_the_authors_tangent": {
+          "adjudicated_entries": 0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "best_step": 0.0,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 0.0,
+          "resolved_worst_entry": [],
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "sweep": [
+            {
+              "absolute": 0.0,
+              "frobenius": 0.0,
+              "relative": 0.0,
+              "step": 0.0
+            }
+          ],
+          "unresolved_entries": 0,
+          "zero_difference_steps": 0
+        },
+        "comparison": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 2.0742988246188234e-09,
+          "best_relative": 1.0689883123314568e-14,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202051716694046e-10,
+          "resolved_worst_entry": [
+            2,
+            1
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.2951204553246498e-09,
+              "frobenius": 2.0742988246188234e-09,
+              "relative": 1.0689883123314568e-14,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.0390067473053932e-08,
+              "frobenius": 1.5139706582924237e-08,
+              "relative": 8.575928707917531e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 5.7800207287073135e-08,
+              "frobenius": 1.1987460064333826e-07,
+              "relative": 4.770810760202861e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 1.7978018149733543e-06,
+              "frobenius": 2.292280111624742e-06,
+              "relative": 7.045834088727595e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 1.4118326362222433e-05,
+              "frobenius": 1.6646161822332352e-05,
+              "relative": 4.994237896840589e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 0.00012780516408383846,
+              "frobenius": 0.00018660308400287055,
+              "relative": 7.202051716694046e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.002186481127864681,
+              "frobenius": 0.003542597598631179,
+              "relative": 1.8047145817295777e-08,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.011455939398729242,
+              "frobenius": 0.01763899619052854,
+              "relative": 9.455696011649532e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 30,
+          "zero_difference_steps": 0
+        },
+        "driven_through": "strain increment",
+        "failures": [],
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "increment": 2,
+        "perturbation_scale": 0.0010000000000000007,
+        "reason": "agreed to 1.069e-14 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "record_index": 186,
+        "regime": {
+          "activated_here": false,
+          "increment": 2,
+          "reason": "the strain increment has reversed, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "regime": "smooth_unloading",
+          "rejected_steps": [
+            1e-07,
+            1e-08
+          ],
+          "selected_step": 0.1,
+          "smoothness": {
+            "0.0001": 0.0,
+            "0.001": 0.0,
+            "0.01": 0.0,
+            "0.1": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 1.608630094552624e-08,
+            "1e-08": 1.608630107491078e-07
+          },
+          "unloading": true,
+          "verifiable": true
+        },
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "smoothness": {
+          "1e-08": 1.608630107491078e-07,
+          "1e-07": 1.608630094552624e-08,
+          "1e-06": 0.0,
+          "1e-05": 0.0,
+          "0.0001": 0.0,
+          "0.001": 0.0,
+          "0.01": 0.0,
+          "0.1": 0.0
+        },
+        "the_references_own_error": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 2.0742988246188234e-09,
+          "best_relative": 1.0689883123314568e-14,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202051716694046e-10,
+          "resolved_worst_entry": [
+            2,
+            1
+          ],
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.2951204553246498e-09,
+              "frobenius": 2.0742988246188234e-09,
+              "relative": 1.0689883123314568e-14,
+              "step": 0.1
+            },
+            {
+              "absolute": 1.0390067473053932e-08,
+              "frobenius": 1.5139706582924237e-08,
+              "relative": 8.575928707917531e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 5.7800207287073135e-08,
+              "frobenius": 1.1987460064333826e-07,
+              "relative": 4.770810760202861e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 1.7978018149733543e-06,
+              "frobenius": 2.292280111624742e-06,
+              "relative": 7.045834088727595e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 1.4118326362222433e-05,
+              "frobenius": 1.6646161822332352e-05,
+              "relative": 4.994237896840589e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 0.00012780516408383846,
+              "frobenius": 0.00018660308400287055,
+              "relative": 7.202051716694046e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.002186481127864681,
+              "frobenius": 0.003542597598631179,
+              "relative": 1.8047145817295777e-08,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.011455939398729242,
+              "frobenius": 0.01763899619052854,
+              "relative": 9.455696011649532e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 30,
+          "zero_difference_steps": 0
+        },
+        "verified": true
+      },
+      {
+        "against_the_authors_tangent": {
+          "adjudicated_entries": 0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "best_step": 0.0,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 0.0,
+          "resolved_worst_entry": [],
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "sweep": [
+            {
+              "absolute": 0.0,
+              "frobenius": 0.0,
+              "relative": 0.0,
+              "step": 0.0
+            }
+          ],
+          "unresolved_entries": 0,
+          "zero_difference_steps": 0
+        },
+        "comparison": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 5.053517919204121e-10,
+          "best_relative": 1.5614436022819032e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202046397490566e-10,
+          "resolved_worst_entry": [
+            2,
+            2
+          ],
+          "stable_range": [
+            0.1,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.8917489796876907e-10,
+              "frobenius": 5.053517919204121e-10,
+              "relative": 1.5614436022819032e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 9.255018085241318e-09,
+              "frobenius": 1.2397847475076663e-08,
+              "relative": 3.903609005704758e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 5.5908458307385445e-08,
+              "frobenius": 9.498872319579023e-08,
+              "relative": 4.614666399974671e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 6.622431101277471e-07,
+              "frobenius": 1.1398446919541221e-06,
+              "relative": 5.466133607403626e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 6.539106834679842e-06,
+              "frobenius": 8.499960395943925e-06,
+              "relative": 3.048922822234176e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 6.432687223423272e-05,
+              "frobenius": 0.00011735478408776625,
+              "relative": 5.309519612984288e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.0006706566782668233,
+              "frobenius": 0.001214551484547656,
+              "relative": 5.53557893172616e-09,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.0037023056647740304,
+              "frobenius": 0.006355048061042207,
+              "relative": 3.0558713423531674e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 30,
+          "zero_difference_steps": 0
+        },
+        "driven_through": "strain increment",
+        "failures": [],
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "increment": 5,
+        "perturbation_scale": 0.003000000000000001,
+        "reason": "agreed to 1.561e-15 at the best step and within 1e-06 at 8 of 8 step sizes, 1e-08 to 0.1: 7 decades of perturbation size, over which truncation and cancellation error scale oppositely, so agreement at both ends is not one regime flattering itself",
+        "record_index": 279,
+        "regime": {
+          "activated_here": false,
+          "increment": 5,
+          "reason": "nothing has activated by here, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "regime": "smooth_elastic",
+          "rejected_steps": [
+            1e-08
+          ],
+          "selected_step": 0.1,
+          "smoothness": {
+            "0.0001": 0.0,
+            "0.001": 0.0,
+            "0.01": 0.0,
+            "0.1": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 6.255783663490139e-08
+          },
+          "unloading": false,
+          "verifiable": true
+        },
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "smoothness": {
+          "1e-08": 6.255783663490139e-08,
+          "1e-07": 0.0,
+          "1e-06": 0.0,
+          "1e-05": 0.0,
+          "0.0001": 0.0,
+          "0.001": 0.0,
+          "0.01": 0.0,
+          "0.1": 0.0
+        },
+        "the_references_own_error": {
+          "adjudicated_entries": 36,
+          "best_frobenius": 5.053517919204121e-10,
+          "best_relative": 1.5614436022819032e-15,
+          "best_step": 0.1,
+          "increment": 0,
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "notes": "",
+          "point": 1,
+          "resolved_relative": 7.202046397490566e-10,
+          "resolved_worst_entry": [
+            2,
+            2
+          ],
+          "stable_range": [
+            0.1,
+            0.1
+          ],
+          "sweep": [
+            {
+              "absolute": 1.8917489796876907e-10,
+              "frobenius": 5.053517919204121e-10,
+              "relative": 1.5614436022819032e-15,
+              "step": 0.1
+            },
+            {
+              "absolute": 9.255018085241318e-09,
+              "frobenius": 1.2397847475076663e-08,
+              "relative": 3.903609005704758e-14,
+              "step": 0.01
+            },
+            {
+              "absolute": 5.5908458307385445e-08,
+              "frobenius": 9.498872319579023e-08,
+              "relative": 4.614666399974671e-13,
+              "step": 0.001
+            },
+            {
+              "absolute": 6.622431101277471e-07,
+              "frobenius": 1.1398446919541221e-06,
+              "relative": 5.466133607403626e-12,
+              "step": 0.0001
+            },
+            {
+              "absolute": 6.539106834679842e-06,
+              "frobenius": 8.499960395943925e-06,
+              "relative": 3.048922822234176e-11,
+              "step": 1e-05
+            },
+            {
+              "absolute": 6.432687223423272e-05,
+              "frobenius": 0.00011735478408776625,
+              "relative": 5.309519612984288e-10,
+              "step": 1e-06
+            },
+            {
+              "absolute": 0.0006706566782668233,
+              "frobenius": 0.001214551484547656,
+              "relative": 5.53557893172616e-09,
+              "step": 1e-07
+            },
+            {
+              "absolute": 0.0037023056647740304,
+              "frobenius": 0.006355048061042207,
+              "relative": 3.0558713423531674e-08,
+              "step": 1e-08
+            }
+          ],
+          "unresolved_entries": 30,
+          "zero_difference_steps": 0
+        },
+        "verified": true
+      }
+    ],
+    "why": "the experiment this material first verified under, replayed exactly: same amplitude, same segments, same step ladder, same tolerances. A regression that searched again would be measuring a different experiment"
+  },
+  "discovery": {
+    "ran": false,
+    "reason": "replaying a frozen experiment"
+  },
+  "manifest": {
+    "name": "Steel",
+    "source": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
+    "bundle": [],
+    "source_form": "fixed",
+    "compiler_flags": [],
+    "element_type": "C3D8",
+    "element_label": 1,
+    "node_coordinates": [],
+    "node_provenance": "",
+    "isothermal_temperature": null,
+    "temperature_provenance": "this deck states no *INITIAL CONDITIONS, TYPE=TEMPERATURE, so there is no temperature of the author's to hold a single element at",
+    "plane_strain_directions": [],
+    "kinematics": "small strain",
+    "ntens": 6,
+    "ndi": 3,
+    "nshr": 3,
+    "nprops": 2,
+    "nstatv": 1,
+    "props": [
+      210000.0,
+      0.3
+    ],
+    "material_provenance": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/UMATmodel.inp: UMATmodel.inp *MATERIAL Steel: 2 constants, *DEPVAR 0 -- a section in UMATmodel.inp attaches Steel to C3D8; the deck sits in the source's own directory",
+    "initial_statev": [],
+    "initial_statev_provenance": "",
+    "initial_state_from_user_subroutine": false,
+    "orientation": null,
+    "orientation_provenance": "",
+    "orientation_axes": null,
+    "orientation_rotation": null,
+    "unsymmetric": false,
+    "loading": [
+      {
+        "name": "uniaxial",
+        "strain": [
+          0.010000000000000002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "prescribed extension along x, lateral faces free to move only in their own plane",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "simple_shear",
+        "strain": [
+          0.0,
+          0.0,
+          0.0,
+          0.010000000000000002,
+          0.0,
+          0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "prescribed engineering shear in the x-y plane",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "uniaxial_reversed",
+        "strain": [
+          -0.005000000000000001,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "reversal of uniaxial to exercise state evolution",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "uniaxial_hold",
+        "strain": [
+          0.010000000000000002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "increments": 5,
+        "period": 10.0,
+        "description": "the strain of uniaxial held for 10 of step time, so that stress change means time dependence",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      }
+    ],
+    "outputs": [
+      "S",
+      "SDV"
+    ],
+    "perturbation_components": [],
+    "fd_steps": [
+      0.1,
+      0.01,
+      0.001,
+      0.0001,
+      1e-05,
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "near_zero_fraction": 1e-08,
+    "primal_tolerance": 1e-10,
+    "notes": "loading is a declared probe chosen by this harness, not read from any deck and not this source's own loading history. Material constants, nstatv, unsymmetry and kinematics ARE read from the paired deck.",
+    "status": "ready"
+  },
+  "deck_digest": "148a9ba1eb9cc250",
+  "support": {
+    "units": 4,
+    "required": true,
+    "ok": true,
+    "reason": "",
+    "objects": 4
+  },
+  "blocking_statements": [],
+  "original": {
+    "completed": true,
+    "increments": 35,
+    "converged_records": 280,
+    "instrumented": true,
+    "warnings": [
+      "post_analysis_wrapup_failure",
+      "process_exit_code_1"
+    ],
+    "reasons": [],
+    "console_tail": ""
+  },
+  "transformed": {
+    "completed": true,
+    "increments": 35,
+    "converged_records": 280,
+    "instrumented": true,
+    "warnings": [
+      "post_analysis_wrapup_failure",
+      "process_exit_code_1"
+    ],
+    "reasons": [],
+    "console_tail": ""
+  },
+  "history_grouping": {
+    "original": {
+      "raw_output_records": 280,
+      "total_increments": 35,
+      "complete_increments": 35,
+      "material_points_per_increment": 8,
+      "first_incomplete_increment": null,
+      "first_non_finite_material_point": null,
+      "complete": true
+    },
+    "transformed": {
+      "raw_output_records": 280,
+      "total_increments": 35,
+      "complete_increments": 35,
+      "material_points_per_increment": 8,
+      "first_incomplete_increment": null,
+      "first_non_finite_material_point": null,
+      "complete": true
+    },
+    "both_finite_throughout": true
+  },
+  "primal": {
+    "increments": 280,
+    "indistinguishable_components": 968,
+    "records_original": 280,
+    "records_transformed": 280,
+    "worst_stress_relative": 0.0,
+    "worst_stress_at": [],
+    "worst_state_relative": 0.0,
+    "worst_state_at": [],
+    "unresolved_components": 700,
+    "resolved_components": 968,
+    "non_finite_components": 0,
+    "non_finite_original": 0,
+    "non_finite_transformed": 0,
+    "agrees": true,
+    "reason": ""
+  },
+  "evidence": {
+    "abaqus_job_completed": true,
+    "all_requested_outputs_present": true,
+    "complete_history_finite": true,
+    "primal_agreed": true,
+    "primal_difference_explained_by_a_measured_control": null,
+    "derivatives_verified": true,
+    "mechanically_informative": true
+  },
+  "time_scale_coverage": {
+    "scale": {
+      "name": "",
+      "value": 0.0,
+      "evidence": "",
+      "declared": false
+    },
+    "total_time": 13.0,
+    "fraction": 0.0,
+    "enough": true,
+    "reaches_heuristic": false,
+    "reason": "this source declares no time scale of its own, so there is nothing here to measure the experiment's duration against"
+  },
+  "activation_on_the_frozen_run": {
+    "activated": true,
+    "increments": 280,
+    "fired": [
+      "departure_from_linearity"
+    ],
+    "summary": "activated over 280 increments by departure_from_linearity (2)",
+    "not_measured": [
+      "dissipated energy (ALLPD/ALLCD are model-level ODB history, not material-point probe output)",
+      "a PNEWDT cutback request (the probe records what the routine returned, not what the solver did with it)",
+      "which constitutive branch executed (that needs the source instrumented, not its output read)"
+    ],
+    "indicators": [
+      {
+        "name": "state_change",
+        "fired": false,
+        "magnitude": 0.0,
+        "detail": "no state variable moved"
+      },
+      {
+        "name": "departure_from_linearity",
+        "fired": true,
+        "magnitude": 2.0,
+        "detail": "largest at increment 64"
+      },
+      {
+        "name": "tangent_change",
+        "fired": false,
+        "magnitude": 0.0,
+        "detail": ""
+      },
+      {
+        "name": "residual_after_reversal",
+        "fired": false,
+        "magnitude": 0.0,
+        "detail": "this loading does not reverse"
+      }
+    ]
+  },
+  "response_plausibility": {
+    "plausible": true,
+    "checks": [
+      {
+        "name": "stress against material constants",
+        "plausible": true,
+        "detail": "peak stress 2827 against a largest material constant of 2.1e+05, a ratio of 0.01346",
+        "measured": 2826.923076923078,
+        "against": 210000.0
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "name": "stress on the material scale",
+      "met": true,
+      "reason": "the response sits within the scales this problem supplies: peak stress 2827 against a largest material constant of 2.1e+05, a ratio of 0.01346",
+      "magnitude": 0.013461538461538467
+    }
+  ],
+  "mechanically_informative": {
+    "informative": true,
+    "reason": "this source declares no time scale of its own, so there is nothing here to measure the experiment's duration against; the material is active over the run that was verified (departure_from_linearity); the response sits within the scales this problem supplies: peak stress 2827 against a largest material constant of 2.1e+05, a ratio of 0.01346; the response sits within the scales this problem supplies: peak stress 2827 against a largest material constant of 2.1e+05, a ratio of 0.01346"
+  },
+  "complete_finite_verification_run": true,
+  "tangent": {
+    "verified": true,
+    "reason": "agreed at all 4 states where a difference could be taken (increments 1, 4, 2, 5); 4 smooth states on a material that never activates, which is the whole of it; worst of them: agreed to 1.069e-14 over a plateau of 2 step sizes, 0.01 to 0.1",
+    "states": [
+      {
+        "verified": true,
+        "reason": "agreed to 1.682e-15 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "increment": 1,
+        "record_index": 0,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.0010000000000000002,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.0,
+          "0.01": 0.0,
+          "0.001": 0.0,
+          "0.0001": 0.0,
+          "1e-05": 0.0,
+          "1e-06": 0.0,
+          "1e-07": 0.0,
+          "1e-08": 2.010787614147512e-08
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 2.0372681319713593e-10,
+              "relative": 1.6815546486112804e-15,
+              "frobenius": 3.8113796774148926e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.1641532182693481e-09,
+              "relative": 7.566995918750762e-15,
+              "frobenius": 2.0136401660938172e-09
+            },
+            {
+              "step": 0.001,
+              "absolute": 2.1012965589761734e-08,
+              "relative": 7.433157895698028e-14,
+              "frobenius": 2.3951121892335796e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 9.266659617424011e-08,
+              "relative": 5.78935243307598e-13,
+              "frobenius": 1.3914904145313752e-07
+            },
+            {
+              "step": 1e-05,
+              "absolute": 1.990454620681703e-06,
+              "relative": 1.64291492500712e-11,
+              "frobenius": 3.0633811956210973e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 4.25399630330503e-05,
+              "relative": 1.504815018856201e-10,
+              "frobenius": 4.462042682744952e-05
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.0002700989134609699,
+              "relative": 9.55451938773499e-10,
+              "frobenius": 0.00031812981723035354
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.001150986587163061,
+              "relative": 6.585001875276839e-09,
+              "frobenius": 0.0017367124479593225
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 3.8113796774148926e-10,
+          "best_relative": 1.6815546486112804e-15,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 3.2759429950281687e-13,
+          "unresolved_entries": 31,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0,
+              "frobenius": 0.0
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 2.0372681319713593e-10,
+              "relative": 1.6815546486112804e-15,
+              "frobenius": 3.8113796774148926e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.1641532182693481e-09,
+              "relative": 7.566995918750762e-15,
+              "frobenius": 2.0136401660938172e-09
+            },
+            {
+              "step": 0.001,
+              "absolute": 2.1012965589761734e-08,
+              "relative": 7.433157895698028e-14,
+              "frobenius": 2.3951121892335796e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 9.266659617424011e-08,
+              "relative": 5.78935243307598e-13,
+              "frobenius": 1.3914904145313752e-07
+            },
+            {
+              "step": 1e-05,
+              "absolute": 1.990454620681703e-06,
+              "relative": 1.64291492500712e-11,
+              "frobenius": 3.0633811956210973e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 4.25399630330503e-05,
+              "relative": 1.504815018856201e-10,
+              "frobenius": 4.462042682744952e-05
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.0002700989134609699,
+              "relative": 9.55451938773499e-10,
+              "frobenius": 0.00031812981723035354
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.001150986587163061,
+              "relative": 6.585001875276839e-09,
+              "frobenius": 0.0017367124479593225
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 3.8113796774148926e-10,
+          "best_relative": 1.6815546486112804e-15,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 3.2759429950281687e-13,
+          "unresolved_entries": 31,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 1,
+          "regime": "smooth_elastic",
+          "reason": "nothing has activated by here, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": false,
+          "unloading": false,
+          "verifiable": true,
+          "selected_step": 0.1,
+          "rejected_steps": [
+            1e-08
+          ],
+          "smoothness": {
+            "0.1": 0.0,
+            "0.01": 0.0,
+            "0.001": 0.0,
+            "0.0001": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 2.010787614147512e-08
+          }
+        }
+      },
+      {
+        "verified": true,
+        "reason": "agreed to 1.441e-15 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "increment": 4,
+        "record_index": 93,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.0010000000000000007,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.0,
+          "0.01": 0.0,
+          "0.001": 0.0,
+          "0.0001": 0.0,
+          "1e-05": 0.0,
+          "1e-06": 0.0,
+          "1e-07": 0.0,
+          "1e-08": 7.037756543380543e-08
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.7462298274040222e-10,
+              "relative": 1.4413325559525263e-15,
+              "frobenius": 3.558530955528108e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.5861587598919868e-09,
+              "relative": 1.963815607485317e-14,
+              "frobenius": 2.748463494727675e-09
+            },
+            {
+              "step": 0.001,
+              "absolute": 2.112938091158867e-08,
+              "relative": 1.2503559922888165e-13,
+              "frobenius": 2.549380924183076e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 4.75964043289423e-07,
+              "relative": 2.338021572324492e-12,
+              "frobenius": 6.69362898169517e-07
+            },
+            {
+              "step": 1e-05,
+              "absolute": 3.6938436096534133e-06,
+              "relative": 3.048886788920277e-11,
+              "frobenius": 6.318078131818262e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 4.2725063394755125e-05,
+              "relative": 2.510212167787055e-10,
+              "frobenius": 6.041176594511309e-05
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.00012799020623788238,
+              "relative": 7.202051716694046e-10,
+              "frobenius": 0.00021302551975579682
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.003993157704826444,
+              "relative": 1.4125455826596946e-08,
+              "frobenius": 0.0041143174925759125
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 3.558530955528108e-10,
+          "best_relative": 1.4413325559525263e-15,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202051716694046e-10,
+          "unresolved_entries": 29,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            2
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0,
+              "frobenius": 0.0
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.7462298274040222e-10,
+              "relative": 1.4413325559525263e-15,
+              "frobenius": 3.558530955528108e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.5861587598919868e-09,
+              "relative": 1.963815607485317e-14,
+              "frobenius": 2.748463494727675e-09
+            },
+            {
+              "step": 0.001,
+              "absolute": 2.112938091158867e-08,
+              "relative": 1.2503559922888165e-13,
+              "frobenius": 2.549380924183076e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 4.75964043289423e-07,
+              "relative": 2.338021572324492e-12,
+              "frobenius": 6.69362898169517e-07
+            },
+            {
+              "step": 1e-05,
+              "absolute": 3.6938436096534133e-06,
+              "relative": 3.048886788920277e-11,
+              "frobenius": 6.318078131818262e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 4.2725063394755125e-05,
+              "relative": 2.510212167787055e-10,
+              "frobenius": 6.041176594511309e-05
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.00012799020623788238,
+              "relative": 7.202051716694046e-10,
+              "frobenius": 0.00021302551975579682
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.003993157704826444,
+              "relative": 1.4125455826596946e-08,
+              "frobenius": 0.0041143174925759125
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 3.558530955528108e-10,
+          "best_relative": 1.4413325559525263e-15,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202051716694046e-10,
+          "unresolved_entries": 29,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            2
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 4,
+          "regime": "smooth_unloading",
+          "reason": "the strain increment has reversed, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": false,
+          "unloading": true,
+          "verifiable": true,
+          "selected_step": 0.1,
+          "rejected_steps": [
+            1e-08
+          ],
+          "smoothness": {
+            "0.1": 0.0,
+            "0.01": 0.0,
+            "0.001": 0.0,
+            "0.0001": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 7.037756543380543e-08
+          }
+        }
+      },
+      {
+        "verified": true,
+        "reason": "agreed to 1.069e-14 over a plateau of 2 step sizes, 0.01 to 0.1",
+        "increment": 2,
+        "record_index": 186,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.0010000000000000007,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.0,
+          "0.01": 0.0,
+          "0.001": 0.0,
+          "0.0001": 0.0,
+          "1e-05": 0.0,
+          "1e-06": 0.0,
+          "1e-07": 1.608630094552624e-08,
+          "1e-08": 1.608630107491078e-07
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.2951204553246498e-09,
+              "relative": 1.0689883123314568e-14,
+              "frobenius": 2.0742988246188234e-09
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.0390067473053932e-08,
+              "relative": 8.575928707917531e-14,
+              "frobenius": 1.5139706582924237e-08
+            },
+            {
+              "step": 0.001,
+              "absolute": 5.7800207287073135e-08,
+              "relative": 4.770810760202861e-13,
+              "frobenius": 1.1987460064333826e-07
+            },
+            {
+              "step": 0.0001,
+              "absolute": 1.7978018149733543e-06,
+              "relative": 7.045834088727595e-12,
+              "frobenius": 2.292280111624742e-06
+            },
+            {
+              "step": 1e-05,
+              "absolute": 1.4118326362222433e-05,
+              "relative": 4.994237896840589e-11,
+              "frobenius": 1.6646161822332352e-05
+            },
+            {
+              "step": 1e-06,
+              "absolute": 0.00012780516408383846,
+              "relative": 7.202051716694046e-10,
+              "frobenius": 0.00018660308400287055
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.002186481127864681,
+              "relative": 1.8047145817295777e-08,
+              "frobenius": 0.003542597598631179
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.011455939398729242,
+              "relative": 9.455696011649532e-08,
+              "frobenius": 0.01763899619052854
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 2.0742988246188234e-09,
+          "best_relative": 1.0689883123314568e-14,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202051716694046e-10,
+          "unresolved_entries": 30,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            2,
+            1
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0,
+              "frobenius": 0.0
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.2951204553246498e-09,
+              "relative": 1.0689883123314568e-14,
+              "frobenius": 2.0742988246188234e-09
+            },
+            {
+              "step": 0.01,
+              "absolute": 1.0390067473053932e-08,
+              "relative": 8.575928707917531e-14,
+              "frobenius": 1.5139706582924237e-08
+            },
+            {
+              "step": 0.001,
+              "absolute": 5.7800207287073135e-08,
+              "relative": 4.770810760202861e-13,
+              "frobenius": 1.1987460064333826e-07
+            },
+            {
+              "step": 0.0001,
+              "absolute": 1.7978018149733543e-06,
+              "relative": 7.045834088727595e-12,
+              "frobenius": 2.292280111624742e-06
+            },
+            {
+              "step": 1e-05,
+              "absolute": 1.4118326362222433e-05,
+              "relative": 4.994237896840589e-11,
+              "frobenius": 1.6646161822332352e-05
+            },
+            {
+              "step": 1e-06,
+              "absolute": 0.00012780516408383846,
+              "relative": 7.202051716694046e-10,
+              "frobenius": 0.00018660308400287055
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.002186481127864681,
+              "relative": 1.8047145817295777e-08,
+              "frobenius": 0.003542597598631179
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.011455939398729242,
+              "relative": 9.455696011649532e-08,
+              "frobenius": 0.01763899619052854
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 2.0742988246188234e-09,
+          "best_relative": 1.0689883123314568e-14,
+          "stable_range": [
+            0.01,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202051716694046e-10,
+          "unresolved_entries": 30,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            2,
+            1
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 2,
+          "regime": "smooth_unloading",
+          "reason": "the strain increment has reversed, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": false,
+          "unloading": true,
+          "verifiable": true,
+          "selected_step": 0.1,
+          "rejected_steps": [
+            1e-07,
+            1e-08
+          ],
+          "smoothness": {
+            "0.1": 0.0,
+            "0.01": 0.0,
+            "0.001": 0.0,
+            "0.0001": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 1.608630094552624e-08,
+            "1e-08": 1.608630107491078e-07
+          }
+        }
+      },
+      {
+        "verified": true,
+        "reason": "agreed to 1.561e-15 at the best step and within 1e-06 at 8 of 8 step sizes, 1e-08 to 0.1: 7 decades of perturbation size, over which truncation and cancellation error scale oppositely, so agreement at both ends is not one regime flattering itself",
+        "increment": 5,
+        "record_index": 279,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.003000000000000001,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.0,
+          "0.01": 0.0,
+          "0.001": 0.0,
+          "0.0001": 0.0,
+          "1e-05": 0.0,
+          "1e-06": 0.0,
+          "1e-07": 0.0,
+          "1e-08": 6.255783663490139e-08
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.8917489796876907e-10,
+              "relative": 1.5614436022819032e-15,
+              "frobenius": 5.053517919204121e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 9.255018085241318e-09,
+              "relative": 3.903609005704758e-14,
+              "frobenius": 1.2397847475076663e-08
+            },
+            {
+              "step": 0.001,
+              "absolute": 5.5908458307385445e-08,
+              "relative": 4.614666399974671e-13,
+              "frobenius": 9.498872319579023e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 6.622431101277471e-07,
+              "relative": 5.466133607403626e-12,
+              "frobenius": 1.1398446919541221e-06
+            },
+            {
+              "step": 1e-05,
+              "absolute": 6.539106834679842e-06,
+              "relative": 3.048922822234176e-11,
+              "frobenius": 8.499960395943925e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 6.432687223423272e-05,
+              "relative": 5.309519612984288e-10,
+              "frobenius": 0.00011735478408776625
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.0006706566782668233,
+              "relative": 5.53557893172616e-09,
+              "frobenius": 0.001214551484547656
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.0037023056647740304,
+              "relative": 3.0558713423531674e-08,
+              "frobenius": 0.006355048061042207
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 5.053517919204121e-10,
+          "best_relative": 1.5614436022819032e-15,
+          "stable_range": [
+            0.1,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202046397490566e-10,
+          "unresolved_entries": 30,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            2,
+            2
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 0.0,
+              "relative": 0.0,
+              "frobenius": 0.0
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 0.0,
+          "best_relative": 0.0,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 1.8917489796876907e-10,
+              "relative": 1.5614436022819032e-15,
+              "frobenius": 5.053517919204121e-10
+            },
+            {
+              "step": 0.01,
+              "absolute": 9.255018085241318e-09,
+              "relative": 3.903609005704758e-14,
+              "frobenius": 1.2397847475076663e-08
+            },
+            {
+              "step": 0.001,
+              "absolute": 5.5908458307385445e-08,
+              "relative": 4.614666399974671e-13,
+              "frobenius": 9.498872319579023e-08
+            },
+            {
+              "step": 0.0001,
+              "absolute": 6.622431101277471e-07,
+              "relative": 5.466133607403626e-12,
+              "frobenius": 1.1398446919541221e-06
+            },
+            {
+              "step": 1e-05,
+              "absolute": 6.539106834679842e-06,
+              "relative": 3.048922822234176e-11,
+              "frobenius": 8.499960395943925e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 6.432687223423272e-05,
+              "relative": 5.309519612984288e-10,
+              "frobenius": 0.00011735478408776625
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.0006706566782668233,
+              "relative": 5.53557893172616e-09,
+              "frobenius": 0.001214551484547656
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.0037023056647740304,
+              "relative": 3.0558713423531674e-08,
+              "frobenius": 0.006355048061042207
+            }
+          ],
+          "best_step": 0.1,
+          "best_frobenius": 5.053517919204121e-10,
+          "best_relative": 1.5614436022819032e-15,
+          "stable_range": [
+            0.1,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 7.202046397490566e-10,
+          "unresolved_entries": 30,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            2,
+            2
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 5,
+          "regime": "smooth_elastic",
+          "reason": "nothing has activated by here, and the forward and backward one-sided differences agree to 0 at a step of 0.1, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": false,
+          "unloading": false,
+          "verifiable": true,
+          "selected_step": 0.1,
+          "rejected_steps": [
+            1e-08
+          ],
+          "smoothness": {
+            "0.1": 0.0,
+            "0.01": 0.0,
+            "0.001": 0.0,
+            "0.0001": 0.0,
+            "1e-05": 0.0,
+            "1e-06": 0.0,
+            "1e-07": 0.0,
+            "1e-08": 6.255783663490139e-08
+          }
+        }
+      }
+    ],
+    "states_checked": 4,
+    "chosen_states": [
+      {
+        "increment": 1,
+        "record_index": 0
+      },
+      {
+        "increment": 4,
+        "record_index": 93
+      },
+      {
+        "increment": 2,
+        "record_index": 186
+      },
+      {
+        "increment": 5,
+        "record_index": 279
+      }
+    ],
+    "states_agreeing": 4,
+    "states_measured": 4,
+    "states_unmeasured": 0,
+    "increment": 2,
+    "record_index": 186,
+    "comparison": {
+      "increment": 0,
+      "point": 1,
+      "sweep": [
+        {
+          "step": 0.1,
+          "absolute": 1.2951204553246498e-09,
+          "relative": 1.0689883123314568e-14,
+          "frobenius": 2.0742988246188234e-09
+        },
+        {
+          "step": 0.01,
+          "absolute": 1.0390067473053932e-08,
+          "relative": 8.575928707917531e-14,
+          "frobenius": 1.5139706582924237e-08
+        },
+        {
+          "step": 0.001,
+          "absolute": 5.7800207287073135e-08,
+          "relative": 4.770810760202861e-13,
+          "frobenius": 1.1987460064333826e-07
+        },
+        {
+          "step": 0.0001,
+          "absolute": 1.7978018149733543e-06,
+          "relative": 7.045834088727595e-12,
+          "frobenius": 2.292280111624742e-06
+        },
+        {
+          "step": 1e-05,
+          "absolute": 1.4118326362222433e-05,
+          "relative": 4.994237896840589e-11,
+          "frobenius": 1.6646161822332352e-05
+        },
+        {
+          "step": 1e-06,
+          "absolute": 0.00012780516408383846,
+          "relative": 7.202051716694046e-10,
+          "frobenius": 0.00018660308400287055
+        },
+        {
+          "step": 1e-07,
+          "absolute": 0.002186481127864681,
+          "relative": 1.8047145817295777e-08,
+          "frobenius": 0.003542597598631179
+        },
+        {
+          "step": 1e-08,
+          "absolute": 0.011455939398729242,
+          "relative": 9.455696011649532e-08,
+          "frobenius": 0.01763899619052854
+        }
+      ],
+      "best_step": 0.1,
+      "best_frobenius": 2.0742988246188234e-09,
+      "best_relative": 1.0689883123314568e-14,
+      "stable_range": [
+        0.01,
+        0.1
+      ],
+      "near_zero_entries": 24,
+      "non_finite_entries": 0,
+      "zero_difference_steps": 0,
+      "resolved_relative": 7.202051716694046e-10,
+      "unresolved_entries": 30,
+      "adjudicated_entries": 36,
+      "resolved_worst_entry": [
+        2,
+        1
+      ],
+      "notes": ""
+    },
+    "driven_through": "strain increment",
+    "failures": [],
+    "perturbation_scale": 0.0010000000000000007,
+    "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+    "fd_steps": [
+      0.1,
+      0.01,
+      0.001,
+      0.0001,
+      1e-05,
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "states_smooth": 4,
+    "states_on_a_branch": 0,
+    "states_transitional": 0,
+    "nonlinear": false,
+    "response_character": "irreversible",
+    "character_reason": "the strain returned to within 0.0% of where it started and 10.0% of the peak stress remained, so the material kept something",
+    "coverage": "4 smooth states on a material that never activates, which is the whole of it"
+  },
+  "seconds": 49.8
+}

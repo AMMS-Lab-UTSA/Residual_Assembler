@@ -11,11 +11,13 @@ from __future__ import annotations
 
 from ..core.registry import Registry
 from .elastic_adapter import IsotropicElastic
+from .neo_hookean import CompressibleNeoHookean
 
 
 def build_material_registry() -> Registry:
     reg = Registry("material")
     reg.register(IsotropicElastic())
+    reg.register(CompressibleNeoHookean())
     # optional adapters that may need compiled Fortran / Abaqus
     for key, module, cls in (
             ("umat", "residual_core.materials.umat_adapter", "UmatAdapter"),

@@ -1,42 +1,10 @@
-"""C3D8 finite-strain solid formulation (Mode 2: material-update-driven).
+"""Bounded C3D8 total isotropic hyperelasticity in the current configuration.
 
-This is the home of the verified crystal-plasticity backend. The examples are
-``nlgeom=YES`` and the CP UMAT returns Cauchy stress, so the internal force is
-assembled in the CURRENT configuration:
-
-    f_int,e = sum_k  B_spatial(x, xi_k)^T sigma_cauchy_k  detJ_current_k w_k
-    K_e     = sum_k  B_spatial^T D_k B_spatial detJ_k w_k + K_geo_k
-
-The bound Material (kinematic_input='deformation_gradient') receives F0/F1 per IP
-and returns Cauchy stress + DDSDDE + updated STATEV. All element numerics delegate
-to the verified c3d8_kernel; this class only bridges DOFs<->kinematics<->material
-and packs/unpacks per-IP state.
-
-NOTE on the tangent measure: turning the finite-strain UMAT DDSDDE into the exact
-Abaqus AMATRX (objective-rate + geometric split) is the error-prone item deferred
-to the Abaqus comparison (see docs/limitations.md and tests). The residual (which
-only needs Cauchy stress) is exact; the tangent here uses the kernel's
-conventional geometric term with the material DDSDDE.
-
-Half of that question is now settled and half is not, and the difference
-matters. What a finite-strain UMAT's DDSDDE IS has been measured from the
-frozen fixtures: Abaqus's finite-strain material Jacobian is the tangent of
-the Jaumann rate of Kirchhoff stress over J, so the Cauchy increment it
-predicts is ``D:Deps - sigma tr(Deps)``. Measured on AlexanderJFDR's
-neo-Hookean, that reading holds to 6.9e-08 and the plain one misses by
-8.7e-03. Crucially it is a property of the ROUTINE and not of NLGEOM:
-irfancn's elastic UMAT under the same flag is a small-strain routine handed a
-logarithmic strain and satisfies the plain reading to 3.4e-16.
-``materials.verified_fixture.tangent_convention`` measures which, per
-material.
-
-What is NOT settled is whether ``int B^T D B dv + K_geo`` as assembled here
-equals the stiffness Abaqus builds out of the same D. Abaqus does not export
-AMATRX, so the only observable that can decide it is the derivative of the
-reaction forces, which needs a run: abaqus_queue/requests/
-A3_finite_strain_element_tangent.json. Until that returns, this tangent is a
-documented approximation and the docstring says so rather than the code
-implying otherwise.
+For L = delta F F^-1 = d + w and Abaqus D = tau^Jaumann/J,
+delta sigma = D:d + w sigma - sigma w - sigma tr(d).
+Linearizing spatial gradients and volume gives B.T c B + Kgeo with
+c:d = D:d - d sigma - sigma d. See docs/evidence/recovery_finite.md.
+History-dependent rotating materials are deliberately unsupported.
 """
 
 from __future__ import annotations
@@ -68,22 +36,20 @@ class SolidC3D8FiniteStrain(Formulation):
     required_inputs = ("coords", "connectivity", "dofs", "material",
                        "material_state", "time_increments")
     optional_inputs = ("dofs_prev",)
-    limitations = ("finite strain, current-configuration assembly",
-                   "C3D8 (8-node hex) only",
-                   "needs a deformation-gradient material (e.g. UMAT / crystal_plasticity)",
-                   "consistent tangent approximate pending Abaqus AMATRX comparison")
-    verification_tests = ("zero-field", "rigid-body", "patch", "FD-tangent",
-                          "CP-kernel-bitwise")
-    notes = "Home of the verified crystal-plasticity backend (one example backend)."
+    limitations = ("C3D8 full integration, real positive-J geometry",
+                   "isotropic total hyperelastic materials only; no history transport",
+                   "requires Cauchy stress and Kirchhoff-Jaumann/J tangent")
+    verification_tests = ("test_finite_strain_hyperelastic",)
+    notes = "Bounded total hyperelastic path; no generic finite-strain UMAT claim."
     required_inputs_by_mode = {
         "material-replay": ("coords", "connectivity", "dofs", "material",
                             "material_parameters", "material_state",
                             "solution_history", "time_increments")}
     optional_inputs_by_mode = {"material-replay": ("dofs_prev",)}
     material_interface_needed = True
-    state_requirements = "history-dependent"
-    tangent_support = "analytic (approx; pending Abaqus AMATRX comparison)"
-    verification_status = "verified"
+    state_requirements = "stateless total hyperelasticity; F0/F1 explicit"
+    tangent_support = "analytic, exact weak linearization for declared measures"
+    verification_status = "bounded-hyperelastic"
 
     def n_nodes(self, element_type):
         return 8
@@ -94,37 +60,64 @@ class SolidC3D8FiniteStrain(Formulation):
         options = options or {}
         solution_state = solution_state or {}
         compute_tangent = options.get("compute_tangent", True)
-        u_e = np.asarray(dofs, dtype=float)
-        u_prev = np.asarray(solution_state.get("dofs_prev",
-                                               np.zeros_like(u_e)), dtype=float)
-        coords = np.asarray(coords, dtype=float)
+        u_e = np.asarray(dofs)
+        u_prev = np.asarray(solution_state.get("dofs_prev", np.zeros_like(u_e)))
+        if any(value.dtype.kind not in "fi" or not np.all(np.isfinite(value))
+               or value.size != 24 for value in (u_e, u_prev)):
+            raise ValueError("finite-strain C3D8 requires 24 real finite DOFs; "
+                             "OTI is supported for material parameters at fixed real geometry")
+        coords = np.asarray(coords)
+        if (element_type != "C3D8" or coords.shape != (8, 3)
+            or coords.dtype.kind not in "fi" or not np.all(np.isfinite(coords))):
+            raise ValueError("finite-strain formulation requires C3D8 with finite (8,3) coordinates")
 
         binding = properties
         material = getattr(binding, "material", None)
         if material is None:
             raise ValueError("solid_c3d8_finite_strain needs a material binding "
                              "(Mode 2). For Mode 1 use stress_driven_adapter.")
-        nstate = getattr(binding, "n_state_vars", 0) or material.n_state_vars
+        expected = {"kinematic_input": "deformation_gradient",
+                    "stress_measure": "cauchy",
+                    "tangent_measure": "kirchhoff_jaumann_over_j",
+                    "response_kind": "isotropic_total_hyperelastic"}
+        for attribute, required in expected.items():
+            actual = getattr(material, attribute, None)
+            if actual != required:
+                raise ValueError("solid_c3d8_finite_strain: material %s has %s=%r; "
+                                 "requires %r. Only bounded isotropic total hyperelasticity "
+                                 "is available; generic rotating/history UMATs are unsupported."
+                                 % (material.name, attribute, actual, required))
+        if (binding.n_state_vars or material.n_state_vars
+                or (material_state is not None and np.size(material_state))):
+            raise ValueError("solid_c3d8_finite_strain does not support history state or DROT transport")
         pts = k.ABAQUS_C3D8_GAUSS.points
 
-        sigma_ip = np.zeros((8, 6))
-        D_ip = np.zeros((8, 6, 6))
-        state_new = np.zeros((8, nstate)) if nstate else None
+        sigma_ip = []
+        D_ip = []
         for ip in range(8):
+            for configuration in (coords, coords + u_e.reshape(8, 3),
+                                  coords + u_prev.reshape(8, 3)):
+                jacobian = configuration.T @ k.shape_grad_natural(pts[ip])
+                if np.linalg.det(jacobian) <= 0:
+                    raise ValueError("finite-strain C3D8 requires positive reference/current/previous "
+                                     "Jacobian at element %s IP %s" % (element_id, ip + 1))
             F0, F1 = _F_at(coords, u_e, u_prev, pts[ip])
-            s_prev = (material_state[ip] if material_state is not None
-                      else np.zeros(nstate))
             kin = {"F0": F0, "F1": F1,
                    "element": element_id, "ip": ip + 1}
             sigma, D, s_new, _ = material.evaluate(
-                kin, s_prev, binding, time, dtime, fields, options)
-            sigma_ip[ip] = sigma
-            D_ip[ip] = D if D is not None else 0.0
-            if state_new is not None:
-                state_new[ip] = s_new
+                kin, np.zeros(0), binding, time, dtime, fields, options)
+            if np.asarray(sigma).shape != (6,) or np.size(s_new):
+                raise ValueError("finite-strain material must return stress (6,) and no history state")
+            sigma_ip.append(sigma)
+            if compute_tangent:
+                if D is None or np.asarray(D).shape != (6, 6):
+                    raise ValueError("finite-strain tangent requires material DDSDDE (6,6)")
+                D_ip.append(k.kirchhoff_jaumann_to_spatial(D, sigma))
 
         r = k.element_internal_force_finite_strain(coords, u_e, sigma_ip)
         K = None
         if compute_tangent:
             K = k.element_tangent(coords, u_e, D_ip, sigma_ip, mode="finite")
-        return r, K, state_new, {"formulation": self.name, "n_ip": 8}
+        return r, K, None, {"formulation": self.name, "n_ip": 8,
+                    "tangent_measure": "exact_weak_linearization",
+                    "history": "none", "rotation": "global isotropic total response"}

@@ -60,7 +60,7 @@ def element_dR_dp(Xe, dsigma_dp_ip, Ue=None, *, mode: str = "small",
     belongs to.
     """
     Xe = np.asarray(Xe, dtype=float)
-    dsigma = np.asarray(dsigma_dp_ip, dtype=float)
+    dsigma = np.asarray(dsigma_dp_ip)
     if dsigma.shape != (len(gauss.weights), 6):
         raise ValueError(
             f"dsigma_dp_ip must be ({len(gauss.weights)}, 6), got {dsigma.shape}")
@@ -68,7 +68,7 @@ def element_dR_dp(Xe, dsigma_dp_ip, Ue=None, *, mode: str = "small",
         if Ue is None:
             raise ValueError("finite-strain mode needs the element displacement")
         xe = Xe + np.asarray(Ue, dtype=float).reshape(8, 3)
-    out = np.zeros(24, dtype=float)
+    out = np.zeros(24, dtype=np.result_type(dsigma.dtype, float))
     for k, weight in enumerate(gauss.weights):
         if mode == "finite":
             B, detJ = b_matrix_spatial(xe, gauss.points[k])
@@ -107,6 +107,7 @@ def assemble_dR_dp(node_ids: Sequence[int], coords, connectivity,
                                      3 * node_id_to_index[nid] + 3]
                                for nid in conn], dtype=float)
         element = element_dR_dp(Xe, dsigma_dp_all[eid], Ue, mode=mode)
+        out = out.astype(np.result_type(out.dtype, element.dtype), copy=False)
         for local, nid in enumerate(conn):
             gi = node_id_to_index[nid]
             out[3 * gi:3 * gi + 3] += element[3 * local:3 * local + 3]

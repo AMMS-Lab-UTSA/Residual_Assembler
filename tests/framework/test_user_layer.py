@@ -8,8 +8,10 @@ Python OTI path is exercised when OTILib is available; otherwise the actionable
 Run: python tests/framework/test_user_layer.py
 """
 
+import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -152,6 +154,32 @@ def test_blackbox_end_to_end():
     finally:
         shutil.rmtree(d, ignore_errors=True)
     _report(checks)
+
+
+@pytest.mark.parametrize("failure", ["missing", "partial", "invalid_json", "not_object", "empty_object"])
+def test_report_refuses_missing_or_invalid_results(tmp_path, failure):
+    public = tmp_path / "public"
+    private = tmp_path / "private"
+    public.mkdir()
+    private.mkdir()
+    summary = public / "validation_summary.json"
+    metadata = private / "metadata.json"
+    if failure != "missing":
+        summary.write_text(json.dumps({"status": "passed"}), encoding="utf-8")
+    if failure not in {"missing", "partial"}:
+        metadata.write_text({"invalid_json": "{", "not_object": "[]",
+                             "empty_object": "{}"}[failure], encoding="utf-8")
+    expected_path = summary if failure == "missing" else metadata
+    with pytest.raises(ConfigError, match=expected_path.name):
+        read_report(str(tmp_path))
+    result = subprocess.run(
+        [sys.executable, "-m", "residual_core.ui.cli", "report", str(tmp_path)],
+        cwd=_ROOT, capture_output=True, text=True,
+    )
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert str(expected_path) in result.stderr
+    assert "Sensitivity run report:" not in result.stdout
+    assert "Traceback" not in result.stderr
 
 
 def test_python_path_check():

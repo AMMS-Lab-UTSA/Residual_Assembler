@@ -14,6 +14,17 @@ make no network calls.
 
 ## Five minutes
 
+For the recovered four-input presentation workflow, use the tested wheel
+installation and joint gate in
+[docs/evidence/recovery_install.md](docs/evidence/recovery_install.md), then
+[docs/PRESENTATION_INTERFACE.md](docs/PRESENTATION_INTERFACE.md). It uses
+`Analysis.inp`, `Analysis.odb`, `OTI_UMAT.obj`, and `sensitivity_request.json`
+with the generated mapping beside the object. The collaborator needs no
+private material source. The bounded J2 workflow requires licensed Abaqus ODB
+extraction and a binary-compatible gfortran installation.
+
+The following is the existing source-development setup, not wheel evidence:
+
 ```bash
 git clone https://github.com/AMMS-Lab-UTSA/Residual_Assembler.git
 cd Residual_Assembler
@@ -33,12 +44,11 @@ that fetches it.
 
 ## Read the status before planning around this
 
-[`STATUS.md`](STATUS.md) says exactly what works. In short: the assembly beats
-are verified for C3D8 — you can assemble and verify R from exported Abaqus
-ingredients — but the *sensitivity* beat does not yet run through the C3D8
-assembly path.
-
-That distinction matters and is not softened anywhere in this repository.
+[`STATUS.md`](STATUS.md) describes the baseline assembly features. The recovery
+branch additionally supports the bounded, fingerprint-pinned J2 C3D8 history
+sensitivity workflow in [docs/PRESENTATION_INTERFACE.md](docs/PRESENTATION_INTERFACE.md).
+Neither the wheel gate nor that workflow establishes generic UMAT, FCC, or
+full-size presentation support.
 
 ## Where to go next
 

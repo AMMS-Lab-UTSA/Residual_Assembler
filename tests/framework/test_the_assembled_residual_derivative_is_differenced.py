@@ -370,7 +370,8 @@ def test_a_fixture_with_a_nan_in_it_is_refused_rather_than_loaded(tmp_path: Path
     fail: it propagates, and every later comparison is made against it."""
     import json
 
-    from residual_core.materials.verified_fixture import FixtureError, load
+    from residual_core.materials.verified_fixture import FixtureError
+    from verified_fixtures import load_historical as load
 
     payload = json.loads(fixtures()[0].path.read_text(encoding="utf-8"))
     payload["original"][2]["stress"][3] = float("nan")
@@ -388,7 +389,8 @@ def test_a_fixture_frozen_from_an_incomplete_run_is_refused(tmp_path: Path):
     are compared against."""
     import json
 
-    from residual_core.materials.verified_fixture import FixtureError, load
+    from residual_core.materials.verified_fixture import FixtureError
+    from verified_fixtures import load_historical as load
 
     payload = json.loads(fixtures()[0].path.read_text(encoding="utf-8"))
     payload["finite_history"]["history_grouping"]["original"][
@@ -406,7 +408,8 @@ def test_a_fixture_with_no_finiteness_evidence_at_all_is_refused(tmp_path: Path)
     fixture whose run was fine; it is a fixture nobody can check."""
     import json
 
-    from residual_core.materials.verified_fixture import FixtureError, load
+    from residual_core.materials.verified_fixture import FixtureError
+    from verified_fixtures import load_historical as load
 
     payload = json.loads(fixtures()[0].path.read_text(encoding="utf-8"))
     payload.pop("finite_history")

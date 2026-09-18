@@ -1,0 +1,43 @@
+*Heading
+Bounded small-strain J2 presentation interface reference
+*Node
+1, 0., 0., 0.
+2, 1., 0., 0.
+3, 1., 1., 0.
+4, 0., 1., 0.
+5, 0., 0., 1.
+6, 1., 0., 1.
+7, 1., 1., 1.
+8, 0., 1., 1.
+*Element, type=C3D8, elset=ALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+*Nset, nset=XZERO
+1, 4, 5, 8
+*Nset, nset=YZERO
+1, 2, 5, 6
+*Nset, nset=ZZERO
+1, 2, 3, 4
+*Nset, nset=LOADED
+2, 3, 6, 7
+*Material, name=J2
+*Depvar
+1
+*User Material, constants=4
+210000., 0.3, 250., 2000.
+*Solid Section, elset=ALL, material=J2
+,
+*Boundary
+XZERO, 1, 1, 0.
+YZERO, 2, 2, 0.
+ZZERO, 3, 3, 0.
+*Step, name=Loading, nlgeom=NO, inc=100
+*Static
+0.25, 1., 0.25, 0.25
+*Cload
+LOADED, 1, 75.
+*Output, field, frequency=1
+*Node Output
+U, RF, CF
+*Element Output
+S, SDV
+*End Step

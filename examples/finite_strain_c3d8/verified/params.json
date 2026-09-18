@@ -1,0 +1,9 @@
+{
+  "mode": "material-replay",
+  "parameters": [
+    "solid.mu",
+    "solid.lambda"
+  ],
+  "backend": "otilib",
+  "order": 1
+}

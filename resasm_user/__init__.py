@@ -35,10 +35,13 @@ def read_report(output_dir: str) -> Dict[str, Any]:
                            "private_dir": priv, "public_dir": pub}
     vs = os.path.join(pub, "validation_summary.json")
     meta = os.path.join(priv, "metadata.json")
-    if os.path.exists(vs):
-        with open(vs, "r", encoding="utf-8") as fh:
-            out["validation_summary"] = json.load(fh)
-    if os.path.exists(meta):
-        with open(meta, "r", encoding="utf-8") as fh:
-            out["metadata"] = json.load(fh)
+    for key, path in (("validation_summary", vs), ("metadata", meta)):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                payload = json.load(fh)
+        except (OSError, ValueError) as exc:
+            raise ConfigError("Cannot read report file %s: %s" % (path, exc)) from exc
+        if not isinstance(payload, dict) or not payload:
+            raise ConfigError("Report file %s must contain a non-empty JSON object" % path)
+        out[key] = payload
     return out

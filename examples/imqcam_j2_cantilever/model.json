@@ -1,0 +1,14 @@
+{
+  "schema": "resasm_replay_record_v1",
+  "kinematics": "small_strain",
+  "integration": "selective_reduced",
+  "provenance": {"kind": "synthetic_converged_fe", "regular_source_hash": "9b779f0c6cadf9c4", "model_id": "bounded_j2_c3d8", "description": "One clamped unit C3D8 under cyclic axial nodal forces; not an Abaqus export or the presentation cantilever."},
+  "mesh": {
+    "nodes": {"1": [0,0,0], "2": [1,0,0], "3": [1,1,0], "4": [0,1,0], "5": [0,0,1], "6": [1,0,1], "7": [1,1,1], "8": [0,1,1]},
+    "elements": {"1": {"type": "C3D8", "connectivity": [1,2,3,4,5,6,7,8]}}
+  },
+  "material": {"props": [210000, 0.3, 250, 2000]},
+  "boundaries": [{"target":1,"kind":"ENCASTRE"},{"target":2,"kind":"ENCASTRE"},{"target":3,"kind":"ENCASTRE"},{"target":4,"kind":"ENCASTRE"}],
+  "loads": {"cload": [{"node":5,"dof":3,"value":100},{"node":6,"dof":3,"value":100},{"node":7,"dof":3,"value":100},{"node":8,"dof":3,"value":100}]},
+  "increments": [{"dt":1,"load_factor":0.1},{"dt":1,"load_factor":0.4},{"dt":1,"load_factor":1},{"dt":1,"load_factor":1.2},{"dt":1,"load_factor":0.8},{"dt":1,"load_factor":-1},{"dt":1,"load_factor":-1.1}]
+}

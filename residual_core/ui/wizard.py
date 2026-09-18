@@ -53,6 +53,9 @@ class ResidualProblem:
         self._subroutine: Optional[str] = None
         self._solution: Optional[np.ndarray] = None
         self._raw_materials = dict(model.materials)   # keep detection info
+        self._explicit_formulations = dict(model.element_formulation)
+        if config and "solution" in config.options:
+            self.set_solution(config.options["solution"])
 
     # ---- construction ---------------------------------------------------
     @classmethod
@@ -164,11 +167,19 @@ class ResidualProblem:
         return policy
 
     def _bind_materials_for_replay(self):
-        """Attach a built-in elastic binding for non-user materials (offline)."""
+        """Preserve explicit materials; resolve configured backends before defaults."""
         from ..materials.elastic_adapter import IsotropicElastic
         bindings = {}
         for name, obj in self._raw_materials.items():
-            if getattr(obj, "user_material", False):
+            backend = self.config.material_backend.get(name) if self.config else None
+            if backend:
+                constants = self.config.material_parameters.get(
+                    name, list(getattr(obj, "constants", []) or []))
+                bindings[name] = MaterialBinding(self.mats.get(backend), list(constants),
+                                                 getattr(obj, "n_state_vars", 0), name)
+            elif isinstance(obj, MaterialBinding) and obj.material is not None:
+                bindings[name] = obj
+            elif getattr(obj, "user_material", False):
                 # CP/UMAT: needs compiled Fortran; leave as-is (assemble will error)
                 bindings[name] = obj
             else:
@@ -195,7 +206,14 @@ class ResidualProblem:
         # (re)bind element formulations under this mode's policy
         self.model.element_formulation = {}
         for eid, el in self.model.elements.items():
-            fk = policy(el.etype)
+            configured = self.config.formulation_policy.get(el.etype) if self.config else None
+            explicit = self._explicit_formulations.get(eid)
+            if configured:
+                fk = configured
+            elif explicit and m in self.forms.get(explicit).supported_modes:
+                fk = explicit
+            else:
+                fk = policy(el.etype)
             if fk is not None:
                 self.model.element_formulation[eid] = fk
 
@@ -299,10 +317,16 @@ class ResidualProblem:
         from ..core import constraints as _constraints
         _R0, _K0, _d0, dm = self._run(mode, None, compute_tangent=False)
         U = np.ones(dm.ndof) if u0 is None else np.asarray(u0, float).copy()
+        finite = "solid_c3d8_finite_strain" in self.model.element_formulation.values()
+        if finite:
+            if u0 is None:
+                U = (self._solution.copy() if self._solution is not None else np.zeros(dm.ndof))
+            _, prescribed, values = _constraints.partition(self.model, dm)
+            U[prescribed] = [values[index] for index in prescribed]
         for _ in range(max_iter):
             R, K, _diag, dm = self._run(mode, U, compute_tangent=True)
             free, _pres, _ = _constraints.partition(self.model, dm)
-            free_R = R[free] if free.any() else R
+            free_R = R[free] if free.any() or finite else R
             if float(np.linalg.norm(free_R)) < tol:
                 break
             Kff = K[np.ix_(free, free)] if free.any() else K
@@ -312,6 +336,10 @@ class ResidualProblem:
                 U[free] += dU
             else:
                 U += dU
+        if finite:
+            residual = self.assemble(mode, U=U)
+            if np.linalg.norm(residual[free]) >= tol:
+                raise RuntimeError("finite-strain Newton did not converge; reduce loading or improve initial guess")
         self._solution = U
         self.dof_manager = dm
         return U
@@ -327,6 +355,21 @@ class ResidualProblem:
         ndof = base.size
         fd = np.zeros((ndof, len(params)))
         for col, pname in enumerate(params):
+            if set(self.model.element_formulation.values()) == {"solid_c3d8_finite_strain"}:
+                from ..formulations.finite_strain_sensitivity import parameter_slot
+                binding, slot = parameter_slot(self.model, pname)
+                value = binding.constants[slot]
+                step = h * max(1.0, abs(value))
+                try:
+                    binding.constants[slot] = value + step
+                    plus = self.solve_newton(mode, u0=base)
+                    binding.constants[slot] = value - step
+                    minus = self.solve_newton(mode, u0=base)
+                finally:
+                    binding.constants[slot] = value
+                    self._solution = saved_solution
+                fd[:, col] = (plus - minus) / (2 * step)
+                continue
             matname, key = (pname.rsplit(".", 1) if "." in pname else (None, pname))
             binding = self.model.materials.get(matname)
             sec = binding if isinstance(binding, dict) else getattr(binding, "section", None)
@@ -436,6 +479,9 @@ class ResidualProblem:
             from ..algebra.otilib_adapter import otilib_available, otilib_status
             if not otilib_available():
                 raise RuntimeError(otilib_status()["error"])
+            if "solid_c3d8_finite_strain" in self.model.element_formulation.values():
+                from ..formulations.finite_strain_sensitivity import FiniteStrainParameterRHS
+                return FiniteStrainParameterRHS()
             return OtiLibRHSProvider()
         if b in ("dual1", "dual"):
             if max_order > 1:

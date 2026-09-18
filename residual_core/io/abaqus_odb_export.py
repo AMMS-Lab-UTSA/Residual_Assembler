@@ -71,6 +71,10 @@ def _vec(data):
     return [float(v) for v in data]
 
 
+def _data(value):
+    return value.dataDouble if str(value.precision) == "DOUBLE_PRECISION" else value.data
+
+
 # --------------------------------------------------------------------------
 # tiny argparse-free CLI (argparse exists in 2.7 but keep this dependency-free
 # and robust to the Abaqus '--' separator)
@@ -81,7 +85,7 @@ def parse_args(argv):
         argv = argv[argv.index("--") + 1:]
     opts = {
         "odb": None, "instance": None, "step": None,
-        "frames": "last", "elset": None, "out": "fields.json",
+        "frames": "last", "elset": None, "out": "fields.json", "strict": "no",
     }
     i = 0
     while i < len(argv):
@@ -210,7 +214,7 @@ def nodal_field(frame, key, instance):
     fld = frame.fieldOutputs[key].getSubset(region=instance)
     out = {}
     for v in fld.values:
-        out[str(int(v.nodeLabel))] = _vec(v.data)
+        out[str(int(v.nodeLabel))] = _vec(_data(v))
     return out
 
 
@@ -227,7 +231,7 @@ def ip_stress(frame, region, instance):
     tmp = {}
     for v in fld.values:
         el = str(int(v.elementLabel))
-        tmp.setdefault(el, []).append((int(v.integrationPoint), _vec(v.data)))
+        tmp.setdefault(el, []).append((int(v.integrationPoint), _vec(_data(v))))
     out = {}
     for el, pairs in tmp.items():
         pairs.sort(key=lambda p: p[0])          # IP 1..8 ascending
@@ -259,7 +263,7 @@ def sdv_fields(frame, region, instance):
         for v in fld.values:
             el = str(int(v.elementLabel))
             ip = int(v.integrationPoint)
-            acc.setdefault(el, {}).setdefault(ip, {})[col] = _f(v.data)
+            acc.setdefault(el, {}).setdefault(ip, {})[col] = _f(_data(v))
 
     out = {}
     ncol = len(keys)
@@ -281,8 +285,15 @@ def main(argv):
     print("opening odb: %s" % opts["odb"])
     odb = openOdb(opts["odb"], readOnly=True)
     try:
+        if opts["strict"] == "yes":
+            if len(odb.rootAssembly.instances) != 1 or len(odb.steps) != 1:
+                raise RuntimeError("request supports exactly one ODB instance and one step")
+            if opts["elset"] or opts["frames"] != "all":
+                raise RuntimeError("strict request export requires all elements and all frames")
         inst_name, instance = pick_instance(odb.rootAssembly, opts["instance"])
         step_name, step = pick_step(odb, opts["step"])
+        if opts["strict"] == "yes" and any(str(element.type) != "C3D8" for element in instance.elements):
+            raise RuntimeError("request supports C3D8 only; no ODB elements may be skipped")
         region = elset_region(instance, odb, opts["elset"])
         frame_idxs = pick_frames(step, opts["frames"])
         print("instance=%s  step=%s  frames=%s  elset=%s"
@@ -299,6 +310,7 @@ def main(argv):
                 "frame": int(frame.frameId) if hasattr(frame, "frameId") else j,
                 "step": step_name,
                 "time": _f(frame.frameValue),
+                "increment": int(frame.incrementNumber),
             }
             U = nodal_field(frame, "U", instance)
             if U is not None:
@@ -306,6 +318,9 @@ def main(argv):
             RF = nodal_field(frame, "RF", instance)
             if RF is not None:
                 rec["RF"] = RF
+            CF = nodal_field(frame, "CF", instance)
+            if CF is not None:
+                rec["CF"] = CF
             S = ip_stress(frame, region, instance)
             if S is not None:
                 rec["S"] = S
@@ -325,6 +340,9 @@ def main(argv):
             "nodes": nodes,
             "elements": elements,
             "frames": frames_out,
+            "export_mode": "strict_request" if opts["strict"] == "yes" else "legacy",
+            "step_names": list(odb.steps.keys()),
+            "instance_names": list(odb.rootAssembly.instances.keys()),
         }
         if sdv_labels_seen:
             out["sdv_labels"] = sdv_labels_seen

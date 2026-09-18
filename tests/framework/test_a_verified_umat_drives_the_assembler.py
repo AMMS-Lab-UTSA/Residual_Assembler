@@ -29,7 +29,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from residual_core.core.where_it_went_wrong import (OWNER, STAGES,  # noqa: E402
+from residual_core.core.where_it_went_wrong import (NOT_ESTABLISHED, OWNER, STAGES,  # noqa: E402
                                                     diagnose)
 from residual_core.formulations.c3d8_kernel import (  # noqa: E402
     ABAQUS_C3D8_GAUSS, b_matrix_reference, element_internal_force_small_strain,
@@ -91,7 +91,7 @@ def test_a_fixture_that_contradicts_its_own_tensor_size_is_refused(tmp_path: Pat
     bad = tmp_path / "wrong_ntens.json"
     bad.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(FixtureError) as raised:
-        load(bad)
+        load(bad, fingerprint=source.transform_fingerprint)
     assert "NTENS=4" in str(raised.value)
 
 
@@ -187,65 +187,35 @@ def _diagnose(fixture):
         reference=lambda stress: independent_internal_force(UNIT_CUBE, stress))
 
 
-#: The one committed fixture whose material is not linear over an increment,
-#: and what the diagnosis finds in it. Recorded rather than excluded.
-#:
-#: ``constitutive_derivative`` asks whether the reported tangent predicts the
-#: reported stress increment -- a SECANT across a finite increment. For an
-#: elastic or hyperelastic material driven in small steps the secant and the
-#: tangent agree, which is why the other nine pass it. J2 is the first
-#: committed fixture with a real nonlinearity, and its worst disagreement,
-#: 3.102e-01, is at INCREMENT 2: the increment in which it yields, where
-#: EQPLAS goes from exactly 0 to 2.478519e-04. The tangent at the start of
-#: that increment is the elastic one and the stress change across it is
-#: elastoplastic, so no tangent evaluated at either end predicts it.
-#:
-#: That is a limitation of the check, not a defect in the material: this
-#: project's standing rule is that a derivative is never evaluated across
-#: yielding, damage initiation or any other nonsmooth transition, and this
-#: check has no notion of one. The fixture reaches `transformation: holds` at
-#: 3.210e-16 in stress and 2.158e-16 in state over all 35 increments before it
-#: stops, so what is established about it is established.
-#:
-#: Written down as a measured fact so that it cannot be mistaken for a pass
-#: and cannot be quietly lost: if the check learns about nonsmooth increments,
-#: or if the numbers move, this fails and someone reads it.
+#: J2's recorded secant disagrees most at first yield (increment 2). Without
+#: re-evaluating the material update, the diagnosis cannot establish whether
+#: its tangent is a derivative. It must retain that uncertainty and continue
+#: checking independent layers, not blame the tangent or claim a complete pass.
 NONLINEAR_OVER_AN_INCREMENT = {
     "bundled__generic_ps/src/j2_props.f": "constitutive_derivative",
 }
 
 
-def test_a_verified_fixture_passes_every_stage():
+def test_a_verified_fixture_holds_only_at_stages_with_sufficient_evidence():
     for fixture in fixtures():
         found = _diagnose(fixture)
         expected = NONLINEAR_OVER_AN_INCREMENT.get(fixture.source_id)
-        if expected is None:
-            assert found.ok, found.report()
-        else:
-            assert not found.ok, (
-                f"{fixture.source_id} now passes every stage. If the "
-                f"constitutive_derivative check learned to skip the increment "
-                f"a material yields in, delete its entry from "
-                f"NONLINEAR_OVER_AN_INCREMENT and say so.")
-            assert found.blame == expected, found.report()
-            # and everything before the stage it stops at really did hold
-            for finding in found.findings:
-                if finding.stage == expected:
-                    break
-                assert finding.status == "holds", found.report()
-            # The diagnosis stops at the first failure, so it reports the
-            # stages up to and including that one and no more -- reporting
-            # later stages it never reached would be claiming they were
-            # checked.
-            reached = [f.stage for f in found.findings]
-            assert reached == list(STAGES)[:len(reached)]
-            assert reached[-1] == expected
-            continue
+        assert found.ok, found.report()
+        if expected is not None:
+            constitutive = found.finding(expected)
+            assert constitutive.status == NOT_ESTABLISHED, found.report()
+            assert not constitutive.ok and not found.complete
+            assert found.blame is None
+            assert "material_update" in constitutive.would_establish
+            assert constitutive.measured["state_movement"] > 0.0
+            assert constitutive.measured["worst"] > 0.1
+            assert found.finding("umat").ok
+            assert found.finding("transformation").ok
         assert [f.stage for f in found.findings] == list(STAGES)
 
 
-def test_the_yield_increment_is_what_the_derivative_check_trips_on():
-    """Named, so the reason J2 stops where it does is not guessed at later.
+def test_the_yield_increment_leaves_the_derivative_unestablished():
+    """Named, so the reason J2 needs an update is not guessed at later.
 
     The worst disagreement is at the increment where EQPLAS leaves zero. A
     secant taken across a yield point is not a derivative of anything.
@@ -257,6 +227,7 @@ def test_the_yield_increment_is_what_the_derivative_check_trips_on():
         _pytest.skip("the J2 fixture is not committed here")
     fixture = j2[0]
     found = _diagnose(fixture)
+    assert found.finding("constitutive_derivative").status == NOT_ESTABLISHED
     measured = next(f.measured for f in found.findings
                     if f.stage == "constitutive_derivative")
     worst_at = int(measured["increment"])

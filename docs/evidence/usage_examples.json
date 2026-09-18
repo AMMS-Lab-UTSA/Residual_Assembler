@@ -1,0 +1,1096 @@
+{
+  "clean_install_verified": false,
+  "phase": "examples",
+  "python": "/home/ammslab3/softwarex_work/.venv/bin/python",
+  "work": "/tmp/recovery_usage__l41upif",
+  "environment": {
+    "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
+    "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
+    "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
+    "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+    "RUN_OTILIB_TESTS": "1"
+  },
+  "commands": [
+    {
+      "name": "environment",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-c",
+        "import sys,residual_core,umat_oti,pyoti.sparse; from umat_oti.store import transform_fingerprint; print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.sparse.__file__); print(transform_fingerprint())"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\n/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/__init__.py\n/home/ammslab3/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
+      "stderr": "",
+      "seconds": 0.9954375689849257
+    },
+    {
+      "name": "R-X1 init",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "init",
+        "--template",
+        "python",
+        "--out",
+        "/tmp/recovery_usage__l41upif/R-X1"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "created /tmp/recovery_usage__l41upif/R-X1 (from template 'python')\n  README.md\n  resasm.yml\n  solution.npy\n  user_residual.py\n\nNext:\n  cd /tmp/recovery_usage__l41upif/R-X1\n  resasm check resasm.yml\n  resasm run resasm.yml\n",
+      "stderr": "",
+      "seconds": 0.23906517104478553
+    },
+    {
+      "name": "R-X1 check",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "check",
+        "/tmp/recovery_usage__l41upif/R-X1/resasm.yml"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "[ok] config parsed: spring_demo (order 2, backend otilib)\n[ok] loaded solution vector: shape (1,)\n[ok] loaded parameter map: 2 parameters (k, f)\n[ok] residual evaluated: shape (1,)\n[ok] tangent loaded (python): shape (1, 1)\n[ok] OTILib available: order 2, basis 2\n[ok] residual norm on free DOFs is 0.000e+00\n[ok] RHS order 1 generated: shape (1, 2)\n[ok] sensitivity solve completed\n",
+      "stderr": "",
+      "seconds": 0.9628594149835408
+    },
+    {
+      "name": "R-X1",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "run",
+        "/tmp/recovery_usage__l41upif/R-X1/resasm.yml"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'python', 'residual_free_norm': 0.0, 'orders_solved': [1, 2]}\n  private outputs -> /tmp/recovery_usage__l41upif/R-X1/resasm_output/private\n  public  outputs -> /tmp/recovery_usage__l41upif/R-X1/resasm_output/public\n  read: /tmp/recovery_usage__l41upif/R-X1/resasm_output/public/summary.md\n",
+      "stderr": "",
+      "seconds": 1.121889496978838,
+      "verification": {
+        "reference": "analytic cubic solution",
+        "tolerance": 1e-08,
+        "checks": [
+          {
+            "direction": [
+              1,
+              0
+            ],
+            "measured": -0.3333333333333333,
+            "reference": -0.3333333333333333,
+            "absolute_error": 0.0
+          },
+          {
+            "direction": [
+              0,
+              1
+            ],
+            "measured": 0.041666666666666664,
+            "reference": 0.041666666666666664,
+            "absolute_error": 0.0
+          },
+          {
+            "direction": [
+              2,
+              0
+            ],
+            "measured": 0.22222222222222224,
+            "reference": 0.2222222222222222,
+            "absolute_error": 2.7755575615628914e-17
+          },
+          {
+            "direction": [
+              1,
+              1
+            ],
+            "measured": -0.006944444444444445,
+            "reference": -0.006944444444444444,
+            "absolute_error": 8.673617379884035e-19
+          },
+          {
+            "direction": [
+              0,
+              2
+            ],
+            "measured": -0.001736111111111111,
+            "reference": -0.001736111111111111,
+            "absolute_error": 0.0
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "name": "R-X1 report",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "report",
+        "/tmp/recovery_usage__l41upif/R-X1/resasm_output"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "Sensitivity run report: /tmp/recovery_usage__l41upif/R-X1/resasm_output\n  residual norm (free) : 0.0\n  tangent source       : python\n  parameters           : k, f\n  derivative orders    : [1, 2]\n  validation status    : ok\n  private outputs      : /tmp/recovery_usage__l41upif/R-X1/resasm_output/private\n  public  outputs      : /tmp/recovery_usage__l41upif/R-X1/resasm_output/public\n",
+      "stderr": "",
+      "seconds": 0.270878946990706
+    },
+    {
+      "name": "R-X2 init",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "init",
+        "--template",
+        "blackbox-order2",
+        "--out",
+        "/tmp/recovery_usage__l41upif/R-X2"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "created /tmp/recovery_usage__l41upif/R-X2 (from template 'blackbox-order2')\n  README.md\n  my_solver.py\n  resasm.yml\n  solution.npy\n\nNext:\n  cd /tmp/recovery_usage__l41upif/R-X2\n  resasm check resasm.yml\n  resasm run resasm.yml\n",
+      "stderr": "",
+      "seconds": 0.26976278400979936
+    },
+    {
+      "name": "R-X2 check",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "check",
+        "/tmp/recovery_usage__l41upif/R-X2/resasm.yml"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "[ok] config parsed: blackbox_order2_demo (order 2, backend otilib)\n[ok] loaded solution vector: shape (1,)\n[ok] loaded parameter map: 2 parameters (k, f)\n[ok] black-box executable configured: python my_solver.py --request {request} --response {response}\n[warn] tangent will come from the black-box response\n[ok] RHS order 1 generated: shape (1, 2)\n[ok] sensitivity solve completed\n",
+      "stderr": "",
+      "seconds": 0.38839100796030834
+    },
+    {
+      "name": "R-X2",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "run",
+        "/tmp/recovery_usage__l41upif/R-X2/resasm.yml"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'response', 'residual_free_norm': None, 'orders_solved': [1, 2]}\n  private outputs -> /tmp/recovery_usage__l41upif/R-X2/resasm_output/private\n  public  outputs -> /tmp/recovery_usage__l41upif/R-X2/resasm_output/public\n  read: /tmp/recovery_usage__l41upif/R-X2/resasm_output/public/summary.md\n",
+      "stderr": "",
+      "seconds": 0.6074890909949318,
+      "verification": {
+        "reference": "analytic cubic solution",
+        "tolerance": 1e-08,
+        "checks": [
+          {
+            "direction": [
+              1,
+              0
+            ],
+            "measured": -0.6666666666666666,
+            "reference": -0.6666666666666666,
+            "absolute_error": 0.0
+          },
+          {
+            "direction": [
+              0,
+              1
+            ],
+            "measured": 0.020833333333333332,
+            "reference": 0.020833333333333332,
+            "absolute_error": 0.0
+          },
+          {
+            "direction": [
+              2,
+              0
+            ],
+            "measured": 0.5555555555555556,
+            "reference": 0.5555555555555556,
+            "absolute_error": 0.0
+          },
+          {
+            "direction": [
+              1,
+              1
+            ],
+            "measured": -0.006944444444444445,
+            "reference": -0.006944444444444444,
+            "absolute_error": 8.673617379884035e-19
+          },
+          {
+            "direction": [
+              0,
+              2
+            ],
+            "measured": -0.00043402777777777775,
+            "reference": -0.00043402777777777775,
+            "absolute_error": 0.0
+          }
+        ],
+        "passed": true
+      }
+    },
+    {
+      "name": "R-X2 report",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "report",
+        "/tmp/recovery_usage__l41upif/R-X2/resasm_output"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "Sensitivity run report: /tmp/recovery_usage__l41upif/R-X2/resasm_output\n  residual norm (free) : None\n  tangent source       : response\n  parameters           : k, f\n  derivative orders    : [1, 2]\n  validation status    : ok\n  private outputs      : /tmp/recovery_usage__l41upif/R-X2/resasm_output/private\n  public  outputs      : /tmp/recovery_usage__l41upif/R-X2/resasm_output/public\n",
+      "stderr": "",
+      "seconds": 0.267726945981849
+    },
+    {
+      "name": "R-X3",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "assemble",
+        "/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/examples/minimal_c3d8_stress_driven/model.json",
+        "--mode",
+        "stress-driven",
+        "--fields",
+        "/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/examples/minimal_c3d8_stress_driven/fields.json",
+        "--out",
+        "/tmp/recovery_usage__l41upif/stress.npy"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "assembled mode 'stress-driven': ndof=24  ||R||=7.071068e+01  max|R|=2.500000e+01\nresidual saved to /tmp/recovery_usage__l41upif/stress.npy\n",
+      "stderr": "",
+      "seconds": 0.2867625069920905,
+      "verification": {
+        "norm": 70.71067811865474,
+        "max_abs": 24.999999999999996,
+        "reference_norm": 70.71067811865474,
+        "reference_max_abs": 25.0,
+        "tolerance": 1e-10,
+        "passed": true
+      }
+    },
+    {
+      "name": "R-X4",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "scripts/reproduce_imqcam_pipeline.py",
+        "--skip-abaqus",
+        "--out",
+        "/tmp/recovery_usage__l41upif/R-X4"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "verified bounded J2 pipeline: /tmp/recovery_usage__l41upif/R-X4/manifest.json\n",
+      "stderr": "",
+      "seconds": 11.053175295004621,
+      "proof": {
+        "path": "/tmp/recovery_usage__l41upif/R-X4/private/manifest.json",
+        "sha256": "22a59aa7ab9751d7d6f17037a9b1e0b05709ee7ae2d6ce779a9e7f86074453ff",
+        "data": {
+          "passed": true,
+          "scope": "one C3D8, eight IPs, seven cyclic J2 increments; first-order material parameters",
+          "commands": [
+            {
+              "argv": [
+                "gfortran",
+                "--version"
+              ],
+              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "returncode": 0,
+              "log": "private/command-1.log"
+            },
+            {
+              "argv": [
+                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "-m",
+                "umat_oti.provider",
+                "build",
+                "/home/ammslab3/softwarex_work/imq-umat-recovery/parameter_sensitivity/models/m3_j2/contract_v2.json",
+                "--out",
+                "/tmp/recovery_usage__l41upif/R-X4/private/provider"
+              ],
+              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "returncode": 0,
+              "log": "private/command-2.log"
+            },
+            {
+              "argv": [
+                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "-m",
+                "residual_core.ui.cli",
+                "replay",
+                "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/imqcam_j2_cantilever/model.json",
+                "--object",
+                "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.obj",
+                "--contract",
+                "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.json",
+                "--solve",
+                "--verify",
+                "--out",
+                "/tmp/recovery_usage__l41upif/R-X4/private/solve"
+              ],
+              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "returncode": 0,
+              "log": "private/command-3.log"
+            },
+            {
+              "argv": [
+                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "-m",
+                "residual_core.ui.cli",
+                "replay",
+                "/tmp/recovery_usage__l41upif/R-X4/private/solve/private/record.json",
+                "--object",
+                "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.obj",
+                "--contract",
+                "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.json",
+                "--out",
+                "/tmp/recovery_usage__l41upif/R-X4/private/replay"
+              ],
+              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "returncode": 0,
+              "log": "private/command-4.log"
+            }
+          ],
+          "abaqus_available": "/usr/bin/abaqus",
+          "abaqus_execution": "not_run",
+          "j2_primal_origin": "synthetic_converged_fe",
+          "environment": {
+            "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
+            "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
+            "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
+            "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+            "RUN_OTILIB_TESTS": "1",
+            "FC": null
+          },
+          "python": {
+            "executable": "/home/ammslab3/softwarex_work/.venv/bin/python",
+            "version": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]",
+            "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31"
+          },
+          "dependencies": {
+            "numpy": "2.4.6",
+            "matplotlib": "3.11.1",
+            "pytest": "9.1.1",
+            "streamlit": "1.62.0"
+          },
+          "compiler": "GNU Fortran (Ubuntu 9.4.0-1ubuntu1~20.04.2) 9.4.0",
+          "repositories": {
+            "residual_assembler": {
+              "path": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "commit": "69ac77cf4865ef5cfc2a46fad987bb7fb6d73e21",
+              "status": " M README.md\n M START_HERE.md\n M STATUS.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M resasm_user/__init__.py\n M residual_core/app/streamlit_app.py\n M residual_core/core/assembler.py\n M residual_core/formulations/c3d8_kernel.py\n M residual_core/formulations/c3d8_sensitivity.py\n M residual_core/formulations/solid_c3d8_finite_strain.py\n M residual_core/io/abaqus_odb_export.py\n M residual_core/io/neutral_model_io.py\n M residual_core/materials/registry.py\n M residual_core/materials/verified_fixture.py\n M residual_core/ui/cli.py\n M residual_core/ui/wizard.py\n M schemas/contract_lock.json\n M schemas/transform_generation.json\n M tests/contract/contract_paths.py\n M tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py\n D tests/fixtures/verified/compresibleneohookean--d78e61195f.json\n M tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json\n M tests/fixtures/verified/j2_props--2feae9f158.json\n D tests/fixtures/verified/lemaitredamagenonlocal--e7f8623ec9.json\n D tests/fixtures/verified/neohookean_umat--10759f1ffd.json\n D tests/fixtures/verified/umat--b8fa38353e.json\n D tests/fixtures/verified/umat_biofilm_visco_phase2--42eacbd5e8.json\n D tests/fixtures/verified/umat_elastic--7e9bb4c291.json\n D tests/fixtures/verified/umat_iso_stretch--890619c18d.json\n D tests/fixtures/verified/umat_viscoelastic--c6ae96a734.json\n M tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py\n M tests/framework/test_a_verified_umat_drives_the_assembler.py\n M tests/framework/test_otilib_fe_sensitivity.py\n M tests/framework/test_the_assembled_residual_derivative_is_differenced.py\n M tests/framework/test_user_layer.py\n M tests/framework/test_which_layer_the_failure_came_from.py\n M tests/framework/verified_fixtures.py\n?? docs/IMQCAM_WORKFLOW.md\n?? docs/PRESENTATION_INTERFACE.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/finite_strain_c3d8/\n?? examples/imqcam_j2_cantilever/\n?? examples/presentation_request/\n?? examples/residual_sensitivity_c3d8/\n?? residual_core/core/field_sensitivity.py\n?? residual_core/formulations/finite_strain_sensitivity.py\n?? residual_core/interface/\n?? residual_core/io/derivative_fields.py\n?? residual_core/materials/neo_hookean.py\n?? residual_core/replay/\n?? residual_core/runtime/\n?? residual_core/ui/cmd_replay.py\n?? residual_core/ui/cmd_request.py\n?? scripts/audit_recovery_usage.py\n?? scripts/check_presentation_browser.py\n?? scripts/clean_install_gate.py\n?? scripts/regenerate_recovery_fixture.py\n?? scripts/reproduce_imqcam_pipeline.py\n?? scripts/reproduce_presentation_request.py\n?? tests/abaqus_derivative_export/\n?? tests/fixtures/historical/\n?? tests/fixtures/presentation_j2/\n?? tests/framework/test_binary_compat.py\n?? tests/framework/test_field_sensitivity.py\n?? tests/framework/test_finite_strain_hyperelastic.py\n?? tests/framework/test_interface_versions.py\n?? tests/integration/\n",
+              "source_tree_sha256": "f94d61f18c83bf79ad683279b583c374caefe886347f5f73c9d7411c3dfea10d",
+              "source_sha256": {
+                "residual_core/__init__.py": "9d140b7c994b1282bd8fc0a8ffc18aebae70555ed91fea78723aa7026f2bd8ea",
+                "residual_core/algebra/__init__.py": "b7af09d91fbb92e036cfbaa33bae96c0e92ec19645a8494f2580ca27568260a9",
+                "residual_core/algebra/dual1.py": "00ebf024ba1d816de2a95f56f8f87f431b8c638aa0d07496bc6638effbc2fb0a",
+                "residual_core/algebra/otilib_adapter.py": "2344f08390782fd40b37d0ce2205a21580df2d6081aaf943fb45ae546d739f1e",
+                "residual_core/app/__init__.py": "7e55764a63363599244572167909fb7d91c751d5ca3931d1bbbeafb5ee395e0e",
+                "residual_core/app/streamlit_app.py": "68b2d6a03e570b2795a960fae39bb0ae8490ef0e0ec4a09bc0aba93d45ff0d34",
+                "residual_core/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "residual_core/core/assembler.py": "cac76f5ce9d44a653ad56c721f3defea20b09b98d2693986ad61ec9f7d525373",
+                "residual_core/core/constraints.py": "606a6a7c2b3897951dfddec97389aa27043cb718ab051f61f15120bc7fe065c1",
+                "residual_core/core/deck_replay.py": "09a5c97c8d7442d05dcbe60a0635e976784be50d8dcbc70e03ebb58387647b40",
+                "residual_core/core/diagnostics.py": "808c2fbd673071ea6dea2a54a85f6b6464c11d0273103b9d23188e6bf0781a9e",
+                "residual_core/core/dof_manager.py": "2f1c5a3799af4207e6f4f976e7d84ecd1f76cade056bd3774f49b7e531562cf2",
+                "residual_core/core/field_sensitivity.py": "d2b235262d7f29107a2f1c283706dac9cae8d4b410e2064ea9650e3f57a527c6",
+                "residual_core/core/finite_difference.py": "658c521a7c693a760077372dbe3be7d4754fb172b9d21fe5b1a69eed81ed57da",
+                "residual_core/core/fixture_residual_check.py": "33712cdaa156bcbb49156f9be8ccabdc3699992e16d088f3dc5535b6b395f74d",
+                "residual_core/core/loads.py": "e3a6b88ec1aafc90076efe084d64906bb50b0eda62bb4f1a995eae5b37ba39bb",
+                "residual_core/core/model.py": "6a68ba31eda89e17c8bc57e4b62859d71b668b5b4fd4a47a9dff827b23038a82",
+                "residual_core/core/oti_rhs_provider.py": "ad2070dd7cff315a4bca214bc0ed2e6b18bbff4db1abbbb09c41aaa97015ec66",
+                "residual_core/core/registry.py": "bad3c34bdd5d2989b624c8652aaf281915ab27dbacf9f65d7b4b1e6c1ab2d37a",
+                "residual_core/core/requirements.py": "c49ddbd017b6186bbe862559acde2489ca23a1b3b205e415310b4a2ee88640af",
+                "residual_core/core/results.py": "38e069e4e567e483583bd32f07b7b176cb24acd44249ef146cae9c278aa4ff35",
+                "residual_core/core/rhs_provider.py": "27bf7f17a6250add24ae4e5df44c8f3a22162591357273a448a919f6816683bc",
+                "residual_core/core/sensitivity_package.py": "51954e8bd2fadcc1135214eb39824a5ea9e16d05de5ce086f8845093e546c067",
+                "residual_core/core/state_manager.py": "214712c6286147a294c78e1d923ad7fa609ed80d9ecc8d6000f829499a6df514",
+                "residual_core/core/state_sensitivity.py": "57d85b71dcbcdb3f15fd533caf352520a8df1f0333f93ed114bab59ac83af285",
+                "residual_core/core/umat_oti_sensitivity.py": "630a938bed7d39d1a08bbcda79536cea9d865e1a248d800a4177baee02abc592",
+                "residual_core/core/verification.py": "d19f2c482c1b69048674365bb1e09a858f137f929e432352ef76573f624c0476",
+                "residual_core/core/voigt.py": "b3b223892e13d37c43cd74680f1b737371aa6255a0a7f43244348d77a00cb903",
+                "residual_core/core/where_it_went_wrong.py": "c271745cb5f14b29073270b87885be086f9cdd1e1b9498770bcc35cb395d6b74",
+                "residual_core/examples/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "residual_core/examples/generate_minimal.py": "f4d3266785654d98025739d04fc1a1bb5c1d8c4a62bd4dd71828a2cb3ac547fc",
+                "residual_core/examples/manifest.py": "2d2eb6011a3f7983689de42ee3963231709857fac1ace8c59c128d1c80f6c811",
+                "residual_core/formulations/__init__.py": "bd0612e6fee6daa433f3986dd435960a515d963bb58faf305fe1bf951490c1c9",
+                "residual_core/formulations/base.py": "2de1056c12d3e6d29040ff835116a2fb4928865ebc9b83abd4962fa7069d5653",
+                "residual_core/formulations/beam2.py": "d584aa1edf8aaaf0d9bc4381187e2f5f15a96d455cb3bec4b93a452ce86f2d80",
+                "residual_core/formulations/c3d8_kernel.py": "4f742021fd0ff1bd00ecc1defbb2c93a0d9af0a04a6f0c71d5a0f384e00abfd2",
+                "residual_core/formulations/c3d8_sensitivity.py": "72f4c05dc46351af429e0aead1c250b41a37c737742d2aa01c3782666c570192",
+                "residual_core/formulations/finite_strain_sensitivity.py": "b5b8389aee85e7f0947b4025146beff8c9afc4647347c4bd24a2cd99fe823731",
+                "residual_core/formulations/nonlinear_bar1.py": "452adff426b054aef1103d5a5efcfb79b12424014e9117f2d7d5cb4d01289bf3",
+                "residual_core/formulations/nonlinear_spring1.py": "7b93aeca3e569ccd1fbf6d29667090900c6fdc7ab2366b6b77cd37cae328b540",
+                "residual_core/formulations/registry.py": "77f4c5a437c4503720b6592f376b564bddd31a738bfa8eb0db80dadff59ab647",
+                "residual_core/formulations/shell_base.py": "dea4b06981535c0ca0898278717765e57e1e5978ca72b8d74021af9e3dfd7a5a",
+                "residual_core/formulations/shell_placeholder.py": "3e486c0223e540a6cb1b30c773c47eaef9a3dcf8ae84f587f6f526fcfa4fc5a8",
+                "residual_core/formulations/solid_c3d8.py": "64914f9e8cd54e7016f0b770ecf34306e7ba352dcdff643e86851abcbad30857",
+                "residual_core/formulations/solid_c3d8_finite_strain.py": "a8b666e2fe163be024569c5b7e5a7150170392db1d1a985b5187652c8109a298",
+                "residual_core/formulations/solid_c3d8_small_strain.py": "f4ee719608a77ad489f3676ed9a323d186865da2a56b0c029b7b2bcd83bf9d45",
+                "residual_core/formulations/stress_driven.py": "1b1b5264ac9c29aa362ea5587ca61f736714e7cd66ddc330f3c10eb0fc5c6c58",
+                "residual_core/formulations/stress_driven_adapter.py": "b755eab06e92761da7a7ce067d5af2511029193f1038f709280dfc57b85a64e4",
+                "residual_core/formulations/truss2.py": "f18bcfe52c8525f469763fed9ec220b1dacb347bfb9bbfe93229cc814f32ff7f",
+                "residual_core/formulations/uel_adapter.py": "7b77c231d5a8d03e63f348b1e638e6109ac2c11e1f2e704cebc139c8f487b9de",
+                "residual_core/formulations/uel_direct.py": "265a12f6b43e264d4ee4476972ef19ef2e3f2ad0c42f903564a241a4db613bd2",
+                "residual_core/interface/__init__.py": "8334bd964373217973f6ca045ac7cc1568d070bd9400b413b867f7f11afb7fed",
+                "residual_core/interface/versions.py": "e80b26ad018da43705c3b2a5c56089af6fe6af5549d380132a5766b65ffd68f0",
+                "residual_core/io/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "residual_core/io/abaqus_inp_parser.py": "8e44390c6062a0dcc0bce5656019cf0f1273baa9fe7ecccf916f315dd5a3bff7",
+                "residual_core/io/abaqus_odb_export.py": "0fea491fcf116b5e39fa7fb6bfc531c92b2192059388035ff6807bac40d08cd5",
+                "residual_core/io/derivative_fields.py": "2ea958c6745d8a3aac5b77a88c92a087e9ae1f606bea6a063001b790b270995e",
+                "residual_core/io/neutral_model_io.py": "3eac655c609db839fe44796601ed86cfbcee36609a514e0e5eb4f979bf42bef7",
+                "residual_core/materials/__init__.py": "458a2c905a69b732f8067644f61c28b5724d48a34f806a764e7c67f615e7e0b7",
+                "residual_core/materials/base.py": "bc7afeb79e9a3ab24a797a4b6003b9ce1b25e4b6b2e60cabacf4c6853412ddf2",
+                "residual_core/materials/crystal_plasticity.py": "fac9a138443b07620ba624864bd6bdb78fa1d4c3d59c7f18e28cfec3e76f0e83",
+                "residual_core/materials/crystal_plasticity_adapter.py": "0c1381d0f0708cdc1b4cdd8c4d257dd904020da9226d76ea2320917d4e0c18fd",
+                "residual_core/materials/elastic.py": "ad4c26be0161e231ce2b9d6a5d3f82fd6c284034d30574665cfd49e3f035f7d2",
+                "residual_core/materials/elastic_adapter.py": "1975439b7e082371e34fd8843a79f3efd131daa72b80d0267bc5ccd06c97ec4c",
+                "residual_core/materials/fixture_playback.py": "7fb4bbec1a2842d3ecaa10e38606a4495cd484773e27607fa456dd219f84dcf5",
+                "residual_core/materials/j2_radial_return.py": "f5fa64076698ddf892cb579ce776d1f05f5bcdef00d046c5af19bade6962d87b",
+                "residual_core/materials/neo_hookean.py": "fbdf5551b507aed6db175432cf905680c43d7c2957b5c3f9d78424d4d370b6d9",
+                "residual_core/materials/registry.py": "da051e1f47e7cdf7a6fec232aac3dfd9508815245e7e91944e04a6b4328b8c13",
+                "residual_core/materials/umat_adapter.py": "11e3c0d9b94e4ca135d0d5338f14ecfd06d41cbfe6ec8452a4a018ecf02c2ace",
+                "residual_core/materials/umat_oti_driver.py": "d08164c858177c72833308ec98838a8d3c6f7863e87dc87ccace84ff3994bfa4",
+                "residual_core/materials/verified_fixture.py": "b23dde5a8459d04db6e0fc21b21a2fe597b6efb26013d7dc343f92004d3008b8",
+                "residual_core/replay/__init__.py": "9ad99d05136831b3b3cc4bd5e795db0b0e665bad0aa6d9fc3d10dc243d523923",
+                "residual_core/replay/abi.py": "f7030e484c4c53b0c811c090c58733fa0481a2e2f63ffdb7edd9eed0ac230e70",
+                "residual_core/replay/connected.py": "0e882260b4289beefdc1af3a2466eb7903178bd7474ad83de97ed9c2d6e823f6",
+                "residual_core/replay/driver.py": "b8ebbe56c4a74fb1ff8bd38cc1c518097f05aa06f5870948319cdabfba5a92cc",
+                "residual_core/replay/engine.py": "6529a3f9b5291d8fc11feb15f94a2f7d7c698932d3f904f46952b2dddf919e21",
+                "residual_core/replay/j2_history.py": "f0d7dbcb628aaaa189d2dfb61299f5d9433342111a53d00d597b6e91958714c9",
+                "residual_core/replay/job.py": "1ac619f5d63e064d10651a7e3c4b53bd966eb9f9f3275223aa7a956d317351ef",
+                "residual_core/replay/kinematics.py": "a2e0693487ab9dd03b9fd2a66fcb373c9b7bfb34c01e75b63cf985fb574a714e",
+                "residual_core/replay/objlink.py": "1aa347f0513d1599e9b0b7a17e91a5472d822c97d54a8f39fe531c77db847aca",
+                "residual_core/replay/outputs.py": "c2f128ae682d10bf9764bb8bc9bd36cf78bcf8885aa23d394dc9e7bb39f41336",
+                "residual_core/replay/package.py": "7e78c129975785632550bba4a813de90ee29cb86918b132c44fde99c0666d52d",
+                "residual_core/replay/path_material.py": "a101f625e7046e9db1d8199aa779096642d09dc8bc4bc09af4a1f2855649beab",
+                "residual_core/replay/presentation.py": "55278022ea8ee84a858cf1c5dea518c5b52820574200841ab54a11825f3d35ae",
+                "residual_core/replay/presentation_inputs.py": "c78d0f9d57abd366d2e6888e22b0de4b2e8d10c9185ae91facb9d86726008d86",
+                "residual_core/replay/record.py": "61ae416ca7f45c8b55e5c82b115970f0f2d93b3ed50f26fd1d08eb98138d7de2",
+                "residual_core/replay/request_contract.py": "504dc31f5f633aa204da8a70e22436cb1de6d4d37b5190289538ab5a5eb1cff9",
+                "residual_core/replay/request_reductions.py": "9b3eb8b15729adb6857ef0a0657d34a56c333acda065fc4840ffafeb89a2ce33",
+                "residual_core/replay/verification.py": "1767337fc7fff9d568dc74a5193f713e76cebeea6562e60efd22bb3a4a841d28",
+                "residual_core/runtime/__init__.py": "c8cc6767b879f8e0d1ac73934be50802539ec4408ceeb5264f56f1de0e51f8b1",
+                "residual_core/runtime/compat.py": "81ac7efeec779820020b678c250c20af679a2a1f7df7aa9cc8e2d4c4668805b4",
+                "residual_core/runtime/libload.py": "27f5eb018a590296987cf0e6327b6986d716ce09c1a7732007ea24d1e681bdf1",
+                "residual_core/stress_driven_residual.py": "ed31acbf6b47c19237553951e8d68b07a714f5b21f96b1bc57dbc2b79bb1e6e9",
+                "residual_core/ui/__init__.py": "82fff5a5dfcf7fab0d09c66a7fca7a7ebe0f98b42a16d3dda7d549c6051ac925",
+                "residual_core/ui/cli.py": "b44b8331df39577690d3047e3ffcbef8faa3f8f16eb7f64b1cb942ed9f870e3f",
+                "residual_core/ui/cmd_replay.py": "d72883dc545ce11fba6f0eaee7bb19c3b7d787a78aa780187b59d089ccdec280",
+                "residual_core/ui/cmd_request.py": "1d5adcca17f6b6dc76d588256f17688a3ed950e334b1402e50260ccdbe41f9d3",
+                "residual_core/ui/config.py": "8ec889a1bb0adc38f7836aad9e7b799e94b34c7ce1f50d1ba1932b91eef575cf",
+                "residual_core/ui/examples.py": "e923027aaabd5d8e76458be020dbf0aae337fdfa0302a6ff464ac9806c8753ad",
+                "residual_core/ui/wizard.py": "79140199fda695af537ed2f61735e3073a92a1bf28c001fe42b1dd4eced98ec4",
+                "residual_core/umat_adapter_fortran/umat_replay.py": "0faab248b9685918a8a927cc84b4400110e64c0ee51441e49d90d2535789aab7",
+                "scripts/reproduce_imqcam_pipeline.py": "c99d95acfbaf58052b4afa5e333f05422d82fb2ab325b6fe02e0d29b6f2462ca",
+                "examples/imqcam_j2_cantilever/README.md": "f2a61f71ac7023081118bfd014fdd664b808ee088e74739092fbd0479e2932a3",
+                "examples/imqcam_j2_cantilever/model.json": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19",
+                "tests/abaqus_derivative_export/README.md": "224b339d39fde203601fbfff113bb63fafb67138edcb1584e9481d77fa19909b",
+                "tests/abaqus_derivative_export/derivative_layout.json": "a8ff28177ffdebc5dac3f4fc48ee91a0ae3d229af1423f35a6c86bb1b9a03fe1",
+                "tests/abaqus_derivative_export/elastic_export_umat.for": "75dd3a3ba0fa964e24b70c0dc56009ad3324315e63a6df61030cac81805989dd",
+                "tests/abaqus_derivative_export/fixtures/S_ip.json": "6285904f0b90dfe8055d182fdd8e64fd4712903e7e7f026423713e27c4e2da8e",
+                "tests/abaqus_derivative_export/fixtures/U_Em.json": "0f19f32b8884ac1bacc77a06830afa61f915c49bff81df2656a9bec0de60988b",
+                "tests/abaqus_derivative_export/fixtures/U_Ep.json": "9563bde62b4540287450344520a9270b25870ef70d2bcefc111f72c1c57810d7",
+                "tests/abaqus_derivative_export/fixtures/U_base.json": "e069c996be711f6bc78a8fbfe2e89baa4505a341c43d3ad07779d916db1a03c8",
+                "tests/abaqus_derivative_export/fixtures/U_num.json": "5d214c11f212486a96506ce9be0956c71c68cdbf8d6b07e81a75fc4ed6aab320",
+                "tests/abaqus_derivative_export/fixtures/U_nup.json": "633c45d0669a413ae7c6463eb670419cabca5f2cd8377297e090e8a9f6d212ca",
+                "tests/abaqus_derivative_export/fixtures/derivative_fields.json": "48bc3126c77a0e9d2c65d80b5c14b07df42f974d7bc2a0844cf41c949dc49782",
+                "tests/abaqus_derivative_export/nonuniform_c3d8.inp": "a02d314aac5157dd174dfd8ced30c5ade9166064203bb10ef73e89ce0d2f5f75"
+              }
+            },
+            "umat_oti": {
+              "path": "/home/ammslab3/softwarex_work/imq-umat-recovery",
+              "commit": "d34c7fff51e13285efaf13a57917fa34034f57cb",
+              "status": " M README.md\n M START_HERE.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M paper_results/corpus/CORPUS_VERIFICATION.md\n M paper_results/corpus/corpus_registry.csv\n M paper_results/corpus/corpus_registry.json\n M pyproject.toml\n M src/umat_oti/contract/contract_lock.json\n M src/umat_oti/contract/schemas/transform_generation.json\n M src/umat_oti/transform/parameter_sensitivity_transform.py\n M tests/test_contract_fixtures.py\n M tests/test_internal_jacobian_validation.py\n M tests/test_repository_standards.py\n M tests/test_the_crystal_plasticity_trio_lost_one_state_slot.py\n M tests/test_the_services_are_the_one_place_a_verdict_is_decided.py\n M tests/test_the_two_denominators_stay_apart.py\n M tools/audit_documentation_commands.py\n M tools/build_corpus_registry.py\n M umat/README.md\n?? docs/PROVIDER.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/verify_internal_jacobian.py\n?? scripts/clean_install_gate.py\n?? src/umat_oti/provider/\n?? src/umat_oti/validation/parameter_sensitivity_provider.py\n?? tests/test_clean_install_gate.py\n?? tests/test_provider_recovery.py\n?? tools/inventory_retired_evidence.py\n",
+              "source_tree_sha256": "90bdb927e50d83b9e2b1afdca63a8dc292555454f11250c6fd5e2a74a17a7f6f",
+              "source_sha256": {
+                "src/umat_oti/__init__.py": "4c31aac72c2f395dacbf7a761eceef86c5e72935433cbd3262db01b2aa855efe",
+                "src/umat_oti/abaqus/__init__.py": "94519fd3e8319354e0c5511b6e2ae3ee4e6d2b52bc542d84463ab5429ff7ba1f",
+                "src/umat_oti/abaqus/activation.py": "f1538826d8a4985684282cbef69e3edc70f224a88015b123bed9e30a33fc3229",
+                "src/umat_oti/abaqus/amplitude_search.py": "7b636c2298ed3619bc5c172364e0d881a0c8bc4db5974d2993bd86577a066fe9",
+                "src/umat_oti/abaqus/body_force.py": "0fd56bb9533f910d9ce8c8727adeeb7da9e0c9ee0bbfdc8eb4952534f987b3ef",
+                "src/umat_oti/abaqus/call_isolation.py": "051bf2ecbb46db12879ac5ca068eac6914fd59501009abe8432e73be2b97f4c4",
+                "src/umat_oti/abaqus/companions.py": "5904eeca1fafd1f69a98b66952495559e9aacc963cc54bde47643386bd877068",
+                "src/umat_oti/abaqus/compare.py": "6fac1dff7425e578b8bdc47ce458ec9fefa103b0108290e354bcecf2549a9b19",
+                "src/umat_oti/abaqus/constant_folding.py": "0f34ac544ebdb3e2f9b0cca05f8963acf69fbe2455e96bba242e9451bdf5c6fa",
+                "src/umat_oti/abaqus/coordinate_domain.py": "b6a2b6336d5400fbd514a54f83341991571df916df3e1c7e8b409f726c00ce83",
+                "src/umat_oti/abaqus/data_files.py": "fde737ef440dde08d5d6ccd4edf34ae0b13b81ae6a03ec82461f9a36870c372f",
+                "src/umat_oti/abaqus/deck.py": "c911717a6b90bc026a33f60ce24641e1602381b1e016c697c35affb84b774897",
+                "src/umat_oti/abaqus/deck_pairing.py": "6517f922d858fd3e3c9cd099e87d52633264a4b257480b4688be01b2b1706788",
+                "src/umat_oti/abaqus/elements.py": "28ebdf77b4bb5d93a66121d2a4c47872b7241875ebc7b5cafb7524afca31d643",
+                "src/umat_oti/abaqus/experiment.py": "61b38ab0ca08e275855ef11e65ee40cd5d00584f776126e88c94a8e4f5dc9ebe",
+                "src/umat_oti/abaqus/formulation.py": "993bb8d505ac177b27926e80bf9c3a14a362edb5b8028f101ee0f4446b8e64ac",
+                "src/umat_oti/abaqus/frames.py": "5794ed98586877662306bb4ad9351a29b3033b42083ab9c4a7fb79b0135ab40d",
+                "src/umat_oti/abaqus/include_shim.py": "58887e0077ad91852e58115d86d637f8243f672b95ca209fe47f2b1c8e173b81",
+                "src/umat_oti/abaqus/internal_iteration.py": "ccdea7d49b27a0c62493d9c280a9d8fe2b3384767ab2316ce8306ff5cb599f1d",
+                "src/umat_oti/abaqus/job_status.py": "95b92f3b5c14ee7c4bd4d2c75504be1c3d7be1052a068e4892e01dbc67bd41e7",
+                "src/umat_oti/abaqus/manifest.py": "bb3a5ab29798dcec3d021cba941aa87efd26285a149201060f83759ded13091d",
+                "src/umat_oti/abaqus/plausibility.py": "6e86e3ce9eb43f79843559faf3c227aaf159dad324317bc48ac97b4737cbbe54",
+                "src/umat_oti/abaqus/precision.py": "1c80c6ca1d4fe4fe0ff5bdc96f8c1bd747d2a788c6833d25c5ecfce632577b99",
+                "src/umat_oti/abaqus/primal_signature.py": "9580bb626ee297aa20208a8f4ce38e8bded911435e0122b737defdeee0b05955",
+                "src/umat_oti/abaqus/probe.py": "ef1569cec2bbf714ed54974bc149dab4e57ef849de914c6cd76ee51ddae38975",
+                "src/umat_oti/abaqus/rate_search.py": "0ca70c7cd2aef6dd67e1f3bddc2706a9b9cf7fbacf2a1730339d8488dd94fc53",
+                "src/umat_oti/abaqus/replay.py": "5cd52e1d31341390b57318894c1643166fd728d340e0e3aa2f0d06530ddd66f0",
+                "src/umat_oti/abaqus/runner.py": "84a8157efedc31e304ad9b944e80706a30f75847892d300b4fa5abd5bb58a38c",
+                "src/umat_oti/abaqus/safe_loading.py": "16171205977a8d5d580717ef01988ead686df87d65c5a02107ec13acea14c79e",
+                "src/umat_oti/abaqus/single_call.py": "a4657137d6442345c02c71ef3f25dc362b6a62f7669052c501d9cb1d7ac35009",
+                "src/umat_oti/abaqus/state_regime.py": "5e36ece577ed42dcd417ff5163bb61af85e6b6d0f69a9d16aec65b67d5401648",
+                "src/umat_oti/abaqus/support.py": "8c1f04c767de1eeeb9899a0fe86210820abf1aa6de14bf52390452fa7f99bf66",
+                "src/umat_oti/abaqus/terminal_states.py": "615ff4f8a44c4aa9206f32d9c712a89465e0cd5909b5db6e7fbd0b4a21db5eaa",
+                "src/umat_oti/abaqus/time_scale.py": "08993b198b5981a95b478c516035c4b10bcef274ae71df9c9ee6531548b44101",
+                "src/umat_oti/abaqus/truncation.py": "81ff2f6eaa91d97eeade4d5010100757a9285beadeae4f9097bb50c83b3e4e1e",
+                "src/umat_oti/app/__init__.py": "fa348b123ee71e3b01d4d80a473f3293fd60a46be1e90fb4efe39c7b0fcca29d",
+                "src/umat_oti/app/components.py": "3d73d181b094ba42acaed65b7152840d46051865b95489838072eeab99441e3e",
+                "src/umat_oti/app/corpus_tab.py": "ea644b6542e0e492fa19cce8572c74500fa05e002bd2e2cd4a99f3afdf335921",
+                "src/umat_oti/app/corpus_view.py": "ef1519b9cefbc398a7f5872fd2c3ab57ceef9824a8e1e2a62e4a02a5c06ea4f3",
+                "src/umat_oti/app/derivative_editor.py": "8c7b53284f8b97b8ba3c87f07af020043c36591410374f813d56588d3b131b7e",
+                "src/umat_oti/app/displays.py": "8708ba4a35915a1aacb170fb89ee3b108dfb4f72143dea32f45d93765dbc93d6",
+                "src/umat_oti/app/engine.py": "ac2d37f90d332ed157a972f7d224885fd51f15da968493685744889d53132f41",
+                "src/umat_oti/app/examples.py": "b81e8cf8c6100a0ff63bedf16162388e669d6f3dac571ca80f3c1cd09f3b397c",
+                "src/umat_oti/app/forms.py": "3e82121c9b6ca480c6fcea1af28b5329e8c0d3158ab323c9dbf3cbcd0f4e8571",
+                "src/umat_oti/app/home.py": "7309cd25dcd15e791c3cfe784fc4842ae206519b07bed0b1fa9ce32b6250a7e8",
+                "src/umat_oti/app/jobs.py": "3d3574e35cef14fe572ad2e3b3bc3527b0c6806c3465f9505c0758c4d725c499",
+                "src/umat_oti/app/library.py": "066d371e17f224b0c8b1ad2644dd9011aa20d999b2d242e4dea48c68c9f093cd",
+                "src/umat_oti/app/plain_language.py": "2e48cf29d5fee06e7957ebfbaa0d1411a32445dea44133af7a16767a21b72063",
+                "src/umat_oti/app/residual_bridge.py": "1f70fdaaa0d118f66bb5b8778054486e1b5210c73315269ac4ac520d36784866",
+                "src/umat_oti/app/results.py": "a2a9a5e61cb0f59ff405554b07d136ad8b5e23e8435bd95561c371cb03da2540",
+                "src/umat_oti/app/state.py": "625d8b7f68c75137e9eeef7b48b0441e650fe60c3ce19735bd768acadac93801",
+                "src/umat_oti/app/streamlit_app.py": "8b427899aeca3f6bfa71c3ebfd92dd4cf12cd51b401e9f618fbe60ccbeae41ad",
+                "src/umat_oti/app/unified_app.py": "6e38b070369aca47a2c92971c78aa853d0e223d98fe8f427126948e8c983ce29",
+                "src/umat_oti/app/wizard.py": "24c9dec9f7119bc988793706cfee46665864d84a0b486241c3b2820c35d76ee2",
+                "src/umat_oti/app/workbench_app.py": "cfa4a6dd117a19103869eaec73848a1d4d120ee1de181385a5c41e64474029e4",
+                "src/umat_oti/assist/__init__.py": "66cbd608d65607c11bd98db4c4911d9504c0881a8b62cd8b20c79474dac3f53b",
+                "src/umat_oti/assist/blocker_triage.py": "eaeafd931f590fca8e5742c0f24371d3a83dc08dca15838ce5580d5b8f2641c6",
+                "src/umat_oti/assist/deck_pairing.py": "c04bc8d554327c00b3d1bb7db236e285c4fc15615c23df7d4d684df9b7a979f0",
+                "src/umat_oti/assist/local_model.py": "2c6ed43dc9e2cb4204e0dc0bdef9ef79a274b6f793e4eb9b619360ddd7cff566",
+                "src/umat_oti/assist/proposals.py": "851c1c115f7edcb7421b9fb7c53d88caba4cda13f69df0cb9b185cfd169a6a1c",
+                "src/umat_oti/assist/repair.py": "ce66ca2390cc4df54d94e82ad6d414a31b36376746d6c0858844e10f2ab9e7e3",
+                "src/umat_oti/cli.py": "2652a1193b33da29ac5d46cc950d2f4f2460050737fc11e3fd209a0928e47bd7",
+                "src/umat_oti/cli_batch.py": "47e2d5fae99f488a8d543415dfd65394ad74165109f6978ac3b05b2531723adb",
+                "src/umat_oti/cli_json.py": "61fa4827b019fb4ab070b75dcea37f0a2dc73d530b329c3d691370ba9fe8264b",
+                "src/umat_oti/contract/__init__.py": "a13765fc810f46789cc41bd3e6161bfe07c51320555f0de893c931ce2155f2db",
+                "src/umat_oti/contract/adapted.py": "60448e13358694e42b4304b9530f3cc00b2e53a6b637b3ab1c9a9480b19bfe34",
+                "src/umat_oti/contract/envelope.py": "cd6c7303a4cca0f39ec08b2fde520e51d4b9dcbfcc14e916b8400b1517d4a5c9",
+                "src/umat_oti/contract/errors.py": "ea3cc1410d7dbc04f20a556b2085bc517040aa567ed003ef829228f0d960ab67",
+                "src/umat_oti/contract/fixtures.py": "99194674668e1ae83c45684cf226b579c55502c8b067f15aa9f386c68893580a",
+                "src/umat_oti/contract/frames.py": "1c5384a678490873ff7e8f1e4a43ca9a9bb8ced68faf3a18cc326250f551b041",
+                "src/umat_oti/contract/gates.py": "24e51134c4f5bd19485b9cbc287ff86ffbe7ac056e71b23fe4a84b2dba1a60b4",
+                "src/umat_oti/contract/identity.py": "4cfdfa22cf6f3c48c1948529bbf022b572c5617742488a1ddb87c1d20a20961e",
+                "src/umat_oti/contract/record.py": "669491eca44e3417f1a3e1f3cf2d4dffdbeeafad3a98f7262ae5f2fa8d573496",
+                "src/umat_oti/contract/schema.py": "5f68ec7f7028595274a07ca3709ecaa62b7033b3d6943eb893eddeaf22fa16b6",
+                "src/umat_oti/contract/terminal.py": "287991e605f6eb0e94c9afa9dc5cc2ac87a22676641cefa94945e108b38411af",
+                "src/umat_oti/contract/tristate.py": "cdc03063df5a3598ce766f10e309e075d0cc0e21b23649fcf266bd93e110e74c",
+                "src/umat_oti/contract/version.py": "be34e2e0ff7516d69bb62928aa3d671cc768775e59afe8cd4743106a6ddd1480",
+                "src/umat_oti/core/__init__.py": "dcb5baffef0d75a8f5cbfc60ca3f7b6fe0272fa7d78744ebc01098d04d64dbe9",
+                "src/umat_oti/core/config.py": "25ff055f9ea613ea81d0e15fd371964d89f29cc5eee4aaf8be3cafebbae0380f",
+                "src/umat_oti/core/config_loader.py": "12c155ec7f394fa3d7318acf995a7deb8f3c059e1d74b9f4e23fff61f58c6bef",
+                "src/umat_oti/core/derivative_request.py": "0ae426c8d73cade2e373648e9ffa58103c8fd313c7f54fe52ab0f643c1c567a2",
+                "src/umat_oti/core/diagnostics.py": "8b5af2f4ccc4c9ac5cc4cd424f93f889eb7b7c7f29c21487d2c4edbdaadac0d8",
+                "src/umat_oti/core/findings_log.py": "f1350ea29a3737f6259b292777c992e56aaa154c18b27c09e929678ecf617a14",
+                "src/umat_oti/core/model.py": "a5c6d5a16e2a92ad85d54c8fdf0e409a03b5f880ccc735e641ff5651cc90fdf6",
+                "src/umat_oti/core/output_layout.py": "24c4a6519432d99d98de4a66a7362a10223fd32a8a0df0ca2e173e7e6a609bb8",
+                "src/umat_oti/core/pipeline.py": "7019674374f75b6702e22165be6fa9a7eb9c457e0bd93844060972efb39cdae9",
+                "src/umat_oti/core/pipeline_status.py": "ef3b7a4664007a24b1185817348610e8e00e4450fe3a50bec2a6904acfd5f62b",
+                "src/umat_oti/core/project.py": "99c6794c61db97d4c7ed01ad10f39e4fa2bb6247b4880d3ed0a41bacd6434e37",
+                "src/umat_oti/core/roles.py": "df7c4689d6e5d7b3fa321aa4ccb635151745f1cb35b6bccf1fc7fcf49aa5ee7f",
+                "src/umat_oti/core/transformation_anchors.py": "162d2069858591540b0a14ffa8be1e3436ebb768c54c484e51e46d4952be5afb",
+                "src/umat_oti/core/transformation_review.py": "462c252c950f96d2d8ded601791e1f79bf5bffa851c70a2dfd05f83c11096ba7",
+                "src/umat_oti/core/transformation_settings.py": "49e170204f7bcdefd83b9dee23998ddcb717c34fd9f145bfa64658240daa33dc",
+                "src/umat_oti/corpus/__init__.py": "b3a147dca41ada52a0da1428522ec5b5043d637ea2c87bc6cb93dd735a1f662e",
+                "src/umat_oti/corpus/abaqus_deck.py": "7d42f3bfd71a30acf8764682286798fb4eb3ebed13913f238fe481374b0e93d2",
+                "src/umat_oti/corpus/acquire.py": "5e0e75e376279e9025acf4054f877c1c84acb62ac0d60bba84d3df9749e75203",
+                "src/umat_oti/corpus/cli.py": "80263f62b40ad09f342dd15c5139f27ae2b6ba6c99842c974428162b154f7da7",
+                "src/umat_oti/corpus/entry_routines.py": "c47a38906433b6ed77bd8a3486a60ca2bb0fbe3f39b96cd0e449ba5bd9c787ff",
+                "src/umat_oti/corpus/funnel.py": "58381dcfc0a992c050b9ac80e4e95c9f5068d06ca93b8592fcb8692749753f63",
+                "src/umat_oti/corpus/identity.py": "df7664f46b039e887e83d91cf0924f5236b44d9d6e322c7df8d9bd02191c2bcc",
+                "src/umat_oti/corpus/tangent_regions.py": "d9dc39bc623eb9ba325657ed6196a32bd31e9872e8c6eb6cadb37db69af73495",
+                "src/umat_oti/environment.py": "d2010fa6c49a8a33a1aef1444d96a4e7bb528289579234a37ef2058f9e60f3ca",
+                "src/umat_oti/fortran/__init__.py": "13083067288b459e06b28d4125875e612c2278e0e2613e58817ab536d233ae88",
+                "src/umat_oti/fortran/callgraph.py": "15331013a54e633aeea1ba1c0ac610cb3844fe73e5f8f66b897baa7a992eaac6",
+                "src/umat_oti/fortran/interface_detection.py": "16d6e714ffa3fda1020f8affd471259e71ec9298d361eee9b373539a8ea0b806",
+                "src/umat_oti/fortran/literals.py": "807e740e0726e14fbf2f660777b2e87a179359460d9c8b91f40566c20bab48cb",
+                "src/umat_oti/fortran/normalize.py": "31ad8c63a3ca954d82d1b81b13604aaba1c92f53e358482de7c3b3bfb2307f3c",
+                "src/umat_oti/fortran/parser.py": "145212e866385b32736b5973ef33385702bcd4341aa9aef660cf0977e2766f06",
+                "src/umat_oti/fortran/regions.py": "55804e46438125e4c23dcbe43096016635005a888783b058aec9973f23d360a8",
+                "src/umat_oti/fortran/scanner.py": "adb01120506dc524a34dd546695a74f399794601d832ce7d52d507c3a0a4bcc5",
+                "src/umat_oti/fortran/symbols.py": "7f66aa1f805a8a47ac2575dae98ff813ec28db88048f302c771fc01d94f419da",
+                "src/umat_oti/fortran/transform.py": "f146b2cf3a36522955f069b1e5be8d03c1db8afe009620f2715983f2bc1af022",
+                "src/umat_oti/fortran/variables.py": "9eaadac1adf069598242d65c723fe34256403d83b398b14cfc7cdb0f39fd11f2",
+                "src/umat_oti/fortran_emit/__init__.py": "a02f893dbd1f2484ef1b3d71af21eca12021082c4d43fe6a5b8ce9b1bebaf52d",
+                "src/umat_oti/fortran_emit/higher_order_strain.py": "eac62ecf1fe71cf3bd90ace94d2466127270039f587dc6a2f3f80fda75de0bec",
+                "src/umat_oti/fortran_emit/parameter_sensitivity_j2.py": "12f726bdc0f5ae3841d2a37cc79ac40643273bdb87f5af5dbf4f34202824f384",
+                "src/umat_oti/jobs/__init__.py": "3319c8d50512e1d7c41214e252d278e1ccc5e0e50edd044422579f0c4073c409",
+                "src/umat_oti/jobs/manager.py": "914fca5c42da15359b3771e68676adccda17bec6fab27de648c414ed067d0784",
+                "src/umat_oti/jobs/persistence.py": "c9ebfb143d43df5b50051f4562c2c8876c7a38b86451742968975f665afefd36",
+                "src/umat_oti/jobs/process.py": "4ed3a57e7c850c771218c21496ccbb9aee5f375ba8ed03ee7d3e0722a5279343",
+                "src/umat_oti/jobs/records.py": "d9de7cab7a246a2c76bcc05ccaaa7371c604da5fa55db0e121391bbd1702397f",
+                "src/umat_oti/jobs/reporter.py": "95d491f123e0d15778301b3faa3c148f24e4f891bb183a5414108c3c55e9bb4e",
+                "src/umat_oti/jobs/stages.py": "0de759ccc889df58eb7c34d06ba21db5f6af03a06c7f30f4079b8aba86a2cefc",
+                "src/umat_oti/oti/__init__.py": "d111c0813a85752d3c6116047158cc19ce68488cc7cb2fce6db5a13398f931e3",
+                "src/umat_oti/oti/backend.py": "404e1f6e04208c20cd35f2ab87fff70d0751b1b751dda8559bbfbf9105200213",
+                "src/umat_oti/oti/extract.py": "a56dff1bd5614d41b09227c15c3723f8285753b20c5650b7878f569e5c484d0f",
+                "src/umat_oti/oti/module_generator.py": "5a9ab213641c5471868263b10be30228b8de4b0d5ad2fe3751002e39ad3f18c0",
+                "src/umat_oti/oti/oti_directions.py": "bb09db905b37dc71c75a573526883dd49f71d5c6ef77b70ee2caa88fc9eda81d",
+                "src/umat_oti/oti/otilib_static.py": "36a00c9035bd76851915dc98191afe2ca44ded82119c60472fa45b79336e9071",
+                "src/umat_oti/oti/seed.py": "c2b99814622881cc80f6f3daeb95fd17cdb0f891bdaa97fd7c8c472429bbb2ab",
+                "src/umat_oti/oti/support/fmod_writer.py": "6525233f95c6dc35c3d481337713da788717e57683f960cf7d3ac6c6deef8694",
+                "src/umat_oti/pipeline/__init__.py": "25454e810d8c5cf489466439d2a54f1fbf5caf41ae323e5b80b569d7c5bb9342",
+                "src/umat_oti/pipeline/cli.py": "5105cf17c2b9dfc63b2931a68b5e8c45b0b3fb687116f8e18bdd64ecbf3a08bb",
+                "src/umat_oti/pipeline/engine.py": "af1181922ba9909b64dd25d182be101b7d9c0fd93049e17cc04e00d094efe50b",
+                "src/umat_oti/pipeline/manifest.py": "618d726bb89440bb389f306f8384fc99947d39cc69fc4d398aa7088b78d124be",
+                "src/umat_oti/pipeline/stages.py": "d0b9c4ef0c134f7f7421ae6d7b4d9dd611469e85df1054b98cada414c19f68f1",
+                "src/umat_oti/pipeline/status.py": "ad556581e02fe9515fda298a8c72efe5f02fd2b5efe86fbf89b87158aae17185",
+                "src/umat_oti/provider/__init__.py": "43474e79a4f9dfe10296b6fc9c6a6b3bd12288579d935fddf77755d54256d3bf",
+                "src/umat_oti/provider/__main__.py": "817ba55af3e5098b04e506f50024fd5020d9f3eece43ad5ad2a6cbef132ca896",
+                "src/umat_oti/provider/build.py": "116dc4b578966cec7f20e86037a6a2d6ce7d9d3ed88fa08f030a7f6b88285a0c",
+                "src/umat_oti/provider/emit.py": "1c690cf78c6690dc4bc40253813118313e97fcd240e314beb804281dcbef0b94",
+                "src/umat_oti/provider/legacy_check.py": "ec0ce4eb9a8513b9edaddaa85087b34d412151bcb6a729a77f5cbccfedcaf903",
+                "src/umat_oti/publication/__init__.py": "ec858719bb660bbf9ca2bee5ddc508b814148485f0464f893ceb4dfc033e2619",
+                "src/umat_oti/publication/layout.py": "89ca3a4e9afc054632cc91373e73c501c7497f77b1fd1344e733d939a996b7de",
+                "src/umat_oti/publication/status.py": "55aa49ed79dc3442b765c7213365770e7ca86d9243ac1f802907035f337baa42",
+                "src/umat_oti/reports/__init__.py": "f94509b888e983f2cee3f3d327b04eba43ae9c9388411a55fc28945b1169eb06",
+                "src/umat_oti/reports/aggregate_abaqus_results.py": "5dc7e28d2fe06f0ee83bc9dae51a07422cad07d10d06ce450c5907d86e00c678",
+                "src/umat_oti/reports/config_writer.py": "7acc35d0551f76cfc57a60a5494bbcd7d51556611019f688b0cdb9a2574a9050",
+                "src/umat_oti/reports/driver_contract.py": "4d08720a786bac0e1a4f1a8ca83b43f88b8def236deb58dcc550cd82113c04df",
+                "src/umat_oti/reports/manifest.py": "15a9b0b864bc43cf603f386c4cc765ec71b74bfd654beb4bb95f67ab357324d2",
+                "src/umat_oti/reports/otis_run_log.py": "f4f25ee2a385cbb8a2f6927e398cffde14a89bb46a936906973cc8a1f245d75f",
+                "src/umat_oti/reports/run_softwarex_evidence.py": "90beb2b91e51854e60819b9924ce0dcefeb238dc54703d3684e6a5368a146103",
+                "src/umat_oti/reports/summary.py": "ab5d62cc3abe5581998ee105073caa18135adb895e0b91af6055e347c00a41f4",
+                "src/umat_oti/reproduce.py": "a815221420343820582cb61ee994829d6981a2dc031b91c09be4ba3819f705b5",
+                "src/umat_oti/semantic/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "src/umat_oti/semantic/emit_lift.py": "19167379b2f99bbf15499991a5bdfcb7544d7478c2ed9b1c5f411258f87d3c16",
+                "src/umat_oti/semantic/fortran_model.py": "b2424f6e573913a71e13de2105fd0d4f3b9eba5bea626f3a0044d56a3ac59647",
+                "src/umat_oti/semantic/llm_advisor.py": "66c72f4161976fe0ce22f0e9ee442eba200ae0f6d00a247b6e696688bb3e032e",
+                "src/umat_oti/semantic/retype.py": "8cc2d851daac0b233673e6f3fbd58f5b56d802d563b9234561b28970a8ac0557",
+                "src/umat_oti/semantic/seed_detect.py": "088aec4d8ed4e399ea41c23b68073ccf5b7ae34aca4d4785f4dba6279e7f6a33",
+                "src/umat_oti/semantic/transform_pipeline.py": "33f276b88cd37f85c75d2405b22070eb08e6db9b7fa51cf714a946252ba8fabe",
+                "src/umat_oti/semantic/transform_plan.py": "f63f041a6531e73d45ad6eb6fcf9dd8e09388444606c5cf6d60b5149a454a138",
+                "src/umat_oti/semantic/umat_domain.py": "19849cc8d72e51924c73679215e5fe2646200607bfea0826b52ae7a44f055cf1",
+                "src/umat_oti/semantic/verify.py": "b5c8bb2382197233ad65db6cd3c53f9a36dc83ab249aebd97afdf2bb9c81658f",
+                "src/umat_oti/services/__init__.py": "21adbf7c5ce2fadce26fd44fcc01f9fbd7b143f0919f0141d629c85646728f5b",
+                "src/umat_oti/services/_support.py": "de2578f158ce6603d3fe5ad1fdc0cb4d6f5c47a6cd9aad89b0debaaaccc0a504",
+                "src/umat_oti/services/contract_adapter.py": "64c60db285ac61ec3e065b83ea8f7b4c696791e11ecec4c9664e71328b9e9b7c",
+                "src/umat_oti/services/corpus_service.py": "45c4b918ee3444428bd8b8158ee78c6ff661e4d70edac5ef2ed77861f3a16a47",
+                "src/umat_oti/services/execution_service.py": "1de490b4febba4f656ebef221260f6b3e9a5f6984909f5c961bb292e6c66fde1",
+                "src/umat_oti/services/experiment_service.py": "a2cc0b0e1f34355bb01b9cf7329370acd992a6c440520043d0a5fc725e68ce38",
+                "src/umat_oti/services/gates.py": "405d3ff69620bd80c8d5a0ebc90de92e902107cdc70e0f9861972ccdd30f86d8",
+                "src/umat_oti/services/manifest_service.py": "0cbd4a9c78488205275a232a5af3fdef562c794363e5b84b3f58fcb215ddd274",
+                "src/umat_oti/services/regression_service.py": "887b1a4d8621ce12a89b8ec8380fd33bbd67fb902ffe953c31052291fccf74a4",
+                "src/umat_oti/services/report_service.py": "95787ec48c075a8ad78a105403e3208fc3e9865c98876ce84cfea5dda0d21b5b",
+                "src/umat_oti/services/residual_service.py": "ddcad542eba68f7e1419c5d7850e644b36fdc2bbf548f6ef034e098d6d3ae92d",
+                "src/umat_oti/services/results.py": "a17d381b15bf7adb4afbd6c47a71cee02907340566b5112cfe8dadfb3dc269b8",
+                "src/umat_oti/services/transformation.py": "a66c8463ab2ac05690cad58287908745ff0c1d89bd555dfce5a909fc996cba59",
+                "src/umat_oti/services/transformation_service.py": "67f48d86913a4c3063dee888dec00bee5b6f1c34f2f47ea7193a6713f4099565",
+                "src/umat_oti/services/verification_service.py": "4db03afa637d0ef20502a6c7f72319dc0eb105ac455785e002b2a0154f5c55d7",
+                "src/umat_oti/services/workbench.py": "765ae01e790babb4002b0370ccbfab36e2eac40325573cebffec04ab01915977",
+                "src/umat_oti/store/__init__.py": "33736c0a6eba76e9f288be96feac0225f1bf7b71def8ba34a97c8665d5c3a0c1",
+                "src/umat_oti/store/transform_store.py": "3da383ced7fe2009b08ff38f77425e1f667f0687f660f160f9f216770b0b908a",
+                "src/umat_oti/transform/__init__.py": "037d6ab5e285e508abfb3cef61309f527d6697b7e9b0fb3a8d0d8ca94d8c711b",
+                "src/umat_oti/transform/abaqus_utility_definitions.py": "998fa5ae4a90bbc5e55966ff58e6f0ee467cb21d10cf97db8f458e541e275997",
+                "src/umat_oti/transform/dependency_resolution.py": "aa0523b5f09c9d4d420977d34ed88cf40e823746c991b3cbf860201b5fb41840",
+                "src/umat_oti/transform/helper_lifting.py": "f3f703459492ca495ccb35d5345665016c985210cc7ceac0fd1eaa1e1fa02a4e",
+                "src/umat_oti/transform/internal_jacobian.py": "4a4e8e10046b209842ae87649548630461bbd115696e2a57c8866e4c02e7e157",
+                "src/umat_oti/transform/local_jacobian_probe.py": "2c4d83c10d858062c00e0e5418cf1eac22080273d5ab4751346a4e21e3d7b303",
+                "src/umat_oti/transform/parameter_sensitivity_transform.py": "91dc5af15fc79b7e0c2aa26f163f35d276ba82ed049dbdb4023b5ce6421d225c",
+                "src/umat_oti/transform/source_transform.py": "5e421ed4b280e20874dddf541d7705dd64771d4f5ade79ec129ff8682bdbb4e6",
+                "src/umat_oti/umat/__init__.py": "e2c1f78626bf7627ff7ca421c2044596f6289411f810efa545a9f1bf2e8069d1",
+                "src/umat_oti/umat/interface.py": "e0081afb89261e1bee4433d44d42beca196e02970215bab2ea995848310abc90",
+                "src/umat_oti/umat/stress_map.py": "99eb06c7e0c1aefb0b4e14d1af661396a7df42edf9a9c530ec4885bf5b4fdc3b",
+                "src/umat_oti/umat/wrapper.py": "2f53992e7fd8f84f76d9f0c5b14aa2d31b8e31337b889ab474c9c7560287943d",
+                "src/umat_oti/validation/__init__.py": "d93607e657b3dcc46feb32b78c4853f2f39e5a670dab6a207a332dd598fb6f29",
+                "src/umat_oti/validation/abaqus.py": "be3dfca9c8fcd5ca46502c8c179175d47329bad52511ce13340ff06d839e43fa",
+                "src/umat_oti/validation/abaqus_runner.py": "ed7e95ec55ca0d498f0b238f3b35f10d75ecd23b98614d27e9cbecda596da60c",
+                "src/umat_oti/validation/actual_legacy_higher_order.py": "02706ad299dc396ad36be71172a2559a97be8a2c02821c29be4a98425ed4ce98",
+                "src/umat_oti/validation/actual_umat_higher_order.py": "903941cee1bea93429a96a340ad8d70f82723dba5000ad7fc55e69a64ac0b906",
+                "src/umat_oti/validation/actual_umat_higher_order_generic.py": "6b4bc447e205ebcdb41ed72a4b1d2a5cd83952617910820c75dd3a774cbb7352",
+                "src/umat_oti/validation/compare_results.py": "61743be57a49e16a25df880cafcd83469534d02d1d8ef8e0b714631f9bf7c167",
+                "src/umat_oti/validation/compiler_check.py": "8fa0b69ca260e32ccbbecf79a4f2ca099c93670fb3ccf32dda6fa8dd18a348f7",
+                "src/umat_oti/validation/finite_difference.py": "301f097f72e161a75296b3791a954463185b241aab71d7fe02558bff4618fec6",
+                "src/umat_oti/validation/finite_strain_tangent.py": "87b5f1c974c1ea82a55cffb398244f89d6c432f78bda0389bc3f7cacf5468bf7",
+                "src/umat_oti/validation/higher_order_convergence.py": "dda1070905fdd9a263bbd4ca4eb42289027a56cd9ba83a1ce256c38855c5c58d",
+                "src/umat_oti/validation/higher_order_convergence_study.py": "716c16053d215bc7dad3468ff1d077b6d22f27a8be52a8ce830efda890d265a5",
+                "src/umat_oti/validation/internal_jacobian_validation.py": "4cdb408edcc063b515e6ddc0c484047341124b511255d47ce793884a18b25c52",
+                "src/umat_oti/validation/j2_reference.py": "8dff7d8f7cfdb227ca876176e589cfd041cd1b03b25ab43ece9929e6512971d6",
+                "src/umat_oti/validation/job_builder.py": "daad92595fcd064503d2f0af448be7de8cd5c4947ec252c4fb6ad140886694b5",
+                "src/umat_oti/validation/material_point.py": "0114e438e1e90eebf703ae9c08e967ebd7c18adee4cf8383a537ba6f7cb26cb1",
+                "src/umat_oti/validation/material_point_driver.py": "ab0494dde8fa91b8ecd279cce44910bd25ca7bd0f46537978bed1e046f529cc9",
+                "src/umat_oti/validation/parameter_sensitivity.py": "c2960ce4926adcd2cb4734ceb2378c9797ae18e22ad15273b564454d7aa9abd1",
+                "src/umat_oti/validation/parameter_sensitivity_provider.py": "bedf2186cb48efa054b1bb6db6d43dd285b409de1d4adb8099313cc1f13a80fc",
+                "src/umat_oti/validation/parameter_sensitivity_validation.py": "8f31862beaa5fbe750d5e3d22c7fa19d71bb49ebc4032d37159519a8d8c673ea",
+                "src/umat_oti/validation/reference_resolution.py": "717aa56b1a982ba645d1fd686a201b2e1f0fa3e6feddcd4b30a6dbd5e15b6be0",
+                "src/umat_oti/validation/run_suite.py": "d6fbcad66feaf6629172703f7905ebdbaeedcf26ffbcaeed69f364a82a190a0c",
+                "src/umat_oti/validation/tangent_validation.py": "ef3a1b5f99b4a8787e4552b36c8581b4550a1fe5acb0c685d068256abf5e24a8",
+                "parameter_sensitivity/models/m3_j2/contract_v2.json": "2b58d84c1205138842abaaa605705399e1fbe9f586ec81a6dec3badb704b7bc9",
+                "parameter_sensitivity/models/m3_j2/umat.for": "9b779f0c6cadf9c493068d84cd18bbf91f91ae14cb08aa0e7c8ac4ca119a9b40"
+              }
+            }
+          },
+          "model": {
+            "path": "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/imqcam_j2_cantilever/model.json",
+            "sha256": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19"
+          },
+          "provider": {
+            "object_sha256": "0cdca6f3568ae568228835257968c26927cde99c633aa2cf42a1020fc27f1e6a",
+            "contract_sha256": "10238d6187c304f42c90d2374e996e0c4ad01c4a1b4f2bbe7ce6d38e25707754",
+            "original_source_sha256": "9b779f0c6cadf9c493068d84cd18bbf91f91ae14cb08aa0e7c8ac4ca119a9b40",
+            "abi": {
+              "regular_umat": "umat",
+              "oti_internal": "umat_oti_internal",
+              "oti_eval": "umat_oti_eval_",
+              "oti_eval_signature": [
+                "STRESS(NTENS)",
+                "STATEV(NSTATV)",
+                "DDSDDE(NTENS,NTENS)",
+                "STRAN(NTENS)",
+                "DSTRAN(NTENS)",
+                "TIME(2)",
+                "DTIME",
+                "TEMP",
+                "DTEMP",
+                "PROPS(NPROPS)",
+                "NPROPS",
+                "NTENS",
+                "NSTATV",
+                "NPARAM",
+                "DSIGMA_DP(NTENS,NPARAM)",
+                "DSTATEV_DP(NSTATV,NPARAM)",
+                "DSIGMA_DP_IN(NTENS,NPARAM)",
+                "DSTATEV_DP_IN(NSTATV,NPARAM)"
+              ]
+            },
+            "march": {
+              "symbol": "umat_oti_march_",
+              "directions": 10,
+              "signature": [
+                "PROPS(NPROPS)",
+                "NPROPS",
+                "PATH(NTENS,NPATH)",
+                "NPATH",
+                "DTARR(NPATH)",
+                "NTENS",
+                "NSTATV",
+                "NPARAM",
+                "DSIG(NTENS,NPARAM,NPATH)",
+                "STROUT(NTENS)",
+                "DDOUT(NTENS,NTENS,NPATH)"
+              ]
+            }
+          },
+          "abaqus_fixture": {
+            "passed": true,
+            "kind": "real_archived_Abaqus_2021_elastic_export",
+            "provenance": {
+              "total_time": 1.0,
+              "odb": "nonuniform_c3d8.odb",
+              "step_time": 1.0,
+              "step": "Step-1",
+              "frame": 1
+            },
+            "errors": {
+              "du_dE": 2.0823535819322397e-05,
+              "du_dnu": 5.454066796529612e-06,
+              "stress_ip": 7.647495682963444e-08,
+              "equilibrium": 1.5715691814577325e-08,
+              "permuted_ip_equilibrium": 0.4752019982761178
+            },
+            "limits": "elastic fixture validates FE assembly, not a J2 Abaqus run; float32 ODB limits FD accuracy"
+          },
+          "verification": {
+            "passed": true,
+            "reference": "ORIGINAL whole paths and independently re-equilibrated ORIGINAL model",
+            "tolerance": 2e-06,
+            "steps": [
+              0.0001,
+              3e-05,
+              1e-05
+            ],
+            "rows": [
+              {
+                "parameter": "E",
+                "relative_step": 0.0001,
+                "absolute_step": 21.0,
+                "total_u": 1.0247424053258358e-08,
+                "total_stress": 8.600560932051076e-08,
+                "total_state": 1.0244783225195659e-08,
+                "fixed_path_stress": 3.565387052617281e-11,
+                "fixed_path_state": 9.95439789547374e-09
+              },
+              {
+                "parameter": "E",
+                "relative_step": 3e-05,
+                "absolute_step": 6.3,
+                "total_u": 1.5113525636269572e-09,
+                "total_stress": 2.211748538564994e-07,
+                "total_state": 8.672979989719332e-09,
+                "fixed_path_stress": 3.98827309391667e-11,
+                "fixed_path_state": 1.2076587999555328e-09
+              },
+              {
+                "parameter": "E",
+                "relative_step": 1e-05,
+                "absolute_step": 2.1,
+                "total_u": 3.4712140258800582e-09,
+                "total_stress": 7.720946310304604e-07,
+                "total_state": 2.8375776287807234e-08,
+                "fixed_path_stress": 1.107073317959296e-10,
+                "fixed_path_state": 1.2076424414481328e-09,
+                "total_u_plateau": 3.0232043170615532e-09,
+                "total_stress_plateau": 5.916071278328171e-07,
+                "total_state_plateau": 2.6937800089364195e-08,
+                "fixed_path_stress_plateau": 1.504122599142432e-10,
+                "fixed_path_state_plateau": 9.07573568977834e-10
+              },
+              {
+                "parameter": "nu",
+                "relative_step": 0.0001,
+                "absolute_step": 0.0001,
+                "total_u": 3.0496438920367627e-09,
+                "total_stress": 2.442739320925989e-09,
+                "total_state": 7.476220441170625e-10,
+                "fixed_path_stress": 2.184842165358705e-07,
+                "fixed_path_state": 6.134459143858305e-11
+              },
+              {
+                "parameter": "nu",
+                "relative_step": 3e-05,
+                "absolute_step": 3e-05,
+                "total_u": 1.6063691733496287e-09,
+                "total_stress": 4.91826940206639e-10,
+                "total_state": 1.6078773560682202e-09,
+                "fixed_path_stress": 1.9703209765219764e-08,
+                "fixed_path_state": 7.084838507451142e-10
+              },
+              {
+                "parameter": "nu",
+                "relative_step": 1e-05,
+                "absolute_step": 1e-05,
+                "total_u": 3.906265126049274e-09,
+                "total_stress": 9.35846996449577e-10,
+                "total_state": 5.519916467877139e-09,
+                "fixed_path_stress": 2.305274394551724e-09,
+                "fixed_path_state": 1.0035026940947319e-09,
+                "total_u_plateau": 2.9354923058656553e-09,
+                "total_stress_plateau": 1.1078135779105428e-09,
+                "total_state_plateau": 4.519282230955288e-09,
+                "fixed_path_stress_plateau": 1.7503361110221155e-08,
+                "fixed_path_state_plateau": 1.179845442627216e-09
+              },
+              {
+                "parameter": "SIGY0",
+                "relative_step": 0.0001,
+                "absolute_step": 0.025,
+                "total_u": 1.335534268327771e-11,
+                "total_stress": 8.66538344030174e-10,
+                "total_state": 6.189181550260029e-12,
+                "fixed_path_stress": 1.9051864763922358e-11,
+                "fixed_path_state": 5.1940821268200867e-11
+              },
+              {
+                "parameter": "SIGY0",
+                "relative_step": 3e-05,
+                "absolute_step": 0.007500000000000001,
+                "total_u": 2.240287813686392e-11,
+                "total_stress": 2.682616551665539e-09,
+                "total_state": 1.4101490743492314e-11,
+                "fixed_path_stress": 6.636048070052001e-11,
+                "fixed_path_state": 1.6798307942806248e-10
+              },
+              {
+                "parameter": "SIGY0",
+                "relative_step": 1e-05,
+                "absolute_step": 0.0025,
+                "total_u": 6.65157179553557e-11,
+                "total_stress": 7.353788287049888e-09,
+                "total_state": 2.009515555324695e-11,
+                "fixed_path_stress": 2.840739680816218e-10,
+                "fixed_path_state": 7.617662915411463e-10,
+                "total_u_plateau": 7.076582054004003e-11,
+                "total_stress_plateau": 7.887839453172546e-09,
+                "total_state_plateau": 2.914261919337303e-11,
+                "fixed_path_stress_plateau": 2.861879520789283e-10,
+                "fixed_path_state_plateau": 9.041186463183391e-10
+              },
+              {
+                "parameter": "H",
+                "relative_step": 0.0001,
+                "absolute_step": 0.2,
+                "total_u": 1.0004988481788615e-08,
+                "total_stress": 4.729962389609024e-08,
+                "total_state": 1.0002385268511528e-08,
+                "fixed_path_stress": 3.0714108635746484e-11,
+                "fixed_path_state": 4.907311568967171e-11
+              },
+              {
+                "parameter": "H",
+                "relative_step": 3e-05,
+                "absolute_step": 0.060000000000000005,
+                "total_u": 9.125033689416329e-10,
+                "total_stress": 1.2924785818418963e-07,
+                "total_state": 9.057103500287577e-10,
+                "fixed_path_stress": 1.258614607967999e-10,
+                "fixed_path_state": 2.3128376952173094e-10
+              },
+              {
+                "parameter": "H",
+                "relative_step": 1e-05,
+                "absolute_step": 0.02,
+                "total_u": 1.5513840165949887e-10,
+                "total_stress": 9.720407922183769e-07,
+                "total_state": 1.1663145996548318e-10,
+                "fixed_path_stress": 1.249998147275205e-10,
+                "fixed_path_state": 5.82492186530187e-10,
+                "total_u_plateau": 8.412248884595852e-10,
+                "total_stress_plateau": 1.0284862393444268e-06,
+                "total_state_plateau": 8.394353960078335e-10,
+                "fixed_path_stress_plateau": 1.7070245217947078e-10,
+                "fixed_path_state_plateau": 6.832901086077285e-10
+              }
+            ],
+            "primal_u_error": 1.5978127228782124e-15,
+            "fixed_path_local_solve_is_not_du_dp": 0.0012843052410761524,
+            "branch_checks": "all increments and all IPs at every perturbation"
+          },
+          "max_equilibrium_error": 2.842170943040401e-15,
+          "outputs": {
+            "public/j2_history.png": "6d0bd9e86a00652e0db74adaca613b0ab5dbe022cb88f89e9801b864212f33e0",
+            "public/abaqus_fixture.json": "972d56273bc2baed1eb6d5a48a3498ca957f9b3d1bca8585c1bbfc8582cc924b",
+            "public/fd_table.csv": "ebf1ba52ad7f1ea4002ec45c7f153bffea73ad4917dd94d2d8121c406a7f4c7d",
+            "public/verification.json": "b8bbcf3c678a1a465391cc6ac8dc612a21a80a25ed0816946e62c76f25aa6bed"
+          }
+        }
+      }
+    },
+    {
+      "name": "R-X5",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "examples/finite_strain_c3d8/benchmark.py",
+        "--out",
+        "/tmp/recovery_usage__l41upif/R-X5"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "{\n  \"schema\": \"resasm-finite-strain-verification/1\",\n  \"elements\": 2,\n  \"ndof\": 36,\n  \"law\": \"mu/2*(I1-3)-mu*log(J)+lambda/2*log(J)^2\",\n  \"constants\": [\n    2.3,\n    4.1\n  ],\n  \"residual_reference\": \"independent reference-volume first-Piola quadrature\",\n  \"residual_relative_error\": 5.703447827527888e-16,\n  \"residual_norm\": 1.7446429238033396,\n  \"free_residual_norm\": 1.056171682913856e-15,\n  \"solution_relative_error\": 8.232181767484323e-17,\n  \"nodal_tangent_fd\": [\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 4.439186672945314e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 4.5520094801878364e-11\n    },\n    {\n      \"step\": 1e-06,\n      \"relative_error\": 1.090986510175759e-10\n    }\n  ],\n  \"oti_solution_fd\": [\n    {\n      \"step\": 0.001,\n      \"relative_error\": 9.47772104561191e-07\n    },\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 9.477926231003939e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 1.0127558267045161e-10\n    }\n  ],\n  \"otilib\": {\n    \"available\": true,\n    \"api_module\": \"pyoti.sparse\",\n    \"repo\": \"https://github.com/mauriaristi/otilib.git\",\n    \"license\": \"GPLv3\",\n    \"env\": {\n      \"OTILIB_ROOT\": \"/home/ammslab3/otilib/build_py311\",\n      \"PYOTI_PATH\": \"/home/ammslab3/otilib/build_py311\"\n    },\n    \"error\": \"\"\n  },\n  \"abaqus\": \"not run by this offline benchmark\",\n  \"scope\": \"total isotropic hyperelasticity; first-order parameter sensitivity at real geometry\",\n  \"passed\": true\n}\n",
+      "stderr": "",
+      "seconds": 2.881412290968001,
+      "proof": {
+        "path": "/tmp/recovery_usage__l41upif/R-X5/report.json",
+        "sha256": "b78794fd8a7ab7762c581156803e93ecb891367a8313b2cea88776e4634ee9e5",
+        "data": {
+          "schema": "resasm-finite-strain-verification/1",
+          "elements": 2,
+          "ndof": 36,
+          "law": "mu/2*(I1-3)-mu*log(J)+lambda/2*log(J)^2",
+          "constants": [
+            2.3,
+            4.1
+          ],
+          "residual_reference": "independent reference-volume first-Piola quadrature",
+          "residual_relative_error": 5.703447827527888e-16,
+          "residual_norm": 1.7446429238033396,
+          "free_residual_norm": 1.056171682913856e-15,
+          "solution_relative_error": 8.232181767484323e-17,
+          "nodal_tangent_fd": [
+            {
+              "step": 0.0001,
+              "relative_error": 4.439186672945314e-09
+            },
+            {
+              "step": 1e-05,
+              "relative_error": 4.5520094801878364e-11
+            },
+            {
+              "step": 1e-06,
+              "relative_error": 1.090986510175759e-10
+            }
+          ],
+          "oti_solution_fd": [
+            {
+              "step": 0.001,
+              "relative_error": 9.47772104561191e-07
+            },
+            {
+              "step": 0.0001,
+              "relative_error": 9.477926231003939e-09
+            },
+            {
+              "step": 1e-05,
+              "relative_error": 1.0127558267045161e-10
+            }
+          ],
+          "otilib": {
+            "available": true,
+            "api_module": "pyoti.sparse",
+            "repo": "https://github.com/mauriaristi/otilib.git",
+            "license": "GPLv3",
+            "env": {
+              "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+              "PYOTI_PATH": "/home/ammslab3/otilib/build_py311"
+            },
+            "error": ""
+          },
+          "abaqus": "not run by this offline benchmark",
+          "scope": "total isotropic hyperelasticity; first-order parameter sensitivity at real geometry",
+          "passed": true
+        }
+      }
+    },
+    {
+      "name": "R-X5 public assembly",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "--config",
+        "/tmp/recovery_usage__l41upif/R-X5/config.json",
+        "assemble",
+        "/tmp/recovery_usage__l41upif/R-X5/model.json",
+        "--mode",
+        "material-replay",
+        "--tangent"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "assembled mode 'material-replay': ndof=36  ||R||=1.744643e+00  max|R|=5.938249e-01\n",
+      "stderr": "",
+      "seconds": 0.19999288400867954
+    },
+    {
+      "name": "R-X5 public sensitivity",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-m",
+        "residual_core.ui.cli",
+        "--config",
+        "/tmp/recovery_usage__l41upif/R-X5/config.json",
+        "sensitivity",
+        "/tmp/recovery_usage__l41upif/R-X5/model.json",
+        "--params",
+        "/tmp/recovery_usage__l41upif/R-X5/params.json",
+        "--out",
+        "/tmp/recovery_usage__l41upif/R-X5/sensitivity"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "hypercomplex backend     : otilib\nbasis count (m)          : 2\ntruncation order (nt)    : 1\ntotal coefficients (N)   : 3\nsensitivity analysis (mode=material-replay, order=1)\n  residual norm ||R_free|| = 1.056172e-15\n  tangent source           = backend-assembled\n  parameters               = ['solid.mu', 'solid.lambda']\n  R^(1) shape              = (36, 2)  (2 directions)\n  hypercomplex ready       = True\n  solved derivative orders : [1]\n  order 1:\n    d^1/e1         = +1.872427e-01   [FD +1.872427e-01, rel 1.40e-10]\n    d^1/e2         = +3.398245e-02   [FD +3.398245e-02, rel 7.56e-11]\n  saved package -> /tmp/recovery_usage__l41upif/R-X5/sensitivity.{json,npz,md}\n",
+      "stderr": "",
+      "seconds": 1.2751338389934972
+    }
+  ],
+  "previous_failures": []
+}

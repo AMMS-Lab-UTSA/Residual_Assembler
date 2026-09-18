@@ -1,4 +1,4 @@
-"""Each of the nine layers, broken on purpose, and the verdict that follows.
+"""The diagnostic layers, broken on purpose, and the verdict that follows.
 
 An attribution nobody has watched fail is a list of strings. Every layer below
 is given a fault that belongs to it and nothing else, and the diagnosis has to
@@ -53,10 +53,11 @@ def run(fixture, **kwargs):
 # --------------------------------------------------------------------------- #
 # the shape of the answer
 # --------------------------------------------------------------------------- #
-def test_the_nine_layers_are_the_nine_the_brief_names():
+def test_the_layers_include_parameter_sensitivity_and_element_jacobian():
     assert LAYERS == ("umat", "transformation", "constitutive_derivative",
-                      "state_sensitivity", "mapping", "element_integration",
-                      "residual_assembly", "boundary_conditions",
+                      "state_sensitivity", "parameter_sensitivity", "mapping",
+                      "element_integration", "residual_assembly",
+                      "element_jacobian", "boundary_conditions",
                       "global_dof_mapping")
     assert set(OWNER) == set(LAYERS)
     for layer, owner in OWNER.items():

@@ -16,12 +16,15 @@ checked only by the tool that makes it is a claim nobody checked.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
-from contract_paths import FIXTURES, SCHEMAS
+from contract_paths import CURRENT_FIXTURES, FIXTURES, SCHEMAS
 from contract_reader import (CONTRACT_VERSION, ContractError,
                              check_fingerprint, fixture_generation,
                              identity_of, require_current,
@@ -98,6 +101,107 @@ def test_the_generation_file_is_the_single_source_of_the_fingerprint():
 
 def test_some_fixtures_are_committed():
     assert _fixtures()
+
+
+def test_current_operational_fixtures_carry_independent_verification():
+    from residual_core.materials.verified_fixture import load
+
+    current = [path for path in sorted(CURRENT_FIXTURES.glob("*.json"))
+               if json.loads(path.read_text())["transform_fingerprint"]
+               == STORE_FINGERPRINT]
+    assert current, "regenerate operational fixtures with the current producer"
+    assert {path.name for path in current} == {
+        "isotropic-elasticity--f7eb90376a.json", "j2_props--2feae9f158.json"}
+    for path in current:
+        payload = json.loads(path.read_text())
+        archived = json.loads((FIXTURES / path.name).read_text())
+        fixture = load(path)
+        assert fixture.all_six_gates, path.name
+        require_five_field_identity(payload, where=path.name)
+        _validate(payload, "residual_fixture_v1", path.name)
+        for field in ("source_id", "source_sha256", "deck", "deck_digest", "material"):
+            assert payload[field] == archived[field], (path.name, field)
+        assert len(payload["original"]) == len(archived["original"])
+        assert fixture.verification["states_checked"] > 0
+        assert fixture.verification["states_agreeing"] > 0
+        for side in ("original", "transformed"):
+            scan = payload["finite_history"]["whole_history"][side]
+            assert scan["values_scanned"] > 0
+            assert scan["first_non_finite"] is None
+            grouping = payload["finite_history"]["history_grouping"][side]
+            assert grouping == archived["finite_history"]["history_grouping"][side]
+
+
+def test_historical_archive_preserves_every_original_inventory_hash():
+    inventory = json.loads((SCHEMAS.parent / "docs/evidence/recovery_evidence_inventory.json").read_text())
+    artifacts = inventory["repositories"]["RA"]["artifacts"]
+    assert len(artifacts) == len(_fixtures()) == 10
+    for artifact in artifacts:
+        path = FIXTURES / Path(artifact["path"]).name
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == artifact["sha256"]
+        assert path.stat().st_size == artifact["bytes"]
+
+
+@pytest.mark.parametrize("name,held,unknown", [
+    ("isotropic-elasticity--f7eb90376a.json", 1, 2),
+    ("j2_props--2feae9f158.json", 32, 3),
+])
+def test_current_fixture_cli_uses_default_currency_and_real_references(
+        tmp_path, name, held, unknown):
+    from residual_core.core.fixture_residual_check import check_fixture
+
+    output = tmp_path / "report.json"
+    result = subprocess.run(
+        [sys.executable, "-m", "residual_core.core.fixture_residual_check",
+         "--fixture", str(CURRENT_FIXTURES / name), "--out", str(output)],
+        cwd=SCHEMAS.parent, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(output.read_text())
+    assert not report["refused"]
+    assert "fingerprint_note" not in report
+    assert report["fixture_fingerprint"] == STORE_FINGERPRINT
+    assert report["summary"]["held"] == held
+    assert report["summary"]["failed"] == 0
+    assert report["summary"]["not_established"] == unknown
+    if name.startswith("j2_props"):
+        assert "umat_oti.validation.j2_reference" in report["material_model"]
+        assert {check["name"] for check in report["checks"]
+                if check["status"] == "holds"} >= {
+                    "dR/du", "dR/dq", "dR/dE", "dR/dNU", "dR/dSIGY0", "dR/dH"}
+    refused = check_fixture(FIXTURES / name)
+    assert "frozen under transform fingerprint" in refused["refused"]
+    assert refused["checks"] == []
+
+
+def test_retired_pass12_fixtures_are_history_not_current_baselines():
+    from residual_core.materials.verified_fixture import (
+        CURRENT_TRANSFORM_FINGERPRINT, STORE_PROVENANCE, FixtureError, load,
+    )
+
+    assert CURRENT_TRANSFORM_FINGERPRINT == STORE_FINGERPRINT
+    assert STORE_PROVENANCE["fingerprint"] == "94a92c01814f107a"
+    assert STORE_PROVENANCE["status"] == "historical_only"
+    assert STORE_PROVENANCE["fingerprint"] != CURRENT_TRANSFORM_FINGERPRINT
+    retired = []
+    for path in _fixtures():
+        payload = json.loads(path.read_text())
+        if payload["transform_fingerprint"] != "94a92c01814f107a":
+            continue
+        retired.append(path.name)
+        assert payload["original"] and payload["converted"]
+        identity_of(payload)
+        with pytest.raises(ContractError) as exc:
+            require_current(payload["transform_fingerprint"], STORE_FINGERPRINT,
+                            where=path.name)
+        assert path.name in str(exc.value)
+        assert payload["transform_fingerprint"] in str(exc.value)
+        assert STORE_FINGERPRINT in str(exc.value)
+        with pytest.raises(FixtureError) as refused:
+            load(path)
+        assert path.name in str(refused.value)
+        assert payload["transform_fingerprint"] in str(refused.value)
+        assert STORE_FINGERPRINT in str(refused.value)
+    assert retired, "the pass12 evidence must remain available as history"
 
 
 def test_a_two_x_fixture_validates_and_a_one_x_one_says_why_it_does_not():
