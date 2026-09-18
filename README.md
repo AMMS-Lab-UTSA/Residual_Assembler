@@ -417,3 +417,14 @@ The redistributable core builds only against `sources/permissive/` (MIT / BSD-3)
 copied or linked. This framework is GPL-3.0-only, so OTILib's GPLv3 is
 compatible; it stays an external dependency because it is a separate
 product, not because of licensing. See `sources/LICENSING.md`.
+
+### Equilibrium verification exit status
+
+`resasm verify MODEL --fields FIELDS --atol 1e-6` checks the Euclidean norm of
+all free residual entries against an absolute tolerance in the model's force
+units. It exits 0 only for finite residuals within tolerance, 1 for failed
+equilibrium, and 2 when verification cannot run. Choose `--atol` for the units
+and precision of the exported analysis. Assembled reactions are printed, but
+are explicitly **not checked against a reference** by this command. The shipped
+minimal stress-driven cube has stress without balancing loads and therefore
+correctly fails equilibrium verification, while still demonstrating assembly.
