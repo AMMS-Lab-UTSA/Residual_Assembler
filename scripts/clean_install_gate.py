@@ -1,4 +1,4 @@
-"""Verify working-tree wheels together, never claim a committed clean-clone gate."""
+"""Build both wheels from clean trees, install them in a new venv, and run the workflows from them."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ import urllib.error
 import urllib.request
 
 
-BRANCH = "integration/imqcam-recovery-2026-09-18"
 PUBLIC_OUTPUTS = ("sensitivity_results.json", "sensitivity_tables.csv", "run_report.txt")
 
 
@@ -41,7 +40,11 @@ def external_work(path: Path, repositories: list[Path]) -> Path:
 
 
 def digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    hasher = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
 
 
 class Gate:
@@ -193,13 +196,30 @@ def check_servers(gate, python, modules):
 def execute(args, gate: Gate):
     repositories = [args.ra_repo.resolve(), args.umat_repo.resolve()]
     gate.report["repositories"] = {}
+    published = []
     for root in repositories:
         branch = gate.run(["git", "-C", root, "branch", "--show-current"]).strip()
-        if branch != BRANCH:
-            raise ValueError(f"expected {BRANCH}, found {branch} at {root}")
+        if args.branch and branch != args.branch:
+            raise ValueError(f"expected branch {args.branch}, found {branch or 'a detached HEAD'} at {root}")
+        status = gate.run(["git", "-C", root, "status", "--porcelain", "--untracked-files=all"])
+        if status.strip():
+            # wheels are built from the tree, so an uncommitted or untracked
+            # file would be installed and the result would describe no commit
+            raise ValueError(f"working tree is not clean at {root}:\n{status}")
+        head = gate.run(["git", "-C", root, "rev-parse", "HEAD"]).strip()
+        remote_head = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "--quiet",
+                                      f"refs/remotes/origin/{branch}"],
+                                     text=True, capture_output=True).stdout.strip() if branch else ""
+        remote_url = subprocess.run(["git", "-C", str(root), "remote", "get-url", "origin"],
+                                    text=True, capture_output=True).stdout.strip()
         gate.report["repositories"][str(root)] = {
-            "head": gate.run(["git", "-C", root, "rev-parse", "HEAD"]).strip(),
-            "status": gate.run(["git", "-C", root, "status", "--short"])}
+            "branch": branch, "head": head, "status": status, "origin": remote_url,
+            "origin_branch_head": remote_head}
+        published.append(bool(args.branch) and head == remote_head)
+    # True only when both wheels come from clean trees whose commit is the
+    # remote-tracking head of the named branch (a fresh clone of it, or a
+    # checkout identical to it as of its last fetch)
+    gate.report["final_branch_clean_clone"] = all(published)
     gate.run([args.python, "-I", "-c",
               "import ctypes, ssl, venv, sys; assert sys.version_info >= (3, 10); print(sys.version)"])
     for executable in ("gfortran", args.abaqus):
@@ -271,7 +291,78 @@ def execute(args, gate: Gate):
     gate.report["presentation"]["source_denied_outputs_identical"] = True
     gate.report["gui"] = json.loads(gate.run([python, "-I", "-c", GUI_PROBE]))
     check_servers(gate, python, gate.report["gui"])
+    if args.cantilever:
+        check_cantilever(args, gate, built, repositories)
     gate.report["passed"] = True
+
+
+#: Largest homogeneity residual accepted on the re-equilibrated J2 cantilever,
+#: relative to the largest term. Measured 1.0e-12 on 2026-09-18 (roundoff of a
+#: 40-increment chain through a 7,293-DOF solve); a single derivative wrong by
+#: 1e-6 leaves about 1e-9.
+HOMOGENEITY_BOUND = 1e-10
+
+
+def check_cantilever(args, gate: Gate, built, repositories):
+    """The full-size J2 cantilever of slide 39, from the installed wheels.
+
+    ``args.cantilever`` holds ``j2/claude_j2_nominal.inp`` and its ODB, as
+    ``examples/presentation_cantilevers/README.md`` produces them in Abaqus.
+    The collaborator command runs on them (routed to the history engine),
+    then the history engine re-equilibrates the recorded increments and every
+    output must obey Euler's identity for the J2 model -- homogeneous of
+    degree one in (E, SIGY0, H) at fixed nu, so under prescribed displacements
+    sum p dQ/dp is Q for reactions, stresses and von Mises and 0 for
+    displacements and plastic strain, at every increment. Nothing in the
+    engine uses that identity.
+    """
+    source = args.cantilever.resolve() / "j2"
+    deck, odb = source / "claude_j2_nominal.inp", source / "claude_j2_nominal.odb"
+    for path in (deck, odb):
+        if not path.is_file():
+            raise ValueError(f"cantilever input missing: {path}")
+    request = repositories[0] / "examples/presentation_cantilevers/j2_request.json"
+    folder = gate.work / "cantilever"
+    folder.mkdir()
+    shutil.copy2(deck, folder / "Analysis.inp")
+    (folder / "Analysis.odb").symlink_to(odb)          # 0.6 GB: linked, digested
+    shutil.copy2(request, folder / "sensitivity_request.json")
+    shutil.copy2(built["object"], folder / "OTI_UMAT.obj")
+    shutil.copy2(built["contract"], folder / "Mapping.json")
+    record = {"inputs": {name: digest(folder / name) for name in
+                         ("Analysis.inp", "Analysis.odb", "sensitivity_request.json", "OTI_UMAT.obj",
+                          "Mapping.json")}, "odb_source": str(odb)}
+    gate.report["cantilever"] = record
+    started = time.monotonic()
+    gate.run([gate.work / "env/bin/resasm", "request", "--model", "Analysis.inp", "--odb", "Analysis.odb",
+              "--material", "OTI_UMAT.obj", "--request", "sensitivity_request.json", "--out", "results",
+              "--abaqus", args.abaqus], cwd=folder)
+    record["request_seconds"] = round(time.monotonic() - started, 1)
+    result = json.loads((folder / "results/sensitivity_results.json").read_text())
+    scope = result["scope"]
+    if result["status"] != "completed" or scope.get("increments_replayed") != 40 \
+            or scope.get("integration_points") != 12288 or scope.get("dof") != 7497:
+        raise ValueError(f"cantilever request did not replay the slide-39 model: {result['status']} {scope}")
+    started = time.monotonic()
+    gate.run([gate.work / "env/bin/resasm", "history", "--model", "Analysis.inp",
+              "--fields", "results/private/fields.npz", "--material", "OTI_UMAT.obj",
+              "--request", "sensitivity_request.json", "--out", "reequilibrated", "--reequilibrate"],
+             cwd=folder)
+    record["reequilibrated_seconds"] = round(time.monotonic() - started, 1)
+    polished = json.loads((folder / "reequilibrated/sensitivity_results.json").read_text())
+    degree = {"RF": 1, "S": 1, "MISES": 1, "U": 0, "SDV": 0}
+    worst, plastic = 0.0, 0
+    for row in polished["results"]:
+        weighted = [row["weighted"][name] for name in ("E", "SIGY0", "H")]
+        largest = max(max(abs(value) for value in weighted), abs(row["value"]))
+        if largest:
+            worst = max(worst, abs(sum(weighted) - degree[row["field"]] * row["value"]) / largest)
+        plastic += row["output"] == "eqplas_max" and row["value"] > 0
+    record.update(homogeneity_residual=worst, homogeneity_bound=HOMOGENEITY_BOUND,
+                  plastic_increments=plastic, outputs_checked=len(polished["results"]))
+    if not plastic or worst > HOMOGENEITY_BOUND:
+        raise ValueError(f"cantilever homogeneity check failed: residual {worst:.3e}, "
+                         f"{plastic} plastic increments")
 
 
 def main(argv=None):
@@ -282,6 +373,11 @@ def main(argv=None):
     parser.add_argument("--odb", type=Path, required=True, help="genuine ODB matching the public presentation deck")
     parser.add_argument("--abaqus", default="abaqus")
     parser.add_argument("--work", type=Path)
+    parser.add_argument("--branch", help="branch both repositories must be on; with it, the report says "
+                                         "whether both commits are that branch's published head")
+    parser.add_argument("--cantilever", type=Path,
+                        help="directory holding j2/claude_j2_nominal.inp and .odb "
+                             "(examples/presentation_cantilevers); adds the full-size J2 check")
     args = parser.parse_args(argv)
     repositories = [args.ra_repo, args.umat_repo]
     if args.work:
