@@ -81,15 +81,21 @@ class Assembler:
                 eid, el.etype, coords, u_e, ss, mat_state, props,
                 time, dtime, fields, opts)
 
-            np.add.at(R, edofs, np.asarray(r_e, float))
+            residual = np.asarray(r_e)
+            if residual.dtype == object and R.dtype != object:
+                R = R.astype(object)
+            np.add.at(R, edofs, residual)
             if compute_tangent and k_e is not None:
-                K[np.ix_(edofs, edofs)] += np.asarray(k_e, float)
+                element_tangent = np.asarray(k_e)
+                if element_tangent.dtype == object and K.dtype != object:
+                    K = K.astype(object)
+                K[np.ix_(edofs, edofs)] += element_tangent
                 diag["tangent_contributions"] += 1
             if self.state is not None and s_new is not None:
                 self.state.set_trial(eid, s_new)
             if collect_elements:
                 diag["element_residuals"][eid] = (edofs.copy(),
-                                                  np.asarray(r_e, float).copy())
+                                                  residual.copy())
             diag["elements"] += 1
             diag["formulations"][fk] = diag["formulations"].get(fk, 0) + 1
 

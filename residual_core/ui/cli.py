@@ -87,7 +87,7 @@ def _cmd_assemble(args):
         return 2
     try:
         out = prob.assemble(mode=args.mode, compute_tangent=args.tangent)
-    except (RuntimeError, NotImplementedError) as exc:
+    except (RuntimeError, NotImplementedError, ValueError) as exc:
         print("Cannot assemble in %s mode." % _req.canonical_mode(args.mode),
               file=sys.stderr)
         print("  %s" % exc, file=sys.stderr)
@@ -233,7 +233,7 @@ def _cmd_sensitivity(args):
         pkg = prob.sensitivity_package(mode=mode, parameters=params, max_order=order,
                                        generate_rhs=True, fd_check=not args.no_fd,
                                        backend=backend)
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
         # OTILib missing (or backend error) -> report cleanly, do NOT fall back
         print("hypercomplex backend: %s" % backend, file=sys.stderr)
         print("ERROR: %s" % exc, file=sys.stderr)
@@ -470,8 +470,12 @@ def _cmd_run(args):
 
 
 def _cmd_report(args):
-    from resasm_user import read_report
-    rep = read_report(args.output_dir)
+    from resasm_user import read_report, ConfigError
+    try:
+        rep = read_report(args.output_dir)
+    except ConfigError as exc:
+        print("ERROR: %s" % exc, file=sys.stderr)
+        return 2
     meta = rep.get("metadata", {})
     vs = rep.get("validation_summary", {})
     print("Sensitivity run report: %s" % args.output_dir)
@@ -490,6 +494,8 @@ def build_parser() -> argparse.ArgumentParser:
                                 description="Model-agnostic residual assembly framework")
     p.add_argument("--config", help="optional config file (.yml/.json)")
     sub = p.add_subparsers(dest="cmd", required=True)
+    from .cmd_replay import register; register(sub)
+    from .cmd_request import register; register(sub)
 
     s = sub.add_parser("inspect", help="model inspection summary")
     s.add_argument("model")

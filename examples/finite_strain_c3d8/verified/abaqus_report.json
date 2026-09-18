@@ -1,0 +1,31 @@
+{
+  "job": "imqr6_hyper",
+  "scope": "homogeneous affine full-integration C3D8; energy-based UHYPER",
+  "completed": true,
+  "displacement_max_error": 4.440892098500626e-16,
+  "reaction_relative_error": 3.9685038231638174e-16,
+  "reaction_derivative_fd": [
+    {
+      "step": 0.001,
+      "relative_error": 2.2686070111507476e-07
+    },
+    {
+      "step": 0.0003,
+      "relative_error": 2.041663859703745e-08
+    },
+    {
+      "step": 0.0001,
+      "relative_error": 2.272139435682054e-09
+    }
+  ],
+  "AMATRX_exported": false,
+  "passed": true,
+  "artifacts_sha256": {
+    "imqr6_hyper.inp": "aa438d228be4cefbe7e885ed40267cd85c327d11860e6cdde93bbe5bd66fa6bb",
+    "imqr6_hyper.odb": "da0ac8b26dd6a57df1d220a1351a2f0d826812fc0bf138d3d87a5c408433c22f",
+    "imqr6_hyper.sta": "80e91073b2f4ba48c940ac8a6cc851c5f042a8643ee118a4ebee70c3f4c42c88",
+    "fields.json": "022a49f8bae8a43111fcc68e4d4917f3b0d0093e6c6042d3c552c21f8dd7c87f",
+    "reference.json": "e2423b2281bec94a3d30097d3c7348420dcb6549cf37097376172672e7b58c7e"
+  },
+  "uhyper_sha256": "077de9102e3b84af3ced675eed468fbc0ff4422a695ba82f83c95490d45cdb81"
+}

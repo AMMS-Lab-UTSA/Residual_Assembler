@@ -97,6 +97,10 @@ def _material_from_dict(md: Dict[str, Any], name: str):
                             n_state_vars=int(md.get("n_state_vars", 0)),
                             name=md.get("name") or name)
         b.section = md.get("section")
+        backend = md.get("material")
+        if backend:
+            from ..materials.registry import build_material_registry
+            b.material = build_material_registry().get(backend)
         return b
     # raw parser-style material -> namespace with the expected attributes
     return SimpleNamespace(

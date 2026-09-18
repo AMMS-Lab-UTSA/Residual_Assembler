@@ -122,6 +122,111 @@ def test_oti_fe_sensitivity():
     _report(_oti_checks())
 
 
+@pytest.mark.parametrize("mode", ["small", "finite"])
+def test_c3d8_stress_preserves_mixed_third_derivatives(mode):
+    from residual_core.formulations.c3d8_kernel import (
+        element_internal_force_finite_strain,
+        element_internal_force_small_strain, unit_cube_Xe)
+
+    _require_otilib()
+    context = A.OtiContext(2, 3)
+    amplitude = context.seed(2.0, 1) ** 2 * context.seed(3.0, 2)
+    coordinates = unit_cube_Xe()
+    stretches = np.array([1.2, 0.9, 1.1]) if mode == "finite" else np.ones(3)
+    displacement = coordinates * (stretches - 1.0)
+    stress = np.array([[amplitude * entry for entry in
+                        (2.0, 3.0, 4.0, 0.5, 0.7, 0.9)]] * 8)
+    if mode == "finite":
+        force = element_internal_force_finite_strain(
+            coordinates, displacement, stress)
+    else:
+        force = element_internal_force_small_strain(coordinates, stress)
+    tensor = np.array([[2.0, 0.5, 0.7], [0.5, 3.0, 0.9], [0.7, 0.9, 4.0]])
+    face_areas = np.prod(stretches) / stretches
+    traction = (((2.0 * coordinates - 1.0) * face_areas) @ tensor.T / 4).ravel()
+    for direction, factor in [((0, 0), 12.0), ((1, 0), 12.0),
+                              ((0, 1), 4.0), ((2, 0), 6.0),
+                              ((1, 1), 4.0), ((2, 1), 2.0)]:
+        actual = np.array([context.deriv(value, direction) for value in force])
+        np.testing.assert_allclose(actual, factor * traction, rtol=1e-13,
+                                   atol=1e-13, err_msg=str(direction))
+
+
+@pytest.mark.parametrize("mode", ["small", "finite"])
+@pytest.mark.parametrize("assembly", ["force", "parameter_derivative"])
+def test_c3d8_global_scatter_preserves_mixed_scalar_contributions(mode, assembly):
+    from residual_core.formulations.c3d8_kernel import (
+        assemble_global_internal_force, unit_cube_Xe)
+    from residual_core.formulations.c3d8_sensitivity import assemble_dR_dp
+
+    _require_otilib()
+    context = A.OtiContext(2, 3)
+    amplitude = context.seed(2.0, 1) ** 2 * context.seed(3.0, 2)
+    coordinates = unit_cube_Xe()
+    node_ids = [80, 20, 50, 10, 70, 40, 60, 30]
+    connectivity = [(1, node_ids), (2, node_ids)]
+    real_stress = np.tile([1.0, 0.0, 0.0, 0.0, 0.0, 0.0], (8, 1))
+    oti_stress = np.array([[amplitude, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8)
+    stresses = {1: real_stress, 2: oti_stress}
+    if assembly == "force":
+        result, mapping = assemble_global_internal_force(
+            node_ids, coordinates, connectivity, np.zeros(24), stresses, mode)
+    else:
+        result, mapping = assemble_dR_dp(
+            node_ids, coordinates, connectivity, stresses, np.zeros(24), mode=mode)
+    expected = np.zeros((8, 3))
+    for local, node_id in enumerate(node_ids):
+        expected[mapping[node_id], 0] = (2.0 * coordinates[local, 0] - 1.0) / 4
+    assert mapping == {node_id: index for index, node_id in enumerate(sorted(node_ids))}
+    for direction, factor in [((0, 0), 13.0), ((1, 0), 12.0), ((2, 1), 2.0)]:
+        actual = np.array([context.deriv(value, direction) for value in result])
+        np.testing.assert_allclose(actual, factor * expected.ravel(),
+                                   rtol=1e-13, atol=1e-13)
+
+
+@pytest.mark.parametrize("mode", ["small", "finite"])
+def test_c3d8_material_stiffness_preserves_mixed_third_derivatives(mode):
+    from residual_core.formulations.c3d8_kernel import element_tangent, unit_cube_Xe
+
+    _require_otilib()
+    context = A.OtiContext(2, 3)
+    amplitude = context.seed(2.0, 1) ** 2 * context.seed(3.0, 2)
+    coordinates = unit_cube_Xe()
+    tangent = np.diag([amplitude * entry for entry in (2, 3, 4, 5, 6, 7)])
+    stiffness = element_tangent(coordinates, np.zeros(24), tangent, mode=mode)
+    strain_tensor = np.array([[0.01, 0.02, 0.03],
+                              [0.02, 0.04, 0.05],
+                              [0.03, 0.05, 0.06]])
+    displacement = (coordinates @ strain_tensor).ravel()
+    stress_tensor = np.array([[0.02, 0.2, 0.36],
+                              [0.2, 0.12, 0.7],
+                              [0.36, 0.7, 0.24]])
+    traction = ((2 * coordinates - 1) @ stress_tensor.T / 4).ravel()
+    force = stiffness @ displacement
+    for direction, factor in [((0, 0), 12.0), ((1, 0), 12.0), ((2, 1), 2.0)]:
+        actual = np.array([context.deriv(value, direction) for value in force])
+        np.testing.assert_allclose(actual, factor * traction, rtol=1e-13, atol=1e-13)
+
+
+def test_c3d8_geometric_stiffness_preserves_stress_derivatives():
+    from residual_core.formulations.c3d8_kernel import element_tangent, unit_cube_Xe
+
+    _require_otilib()
+    context = A.OtiContext(2, 3)
+    amplitude = context.seed(2.0, 1) ** 2 * context.seed(3.0, 2)
+    coordinates = unit_cube_Xe()
+    stress = np.array([[amplitude, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8)
+    stiffness = element_tangent(coordinates, np.zeros(24), np.zeros((6, 6)),
+                                sigma_ip=stress, mode="finite")
+    force = stiffness @ coordinates.ravel()
+    traction = np.zeros((8, 3))
+    traction[:, 0] = (2 * coordinates[:, 0] - 1) / 4
+    for direction, factor in [((0, 0), 12.0), ((1, 0), 12.0), ((2, 1), 2.0)]:
+        actual = np.array([context.deriv(value, direction) for value in force])
+        np.testing.assert_allclose(actual, factor * traction.ravel(),
+                                   rtol=1e-13, atol=1e-13)
+
+
 def main():
     print("OTILib FE sensitivity (nonlinear bar chain)")
     results = [_script_run(test_real_fe_chain), _script_run(test_oti_fe_sensitivity)]

@@ -12,6 +12,7 @@ license = { text = "GPL-3.0-only" }
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
+test = ["pytest>=7"]
 yaml = ["PyYAML"]
 # Optional Streamlit front end (residual_core/app, launched by scripts/app.py).
 # It is an extra, not a dependency: the GUI only builds argv lists and calls
@@ -37,6 +38,12 @@ resasm = "residual_core.ui.cli:main"
 # a package list here -- new subpackages must not silently go unshipped.
 include = ["residual_core*", "resasm_user*", "partner_kit*"]
 exclude = ["tests*", "sources*", "scripts*"]
+
+[tool.setuptools.package-data]
+"residual_core" = ["example_manifest.json", "example_manifest.md"]
+"residual_core.replay" = ["contract/*.json", "contract/*.h"]
+"residual_core.examples" = ["*/*.json", "*/*.md"]
+"residual_core.umat_adapter_fortran" = ["*.f90", "aba_stubs/*.f", "aba_stubs/*.f90"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

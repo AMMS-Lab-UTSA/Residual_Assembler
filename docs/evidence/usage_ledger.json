@@ -1,0 +1,40 @@
+{
+  "clean_install_verified": false,
+  "phase": "ledger",
+  "python": "/home/ammslab3/softwarex_work/.venv/bin/python",
+  "work": "/tmp/recovery_usage_q1nl55dy",
+  "environment": {
+    "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
+    "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
+    "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
+    "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+    "RUN_OTILIB_TESTS": "1"
+  },
+  "commands": [
+    {
+      "name": "environment",
+      "argv": [
+        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "-c",
+        "import sys,residual_core,umat_oti,pyoti.sparse; from umat_oti.store import transform_fingerprint; print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.sparse.__file__); print(transform_fingerprint())"
+      ],
+      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "returncode": 0,
+      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\n/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/__init__.py\n/home/ammslab3/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
+      "stderr": "",
+      "seconds": 0.913806252006907
+    },
+    {
+      "name": "ledger rendering",
+      "requirements": 274,
+      "completed": 0,
+      "outstanding": 274,
+      "status_counts": {
+        "NOT STARTED": 11,
+        "IN PROGRESS (recovery audit: bounded evidence)": 159,
+        "IMPLEMENTED - not yet reproduced from clean install": 104
+      }
+    }
+  ],
+  "previous_failures": []
+}

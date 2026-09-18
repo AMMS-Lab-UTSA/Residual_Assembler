@@ -1,0 +1,1116 @@
+{
+  "key": "36842f299b94a5fd581fe415",
+  "source": "bundled__generic_ps/src/j2_props.f",
+  "source_sha256": "4362e759c4642cb2f74e20c50b86a9472b1e80d6a7fef663bf8faa3dfa8de1c8",
+  "fingerprint": "6aa20d22e37f14c9",
+  "repository": "bundled/generic_ps",
+  "stage": "verified",
+  "reason": "agreed at all 2 states where a difference could be taken (increments 4, 2); 2 smooth state(s) inside the activated regime (2 loading, 0 unloading), which is the whole of this material: it is activated from its first increment and never stops, so there is no elastic branch to verify on and every state that can be measured is inside the activated one; worst of them: agreed to 8.250e-11 over a plateau of 3 step sizes, 1e-06 to 0.0001",
+  "warnings": [
+    "original: post_analysis_wrapup_failure",
+    "original: process_exit_code_1",
+    "transformed: post_analysis_wrapup_failure",
+    "transformed: process_exit_code_1"
+  ],
+  "deck": "bundled__generic_ps/decks/j2.inp",
+  "material_block": "J2",
+  "material_provenance": "bundled__generic_ps/decks/j2.inp: j2.inp *MATERIAL J2: 4 constants, *DEPVAR 1 -- the two names agree on j2, which is a value the author varied rather than a word every file of this kind carries",
+  "props_count": 4,
+  "nstatv": 1,
+  "unsymmetric": false,
+  "ntens": 6,
+  "element_type": "C3D8",
+  "kinematics": "small strain",
+  "kinematics_provenance": "no *STEP in j2.inp sets NLGEOM, which is Abaqus's default of NLGEOM=NO",
+  "kinematics_note": "",
+  "entry_classification": null,
+  "formulation": {
+    "element": "C3D8",
+    "family": "three-dimensional continuum",
+    "reason": "the author's deck runs this material on C3D8, which is three-dimensional continuum; the verification runs the same formulation on C3D8, whose NTENS=6 is the same tensor the UMAT is called with",
+    "provenance": "bundled__generic_ps/decks/j2.inp: line 18: *SOLID SECTION, ELSET=ONE, MATERIAL=J2",
+    "agreement": "the source and the deck agree: three-dimensional continuum",
+    "deck_elements": [
+      "C3D8"
+    ],
+    "source": {
+      "ntens": 6,
+      "family": "three-dimensional continuum",
+      "evidence": [
+        "a literal subscript 6 on a tensor array, which only a six-component tensor has"
+      ]
+    }
+  },
+  "experiment": {
+    "family": {
+      "name": "strain driven",
+      "driver": "strain",
+      "evidence": [
+        "nothing in this routine reads the clock, a body force, a separation or a coordinate, so a prescribed strain path is what it is for"
+      ],
+      "notes": []
+    },
+    "criterion": "something in the routine must depart from linear-elastic inside the path: a state variable that moves, a tangent that changes, or a residual after reversal. An agreement reached where stress is linear in strain is an agreement about the part every build gets right",
+    "requirement": {
+      "total_time": 13.0,
+      "periods": [
+        1.0,
+        1.0,
+        1.0,
+        10.0
+      ],
+      "reason": "this routine declares no time scale of its own; the author's deck runs 1, 1, 1, 10 of step time and that is the history it was written against"
+    },
+    "reason": "the driver of this source is the strain increment, so the amplitude search chooses how far and this chooses the shape: out, back through zero and out again, because the author's own deck runs 4 steps and a deck that reverses is a deck whose material was expected to behave differently on the way back",
+    "refusal": "",
+    "warnings": [],
+    "manifest": {
+      "name": "j2_props",
+      "source": "bundled__generic_ps/src/j2_props.f",
+      "bundle": [],
+      "source_form": "fixed",
+      "compiler_flags": [],
+      "element_type": "C3D8",
+      "element_label": 1,
+      "node_coordinates": [],
+      "node_provenance": "",
+      "isothermal_temperature": null,
+      "temperature_provenance": "this deck states no *INITIAL CONDITIONS, TYPE=TEMPERATURE, so there is no temperature of the author's to hold a single element at",
+      "plane_strain_directions": [],
+      "kinematics": "small strain",
+      "ntens": 6,
+      "ndi": 3,
+      "nshr": 3,
+      "nprops": 4,
+      "nstatv": 1,
+      "props": [
+        200000.0,
+        0.3,
+        250.0,
+        2000.0
+      ],
+      "material_provenance": "j2.inp *MATERIAL J2: 4 constants, *DEPVAR 1 -- j2.inp declares exactly one element, so it is the author's own single-element test of this material; a section in j2.inp attaches J2 to C3D8; the two names agree on j2, which is a value the author varied rather than a word every file of this kind carries",
+      "initial_statev": [],
+      "initial_statev_provenance": "",
+      "initial_state_from_user_subroutine": false,
+      "orientation": null,
+      "orientation_provenance": "",
+      "orientation_axes": null,
+      "orientation_rotation": null,
+      "unsymmetric": false,
+      "loading": [
+        {
+          "name": "cycle1_forward",
+          "strain": [
+            0.01,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 8,
+          "period": 1.0,
+          "description": "forward excursion",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "cycle1_reverse",
+          "strain": [
+            -0.02,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 8,
+          "period": 1.0,
+          "description": "reversal through zero to the other side",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "cycle2_forward",
+          "strain": [
+            0.01,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 8,
+          "period": 1.0,
+          "description": "forward excursion",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "cycle2_reverse",
+          "strain": [
+            -0.02,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "increments": 8,
+          "period": 1.0,
+          "description": "reversal through zero to the other side",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        },
+        {
+          "name": "simple_shear",
+          "strain": [
+            0.0,
+            0.0,
+            0.0,
+            0.01,
+            0.0,
+            0.0
+          ],
+          "increments": 10,
+          "period": 1.0,
+          "description": "prescribed engineering shear in the x-y plane",
+          "body_force": [],
+          "held": [],
+          "separation": [],
+          "clamped_face": [],
+          "time_only": false,
+          "rotation": [],
+          "rotation_lead_in": false
+        }
+      ],
+      "outputs": [
+        "S",
+        "SDV"
+      ],
+      "perturbation_components": [],
+      "fd_steps": [
+        0.1,
+        0.01,
+        0.001,
+        0.0001,
+        1e-05,
+        1e-06,
+        1e-07,
+        1e-08
+      ],
+      "near_zero_fraction": 1e-08,
+      "primal_tolerance": 1e-10,
+      "notes": "",
+      "status": "ready"
+    }
+  },
+  "searched_for_material_data": null,
+  "source_form": "fixed",
+  "frozen": {
+    "from": "<home>/softwarex_work/corpus_run/_superseded/pass12/results/store_verification.jsonl",
+    "states": [],
+    "why": "the experiment this material first verified under, replayed exactly: same amplitude, same segments, same step ladder, same tolerances. A regression that searched again would be measuring a different experiment"
+  },
+  "discovery": {
+    "ran": false,
+    "reason": "replaying a frozen experiment"
+  },
+  "manifest": {
+    "name": "J2",
+    "source": "bundled__generic_ps/src/j2_props.f",
+    "bundle": [],
+    "source_form": "fixed",
+    "compiler_flags": [],
+    "element_type": "C3D8",
+    "element_label": 1,
+    "node_coordinates": [],
+    "node_provenance": "",
+    "isothermal_temperature": null,
+    "temperature_provenance": "this deck states no *INITIAL CONDITIONS, TYPE=TEMPERATURE, so there is no temperature of the author's to hold a single element at",
+    "plane_strain_directions": [],
+    "kinematics": "small strain",
+    "ntens": 6,
+    "ndi": 3,
+    "nshr": 3,
+    "nprops": 4,
+    "nstatv": 1,
+    "props": [
+      200000.0,
+      0.3,
+      250.0,
+      2000.0
+    ],
+    "material_provenance": "bundled__generic_ps/decks/j2.inp: j2.inp *MATERIAL J2: 4 constants, *DEPVAR 1 -- the two names agree on j2, which is a value the author varied rather than a word every file of this kind carries",
+    "initial_statev": [],
+    "initial_statev_provenance": "",
+    "initial_state_from_user_subroutine": false,
+    "orientation": null,
+    "orientation_provenance": "",
+    "orientation_axes": null,
+    "orientation_rotation": null,
+    "unsymmetric": false,
+    "loading": [
+      {
+        "name": "uniaxial",
+        "strain": [
+          0.010000000000000002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "prescribed extension along x, lateral faces free to move only in their own plane",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "simple_shear",
+        "strain": [
+          0.0,
+          0.0,
+          0.0,
+          0.010000000000000002,
+          0.0,
+          0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "prescribed engineering shear in the x-y plane",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "uniaxial_reversed",
+        "strain": [
+          -0.005000000000000001,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0
+        ],
+        "increments": 10,
+        "period": 1.0,
+        "description": "reversal of uniaxial to exercise state evolution",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      },
+      {
+        "name": "uniaxial_hold",
+        "strain": [
+          0.010000000000000002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "increments": 5,
+        "period": 10.0,
+        "description": "the strain of uniaxial held for 10 of step time, so that stress change means time dependence",
+        "body_force": [],
+        "held": [],
+        "separation": [],
+        "clamped_face": [],
+        "time_only": false,
+        "rotation": [],
+        "rotation_lead_in": false
+      }
+    ],
+    "outputs": [
+      "S",
+      "SDV"
+    ],
+    "perturbation_components": [],
+    "fd_steps": [
+      0.1,
+      0.01,
+      0.001,
+      0.0001,
+      1e-05,
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "near_zero_fraction": 1e-08,
+    "primal_tolerance": 1e-10,
+    "notes": "J2 material from archived fixture; retained four-step loading; byte-identical deck required",
+    "status": "ready"
+  },
+  "deck_digest": "5bca9c51a7f5aab2",
+  "support": {
+    "units": 4,
+    "required": true,
+    "ok": true,
+    "reason": "",
+    "objects": 4
+  },
+  "blocking_statements": [],
+  "original": {
+    "completed": true,
+    "increments": 35,
+    "converged_records": 280,
+    "instrumented": true,
+    "warnings": [
+      "post_analysis_wrapup_failure",
+      "process_exit_code_1"
+    ],
+    "reasons": [],
+    "console_tail": ""
+  },
+  "transformed": {
+    "completed": true,
+    "increments": 35,
+    "converged_records": 280,
+    "instrumented": true,
+    "warnings": [
+      "post_analysis_wrapup_failure",
+      "process_exit_code_1"
+    ],
+    "reasons": [],
+    "console_tail": ""
+  },
+  "history_grouping": {
+    "original": {
+      "raw_output_records": 280,
+      "total_increments": 35,
+      "complete_increments": 35,
+      "material_points_per_increment": 8,
+      "first_incomplete_increment": null,
+      "first_non_finite_material_point": null,
+      "complete": true
+    },
+    "transformed": {
+      "raw_output_records": 280,
+      "total_increments": 35,
+      "complete_increments": 35,
+      "material_points_per_increment": 8,
+      "first_incomplete_increment": null,
+      "first_non_finite_material_point": null,
+      "complete": true
+    },
+    "both_finite_throughout": true
+  },
+  "primal": {
+    "increments": 280,
+    "indistinguishable_components": 1312,
+    "records_original": 280,
+    "records_transformed": 280,
+    "worst_stress_relative": 0.0,
+    "worst_stress_at": [],
+    "worst_state_relative": 0.0,
+    "worst_state_at": [],
+    "unresolved_components": 612,
+    "resolved_components": 1312,
+    "non_finite_components": 0,
+    "non_finite_original": 0,
+    "non_finite_transformed": 0,
+    "agrees": true,
+    "reason": ""
+  },
+  "evidence": {
+    "abaqus_job_completed": true,
+    "all_requested_outputs_present": true,
+    "complete_history_finite": true,
+    "primal_agreed": true,
+    "primal_difference_explained_by_a_measured_control": null,
+    "derivatives_verified": true,
+    "mechanically_informative": true
+  },
+  "time_scale_coverage": {
+    "scale": {
+      "name": "",
+      "value": 0.0,
+      "evidence": "",
+      "declared": false
+    },
+    "total_time": 13.0,
+    "fraction": 0.0,
+    "enough": true,
+    "reaches_heuristic": false,
+    "reason": "this source declares no time scale of its own, so there is nothing here to measure the experiment's duration against"
+  },
+  "activation_on_the_frozen_run": {
+    "activated": true,
+    "increments": 280,
+    "fired": [
+      "state_change",
+      "departure_from_linearity"
+    ],
+    "summary": "activated over 280 increments by state_change (0.0261), departure_from_linearity (1.73)",
+    "not_measured": [
+      "dissipated energy (ALLPD/ALLCD are model-level ODB history, not material-point probe output)",
+      "a PNEWDT cutback request (the probe records what the routine returned, not what the solver did with it)",
+      "which constitutive branch executed (that needs the source instrumented, not its output read)"
+    ],
+    "indicators": [
+      {
+        "name": "state_change",
+        "fired": true,
+        "magnitude": 0.026086305805088153,
+        "detail": "largest movement in STATEV(1); STATEV(1) moves per unit strain by a factor that varies 0.994 along the path, which the loading does not explain"
+      },
+      {
+        "name": "departure_from_linearity",
+        "fired": true,
+        "magnitude": 1.7338976332027267,
+        "detail": "largest at increment 97"
+      },
+      {
+        "name": "tangent_change",
+        "fired": false,
+        "magnitude": 0.0,
+        "detail": ""
+      },
+      {
+        "name": "residual_after_reversal",
+        "fired": false,
+        "magnitude": 0.0,
+        "detail": "this loading does not reverse"
+      }
+    ]
+  },
+  "response_plausibility": {
+    "plausible": true,
+    "checks": [
+      {
+        "name": "stress against material constants",
+        "plausible": true,
+        "detail": "peak stress 1868 against a largest material constant of 2e+05, a ratio of 0.00934",
+        "measured": 1868.0930457213224,
+        "against": 200000.0
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "name": "stress on the material scale",
+      "met": true,
+      "reason": "the response sits within the scales this problem supplies: peak stress 1868 against a largest material constant of 2e+05, a ratio of 0.00934",
+      "magnitude": 0.009340465228606612
+    }
+  ],
+  "mechanically_informative": {
+    "informative": true,
+    "reason": "this source declares no time scale of its own, so there is nothing here to measure the experiment's duration against; the material is active over the run that was verified (state_change, departure_from_linearity); the response sits within the scales this problem supplies: peak stress 1868 against a largest material constant of 2e+05, a ratio of 0.00934; the response sits within the scales this problem supplies: peak stress 1868 against a largest material constant of 2e+05, a ratio of 0.00934"
+  },
+  "complete_finite_verification_run": true,
+  "tangent": {
+    "verified": true,
+    "reason": "agreed at all 2 states where a difference could be taken (increments 4, 2); 2 smooth state(s) inside the activated regime (2 loading, 0 unloading), which is the whole of this material: it is activated from its first increment and never stops, so there is no elastic branch to verify on and every state that can be measured is inside the activated one; worst of them: agreed to 8.250e-11 over a plateau of 3 step sizes, 1e-06 to 0.0001",
+    "states": [
+      {
+        "verified": true,
+        "reason": "agreed to 8.250e-11 over a plateau of 3 step sizes, 1e-06 to 0.0001",
+        "increment": 4,
+        "record_index": 3,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.0010000000000000002,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.012522347546137378,
+          "0.01": 0.0012532133316352629,
+          "0.001": 0.00012532231202382787,
+          "0.0001": 1.2532238552477976e-05,
+          "1e-05": 1.2532704117914416e-06,
+          "1e-06": 1.2538523684874852e-07,
+          "1e-07": 2.116206529652593e-08,
+          "1e-08": 1.3678583517019613e-07
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 34.01332156843273,
+              "relative": 0.000531495430409016,
+              "frobenius": 75.59780056460336
+            },
+            {
+              "step": 0.01,
+              "absolute": 0.3404362939763814,
+              "relative": 5.319210829403845e-06,
+              "frobenius": 0.7564678469328543
+            },
+            {
+              "step": 0.001,
+              "absolute": 0.003404410323128104,
+              "relative": 5.3192534177258183e-08,
+              "frobenius": 0.007564797923932182
+            },
+            {
+              "step": 0.0001,
+              "absolute": 3.495984128676355e-05,
+              "relative": 5.31925206867019e-10,
+              "frobenius": 7.604506747345466e-05
+            },
+            {
+              "step": 1e-05,
+              "absolute": 9.808311006054282e-06,
+              "relative": 8.250183296249711e-11,
+              "frobenius": 1.8221039011716096e-05
+            },
+            {
+              "step": 1e-06,
+              "absolute": 7.475021993741393e-05,
+              "relative": 4.4969018992169897e-10,
+              "frobenius": 0.0001311465368061672
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.0012326484429650009,
+              "relative": 7.4154954043978e-09,
+              "frobenius": 0.0017871746383495315
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.00701035390375182,
+              "relative": 5.896703789452834e-08,
+              "frobenius": 0.01215242645735815
+            }
+          ],
+          "best_step": 1e-05,
+          "best_frobenius": 1.8221039011716096e-05,
+          "best_relative": 8.250183296249711e-11,
+          "stable_range": [
+            1e-06,
+            0.0001
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 1.4704994353930356e-10,
+          "unresolved_entries": 32,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            2,
+            3
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 101682.85118714732,
+              "relative": 0.6068881808526781,
+              "frobenius": 170643.0768493376
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 170643.0768493376,
+          "best_relative": 0.6068881808526781,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 101682.85118714746,
+              "relative": 0.4406256884776384,
+              "frobenius": 170631.45276564965
+            },
+            {
+              "step": 0.01,
+              "absolute": 101682.85118715087,
+              "relative": 0.44062568847762856,
+              "frobenius": 170642.96008994724
+            },
+            {
+              "step": 0.001,
+              "absolute": 101682.85118714516,
+              "relative": 0.44062568847713596,
+              "frobenius": 170643.07568165677
+            },
+            {
+              "step": 0.0001,
+              "absolute": 101682.85118703148,
+              "relative": 0.44062568848009187,
+              "frobenius": 170643.076837752
+            },
+            {
+              "step": 1e-05,
+              "absolute": 101682.85119157899,
+              "relative": 0.44062568847023864,
+              "frobenius": 170643.07684662478
+            },
+            {
+              "step": 1e-06,
+              "absolute": 101682.85122000068,
+              "relative": 0.44062568881508885,
+              "frobenius": 170643.07683108133
+            },
+            {
+              "step": 1e-07,
+              "absolute": 101682.85093578356,
+              "relative": 0.4406256991605913,
+              "frobenius": 170643.07750385217
+            },
+            {
+              "step": 1e-08,
+              "absolute": 101682.85377795453,
+              "relative": 0.4406256696020135,
+              "frobenius": 170643.07770260953
+            }
+          ],
+          "best_step": 1e-08,
+          "best_frobenius": 170643.07770260953,
+          "best_relative": 0.4406256696020135,
+          "stable_range": [
+            1e-08,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.3776791615522683,
+          "unresolved_entries": 24,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 4,
+          "regime": "smooth_inelastic",
+          "reason": "the material has activated by here, and the forward and backward one-sided differences agree to 2.12e-08 at a step of 1e-07, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": true,
+          "unloading": false,
+          "verifiable": true,
+          "selected_step": 1e-07,
+          "rejected_steps": [
+            0.1,
+            0.01,
+            0.001,
+            0.0001,
+            1e-05
+          ],
+          "smoothness": {
+            "0.1": 0.012522347546137378,
+            "0.01": 0.0012532133316352629,
+            "0.001": 0.00012532231202382787,
+            "0.0001": 1.2532238552477976e-05,
+            "1e-05": 1.2532704117914416e-06,
+            "1e-06": 1.2538523684874852e-07,
+            "1e-07": 2.116206529652593e-08,
+            "1e-08": 1.3678583517019613e-07
+          }
+        }
+      },
+      {
+        "verified": true,
+        "reason": "agreed to 1.930e-11 at the best step and within 1e-06 at 6 of 8 step sizes, 1e-08 to 0.001: 5 decades of perturbation size, over which truncation and cancellation error scale oppositely, so agreement at both ends is not one regime flattering itself",
+        "increment": 2,
+        "record_index": 141,
+        "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+        "perturbation_scale": 0.0010000000000000005,
+        "driven_through": "strain increment",
+        "smoothness": {
+          "0.1": 0.020220308266170762,
+          "0.01": 0.002024809939568533,
+          "0.001": 0.00020248377328156873,
+          "0.0001": 2.0248381311522745e-05,
+          "1e-05": 2.0248422178277297e-06,
+          "1e-06": 2.0247183814208722e-07,
+          "1e-07": 1.981375785861624e-08,
+          "1e-08": 3.419645879254904e-08
+        },
+        "failures": [],
+        "comparison": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 77.33263416672708,
+              "relative": 0.0009263031304625432,
+              "frobenius": 171.9103340033805
+            },
+            {
+              "step": 0.01,
+              "absolute": 0.774525240121875,
+              "relative": 9.27592496638991e-06,
+              "frobenius": 1.7210400497422764
+            },
+            {
+              "step": 0.001,
+              "absolute": 0.007745371724013239,
+              "relative": 9.276054097478664e-08,
+              "frobenius": 0.017210594913855962
+            },
+            {
+              "step": 0.0001,
+              "absolute": 7.759244181215763e-05,
+              "relative": 9.276055247709655e-10,
+              "frobenius": 0.00017204213760302418
+            },
+            {
+              "step": 1e-05,
+              "absolute": 2.0127336028963327e-06,
+              "relative": 1.9304379975798097e-11,
+              "frobenius": 4.076376643112158e-06
+            },
+            {
+              "step": 1e-06,
+              "absolute": 3.2853393349796534e-05,
+              "relative": 1.9877241924774073e-10,
+              "frobenius": 5.5560202696921405e-05
+            },
+            {
+              "step": 1e-07,
+              "absolute": 0.000251363730058074,
+              "relative": 1.500249797151345e-09,
+              "frobenius": 0.0005120906011370633
+            },
+            {
+              "step": 1e-08,
+              "absolute": 0.002177956746891141,
+              "relative": 1.928050456361596e-08,
+              "frobenius": 0.00520896585414623
+            }
+          ],
+          "best_step": 1e-05,
+          "best_frobenius": 4.076376643112158e-06,
+          "best_relative": 1.9304379975798097e-11,
+          "stable_range": [
+            1e-05,
+            1e-05
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 1.5002497949005957e-09,
+          "unresolved_entries": 32,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "notes": ""
+        },
+        "fd_steps": [
+          0.1,
+          0.01,
+          0.001,
+          0.0001,
+          1e-05,
+          1e-06,
+          1e-07,
+          1e-08
+        ],
+        "against_the_authors_tangent": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.0,
+              "absolute": 101682.85118714732,
+              "relative": 0.6068881808526781,
+              "frobenius": 157146.1581851633
+            }
+          ],
+          "best_step": 0.0,
+          "best_frobenius": 157146.1581851633,
+          "best_relative": 0.6068881808526781,
+          "stable_range": [
+            0.0,
+            0.0
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.0,
+          "unresolved_entries": 0,
+          "adjudicated_entries": 0,
+          "resolved_worst_entry": [],
+          "notes": ""
+        },
+        "the_references_own_error": {
+          "increment": 0,
+          "point": 1,
+          "sweep": [
+            {
+              "step": 0.1,
+              "absolute": 101682.85118714691,
+              "relative": 0.44062568847763817,
+              "frobenius": 157094.108886409
+            },
+            {
+              "step": 0.01,
+              "absolute": 101682.85118714519,
+              "relative": 0.44062568847764066,
+              "frobenius": 157145.6355011642
+            },
+            {
+              "step": 0.001,
+              "absolute": 101682.8511871736,
+              "relative": 0.44062568847762834,
+              "frobenius": 157146.15295811716
+            },
+            {
+              "step": 0.0001,
+              "absolute": 101682.85118674731,
+              "relative": 0.44062568848009137,
+              "frobenius": 157146.15813283977
+            },
+            {
+              "step": 1e-05,
+              "absolute": 101682.85118589466,
+              "relative": 0.44062568847023864,
+              "frobenius": 157146.1581825006
+            },
+            {
+              "step": 1e-06,
+              "absolute": 101682.85122000071,
+              "relative": 0.44062568832244564,
+              "frobenius": 157146.15818958485
+            },
+            {
+              "step": 1e-07,
+              "absolute": 101682.85093578359,
+              "relative": 0.4406256905393391,
+              "frobenius": 157146.15801516065
+            },
+            {
+              "step": 1e-08,
+              "absolute": 101682.85093578359,
+              "relative": 0.44062566960201327,
+              "frobenius": 157146.1554462342
+            }
+          ],
+          "best_step": 1e-08,
+          "best_frobenius": 157146.1554462342,
+          "best_relative": 0.44062566960201327,
+          "stable_range": [
+            1e-08,
+            0.1
+          ],
+          "near_zero_entries": 24,
+          "non_finite_entries": 0,
+          "zero_difference_steps": 0,
+          "resolved_relative": 0.3776791606186247,
+          "unresolved_entries": 24,
+          "adjudicated_entries": 36,
+          "resolved_worst_entry": [
+            1,
+            1
+          ],
+          "notes": ""
+        },
+        "regime": {
+          "increment": 2,
+          "regime": "smooth_inelastic",
+          "reason": "the material has activated by here, and the forward and backward one-sided differences agree to 1.98e-08 at a step of 1e-07, which is round-off rather than a jump: a kink's gap is the difference between two limiting derivatives and is of order one",
+          "activated_here": true,
+          "unloading": false,
+          "verifiable": true,
+          "selected_step": 1e-07,
+          "rejected_steps": [
+            0.1,
+            0.01,
+            0.001,
+            0.0001,
+            1e-05,
+            1e-06
+          ],
+          "smoothness": {
+            "0.1": 0.020220308266170762,
+            "0.01": 0.002024809939568533,
+            "0.001": 0.00020248377328156873,
+            "0.0001": 2.0248381311522745e-05,
+            "1e-05": 2.0248422178277297e-06,
+            "1e-06": 2.0247183814208722e-07,
+            "1e-07": 1.981375785861624e-08,
+            "1e-08": 3.419645879254904e-08
+          }
+        }
+      }
+    ],
+    "states_checked": 2,
+    "chosen_states": [
+      {
+        "increment": 4,
+        "record_index": 3
+      },
+      {
+        "increment": 2,
+        "record_index": 141
+      }
+    ],
+    "states_agreeing": 2,
+    "states_measured": 2,
+    "states_unmeasured": 0,
+    "increment": 4,
+    "record_index": 3,
+    "comparison": {
+      "increment": 0,
+      "point": 1,
+      "sweep": [
+        {
+          "step": 0.1,
+          "absolute": 34.01332156843273,
+          "relative": 0.000531495430409016,
+          "frobenius": 75.59780056460336
+        },
+        {
+          "step": 0.01,
+          "absolute": 0.3404362939763814,
+          "relative": 5.319210829403845e-06,
+          "frobenius": 0.7564678469328543
+        },
+        {
+          "step": 0.001,
+          "absolute": 0.003404410323128104,
+          "relative": 5.3192534177258183e-08,
+          "frobenius": 0.007564797923932182
+        },
+        {
+          "step": 0.0001,
+          "absolute": 3.495984128676355e-05,
+          "relative": 5.31925206867019e-10,
+          "frobenius": 7.604506747345466e-05
+        },
+        {
+          "step": 1e-05,
+          "absolute": 9.808311006054282e-06,
+          "relative": 8.250183296249711e-11,
+          "frobenius": 1.8221039011716096e-05
+        },
+        {
+          "step": 1e-06,
+          "absolute": 7.475021993741393e-05,
+          "relative": 4.4969018992169897e-10,
+          "frobenius": 0.0001311465368061672
+        },
+        {
+          "step": 1e-07,
+          "absolute": 0.0012326484429650009,
+          "relative": 7.4154954043978e-09,
+          "frobenius": 0.0017871746383495315
+        },
+        {
+          "step": 1e-08,
+          "absolute": 0.00701035390375182,
+          "relative": 5.896703789452834e-08,
+          "frobenius": 0.01215242645735815
+        }
+      ],
+      "best_step": 1e-05,
+      "best_frobenius": 1.8221039011716096e-05,
+      "best_relative": 8.250183296249711e-11,
+      "stable_range": [
+        1e-06,
+        0.0001
+      ],
+      "near_zero_entries": 24,
+      "non_finite_entries": 0,
+      "zero_difference_steps": 0,
+      "resolved_relative": 1.4704994353930356e-10,
+      "unresolved_entries": 32,
+      "adjudicated_entries": 36,
+      "resolved_worst_entry": [
+        2,
+        3
+      ],
+      "notes": ""
+    },
+    "driven_through": "strain increment",
+    "failures": [],
+    "perturbation_scale": 0.0010000000000000002,
+    "replay_header": "/usr/SIMULIA/EstProducts/2021/SMAUsubs/PublicInterfaces/aba_param.inc (installation), installed under 4 casings",
+    "fd_steps": [
+      0.1,
+      0.01,
+      0.001,
+      0.0001,
+      1e-05,
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "states_smooth": 2,
+    "states_on_a_branch": 0,
+    "states_transitional": 0,
+    "nonlinear": true,
+    "response_character": "irreversible",
+    "character_reason": "the strain returned to within 0.0% of where it started and 14.4% of the peak stress remained, so the material kept something",
+    "coverage": "2 smooth state(s) inside the activated regime (2 loading, 0 unloading), which is the whole of this material: it is activated from its first increment and never stops, so there is no elastic branch to verify on and every state that can be measured is inside the activated one"
+  },
+  "seconds": 47.5,
+  "recovery_input": {
+    "fixture_sha256": "60e0276a69451afabfbd7ea8d3853f067fe86c4adc830f8bcde3e20032e834ff",
+    "retained_results_sha256": "3cca17cb9009be499374218d86b76098f41c3e3f10b221c4858c874a988d29df",
+    "deck_byte_identical": true,
+    "bundled_manifest_reconstructed": true,
+    "numerical_evidence_reused": false
+  }
+}

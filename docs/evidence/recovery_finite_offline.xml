@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.154" timestamp="2026-09-18T11:37:31.251781-05:00" hostname="ammslab3-Precision-5820-Tower"><testcase classname="" name="tests.framework.test_a_verified_deck_drives_the_global_assembly" time="0.000"><error message="collection failure">tests/framework/test_a_verified_deck_drives_the_global_assembly.py:68: in &lt;module&gt;
+    @pytest.mark.parametrize("fixture", hex_fixtures(), ids=ids(hex_fixtures()))
+                                        ^^^^^^^^^^^^^^
+tests/framework/verified_fixtures.py:67: in hex_fixtures
+    usable = [f for f in all_fixtures(require_gates)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/framework/verified_fixtures.py:47: in all_fixtures
+    loaded = load_all(FIXTURES, fingerprint=CURRENT_TRANSFORM_FINGERPRINT)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+residual_core/materials/verified_fixture.py:444: in load_all
+    return [load(path, fingerprint=fingerprint)
+residual_core/materials/verified_fixture.py:444: in &lt;listcomp&gt;
+    return [load(path, fingerprint=fingerprint)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+residual_core/materials/verified_fixture.py:255: in load
+    raise FixtureError(
+E   residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.</error></testcase></testsuite></testsuites>

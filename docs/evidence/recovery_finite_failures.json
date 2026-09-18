@@ -1,0 +1,380 @@
+{
+  "counts": {
+    "tests": 397,
+    "failures": 56,
+    "errors": 5,
+    "skipped": 11,
+    "passed": 325
+  },
+  "failures": [
+    {
+      "test": "::tests.framework.test_a_verified_deck_drives_the_global_assembly",
+      "outcome": "error",
+      "message": "collection failure",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_every_committed_fixture_still_loads",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_every_committed_fixture_now_carries_every_claim",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_claim_a_fixture_does_not_carry_is_named_rather_than_assumed",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_fixture_carrying_every_claim_reports_none_missing",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_window_shorter_than_the_export_asked_for_is_refused",
+      "outcome": "failure",
+      "message": "assert '3 record(s) of the 6' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_fixture_frozen_before_the_counts_were_separated_is_still_held",
+      "outcome": "failure",
+      "message": "assert '3 record(s) of the 6' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"\n +  where \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\" = str(FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"))\n +    where FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") = <ExceptionInfo FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accep...s run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") tblen=2>.value",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_window_of_exactly_what_was_asked_for_is_not_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_fixture_that_does_not_state_what_was_asked_for_is_not_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_run_that_went_non_finite_outside_the_window_is_refused",
+      "outcome": "failure",
+      "message": "assert 'OUTSIDE the carried window' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_non_finite_tangent_outside_the_window_is_refused_the_same_way",
+      "outcome": "failure",
+      "message": "assert 'DDSDDE[7] is inf' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"\n +  where \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\" = str(FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"))\n +    where FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") = <ExceptionInfo FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accep...s run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") tblen=2>.value",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_clean_whole_history_scan_is_not_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_nan_among_the_carried_numbers_is_still_refused",
+      "outcome": "failure",
+      "message": "assert 'stress[1]' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"\n +  where \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\" = str(FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"))\n +    where FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") = <ExceptionInfo FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accep...s run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") tblen=2>.value",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_run_that_was_not_finite_end_to_end_is_still_refused",
+      "outcome": "failure",
+      "message": "assert 'complete_finite_verification_run' in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"\n +  where \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\" = str(FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"))\n +    where FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") = <ExceptionInfo FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accep...s run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") tblen=2>.value",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_fixture_is_held_to_the_rule_that_froze_it::test_a_gate_that_was_never_measured_is_not_taken_as_passed",
+      "outcome": "failure",
+      "message": "assert \"complete_history_finite='not measured'\" in \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"\n +  where \"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the r...body else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\" = str(FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"))\n +    where FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37...ody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") = <ExceptionInfo FixtureError(\"case.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accep...s run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\") tblen=2>.value",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_step_is_not_decoration::test_the_deck_carries_four_steps_and_each_says_how_long_it_takes",
+      "outcome": "error",
+      "message": "failed on setup with \"residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_step_is_not_decoration::test_every_boundary_knows_which_step_wrote_it",
+      "outcome": "error",
+      "message": "failed on setup with \"residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_step_is_not_decoration::test_a_step_with_op_new_replaces_what_came_before_it",
+      "outcome": "error",
+      "message": "failed on setup with \"residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_step_is_not_decoration::test_reading_the_steps_flat_gives_the_first_step_the_last_steps_motion",
+      "outcome": "error",
+      "message": "failed on setup with \"residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.\"",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_every_fixture_declares_what_it_is",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_fixture_that_contradicts_its_own_tensor_size_is_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_the_conventions_the_fixture_states_hold_in_its_numbers",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_the_internal_force_matches_an_independent_integration",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_uniform_stress_leaves_no_net_force",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_the_element_tangent_is_the_derivative_of_the_internal_force",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_rigid_translation_produces_no_force",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_verified_fixture_holds_only_at_stages_with_sufficient_evidence",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_the_yield_increment_leaves_the_derivative_unestablished",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_stress_that_is_not_a_number_is_blamed_on_the_umat",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_converted_build_that_disagrees_is_blamed_on_the_transformation",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_a_tangent_that_does_not_differentiate_its_stress_is_blamed_on_it",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_an_assembly_that_disagrees_with_an_independent_one_is_blamed_on_it",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_a_verified_umat_drives_the_assembler::test_the_blame_stops_at_the_first_stage_that_fails",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_small_strain_stiffness_is_the_derivative_of_the_small_strain_force",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_agreement_is_a_plateau_and_not_one_lucky_step",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_fixed_stress_jacobian_is_the_derivative_of_the_finite_strain_force",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_finite_strain_derivative_holds_where_the_element_has_actually_moved",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_geometric_term_is_not_the_fixed_stress_jacobian",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_every_frozen_fixture_carries_a_completely_finite_history",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_a_fixture_with_a_nan_in_it_is_refused_rather_than_loaded",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_a_fixture_frozen_from_an_incomplete_run_is_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_a_fixture_with_no_finiteness_evidence_at_all_is_refused",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_fixtures_come_from_more_than_one_author",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_residual_derivative_is_differenced::test_the_frozen_set_is_named_as_a_selection_rather_than_as_the_corpus",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_state_derivative_is_differenced::test_a_state_probe_turns_the_state_layer_from_unknown_into_a_verdict",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_the_assembled_state_derivative_is_differenced::test_a_wrong_state_derivative_is_blamed_on_the_state_layer",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_every_verdict_carries_the_numbers_it_was_reached_on",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_not_established_is_not_a_pass_and_says_so_in_the_report",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_the_whole_diagnosis_serialises_for_a_caller_that_is_not_a_person",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_every_committed_fixture_carries_the_gates_the_pipeline_measured",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_the_tangent_reading_is_decided_by_the_numbers_and_not_by_nlgeom",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_an_isochoric_window_refuses_to_choose_a_reading",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_the_pipelines_own_gate_and_this_repositorys_layer_agree",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_a_shear_convention_in_the_tangent_is_blamed_on_the_mapping_layer",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_a_window_with_no_shear_leaves_the_shear_convention_unestablished",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_a_quadrature_that_does_not_integrate_is_blamed_on_the_element_layer",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_an_element_geometry_that_is_degenerate_is_blamed_on_the_element_layer",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_a_partition_that_leaks_is_blamed_on_the_boundary_layer",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_a_dof_map_with_a_collision_is_blamed_on_the_mapping_of_dofs",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_without_a_deck_the_last_two_layers_are_unknown_rather_than_clean",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    },
+    {
+      "test": "tests.framework.test_which_layer_the_failure_came_from::test_the_run_stops_at_the_first_layer_that_fails",
+      "outcome": "failure",
+      "message": "residual_core.materials.verified_fixture.FixtureError: compresibleneohookean--d78e61195f.json was frozen under transform fingerprint '94a92c01814f107a' and this reader accepts '6aa20d22e37f14c9' (the requested generation). The same UMAT converted by a different build of the transformation is a different experiment: its stress and tangent are evidence about that build, so checking today's assembler against them would be checking it against somebody else's run. Re-export it from the current store with UMAT_source_transformation/tools/export_residual_fixture.py.",
+      "stale_fingerprint": true
+    }
+  ],
+  "all_failures_are_stale_fingerprint": true,
+  "accepted_fingerprint": "6aa20d22e37f14c9",
+  "legacy_fingerprint": "94a92c01814f107a"
+}

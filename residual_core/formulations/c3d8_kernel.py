@@ -211,10 +211,10 @@ def b_matrix_spatial(xe, xi):
 
 def voigt_to_tensor(s):
     """(6,) Voigt (11,22,33,12,13,23) symmetric stress -> (3,3) tensor."""
-    s = np.asarray(s, dtype=float)
+    s = np.asarray(s)
     return np.array([[s[0], s[3], s[4]],
                      [s[3], s[1], s[5]],
-                     [s[4], s[5], s[2]]], dtype=float)
+                     [s[4], s[5], s[2]]])
 
 
 def _as_ue_2d(Ue):
@@ -241,9 +241,9 @@ def element_internal_force_small_strain(Xe, sigma_ip, gauss=ABAQUS_C3D8_GAUSS):
     Returns  : (24,) node-major internal force.
     """
     Xe = np.asarray(Xe, dtype=float)
-    sigma_ip = np.asarray(sigma_ip, dtype=float)
+    sigma_ip = np.asarray(sigma_ip)
     points, weights = gauss.points, gauss.weights
-    f = np.zeros(24, dtype=float)
+    f = np.zeros(24, dtype=np.result_type(sigma_ip.dtype, float))
     for k in range(len(weights)):
         B0, detJ0 = b_matrix_reference(Xe, points[k])
         f += (B0.T @ sigma_ip[k]) * detJ0 * weights[k]
@@ -264,9 +264,9 @@ def element_internal_force_finite_strain(Xe, Ue, sigma_ip, gauss=ABAQUS_C3D8_GAU
     """
     Xe = np.asarray(Xe, dtype=float)
     xe = Xe + _as_ue_2d(Ue)
-    sigma_ip = np.asarray(sigma_ip, dtype=float)
+    sigma_ip = np.asarray(sigma_ip)
     points, weights = gauss.points, gauss.weights
-    f = np.zeros(24, dtype=float)
+    f = np.zeros(24, dtype=np.result_type(sigma_ip.dtype, float))
     for k in range(len(weights)):
         B, detJ = b_matrix_spatial(xe, points[k])
         f += (B.T @ sigma_ip[k]) * detJ * weights[k]
@@ -276,6 +276,27 @@ def element_internal_force_finite_strain(Xe, Ue, sigma_ip, gauss=ABAQUS_C3D8_GAU
 # ---------------------------------------------------------------------------
 # Element tangent
 # ---------------------------------------------------------------------------
+
+def kirchhoff_jaumann_to_spatial(ddsdde, stress):
+    """Convert (Jaumann rate of Kirchhoff stress)/J to the spatial modulus.
+
+    For engineering strain d, c:d = DDSDDE:d - d@sigma - sigma@d.
+    Use c with B.T@c@B plus the initial-stress stiffness in element_tangent.
+    Geometry is real; stress and material parameters may be OTI scalars.
+    """
+    stress_tensor = voigt_to_tensor(stress)
+    corrected = np.array(ddsdde, dtype=np.result_type(
+        np.asarray(ddsdde).dtype, stress_tensor.dtype, float), copy=True)
+    pairs = ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
+    for column, (row, other) in enumerate(pairs):
+        strain = np.zeros((3, 3))
+        strain[row, other] = 1.0 if row == other else 0.5
+        strain[other, row] = strain[row, other]
+        correction = strain @ stress_tensor + stress_tensor @ strain
+        corrected[:, column] -= np.array([correction[first, second]
+                                         for first, second in pairs])
+    return corrected
+
 
 def element_tangent(Xe, Ue, Dmat_ip, sigma_ip=None, mode='finite',
                     gauss=ABAQUS_C3D8_GAUSS):
@@ -290,8 +311,8 @@ def element_tangent(Xe, Ue, Dmat_ip, sigma_ip=None, mode='finite',
     i.e. the standard current-configuration initial-stress stiffness with the
     Cauchy stress. In block form for the 8 nodes this is  kron(G, I3)  with
     G[a,b] = dNdx[a] @ sigma_tensor @ dNdx[b]. It is SYMMETRIC and is the
-    conventional geometric term used together with an objective-rate material
-    tangent D to form the consistent nlgeom stiffness.
+    conventional geometric term used with the spatial elasticity modulus c.
+    An objective-rate material tangent must first be converted to c.
 
     IT IS NOT the directional derivative of  int B_spatial^T sigma dv  at FIXED
     sigma. That fixed-sigma force Jacobian is generally NON-symmetric and equals
@@ -308,14 +329,12 @@ def element_tangent(Xe, Ue, Dmat_ip, sigma_ip=None, mode='finite',
     mode     : 'finite' (current config, B_spatial + K_geo) or
                'small'  (reference config, B0, no geometric term).
 
-    NOTE on measures: for the true nlgeom C3D8 the material term needs D to be
-    the Cauchy/Jaumann (or chosen objective-rate) spatial tangent consistent
-    with the UMAT DDSDDE mapping; that mapping is the error-prone item to be
-    closed against Abaqus later (see the tests/ README). Here the geometric
-    term is verified independently.
+    Dmat_ip is the spatial elasticity modulus, NOT raw Abaqus DDSDDE.
+    For Kirchhoff-Jaumann/J DDSDDE use kirchhoff_jaumann_to_spatial at each IP.
+    This low-level kernel does not infer a material's stress/tangent measures.
     """
     Xe = np.asarray(Xe, dtype=float)
-    Dmat_ip = np.asarray(Dmat_ip, dtype=float)
+    Dmat_ip = np.asarray(Dmat_ip)
     if Dmat_ip.shape == (6, 6):
         Dmat_ip = np.broadcast_to(Dmat_ip, (8, 6, 6))
     points, weights = gauss.points, gauss.weights
@@ -327,7 +346,9 @@ def element_tangent(Xe, Ue, Dmat_ip, sigma_ip=None, mode='finite',
     else:
         raise ValueError("mode must be 'finite' or 'small', got %r" % (mode,))
 
-    K = np.zeros((24, 24), dtype=float)
+    stress_dtype = (np.asarray(sigma_ip).dtype
+                    if mode == 'finite' and sigma_ip is not None else float)
+    K = np.zeros((24, 24), dtype=np.result_type(Dmat_ip.dtype, stress_dtype, float))
     I3 = np.eye(3)
     for k in range(len(weights)):
         B, detJ, dNdx = _b_from_coords(coords, points[k])
@@ -419,13 +440,14 @@ def assemble_global_internal_force(node_ids, coords, connectivity, U, sigma_all,
     for eid, conn in connectivity:
         Xe = np.array([coords[id_to_row[nid]] for nid in conn], dtype=float)
         Ue = np.array([get_u(nid) for nid in conn], dtype=float)   # (8,3)
-        sig = np.asarray(sigma_all[eid], dtype=float)              # (8,6)
+        sig = np.asarray(sigma_all[eid])                           # (8,6)
         if mode == 'finite':
             fe = element_internal_force_finite_strain(Xe, Ue, sig)
         elif mode == 'small':
             fe = element_internal_force_small_strain(Xe, sig)
         else:
             raise ValueError("mode must be 'finite' or 'small'")
+        F = F.astype(np.result_type(F.dtype, fe.dtype), copy=False)
         for a, nid in enumerate(conn):
             gi = node_id_to_index[nid]
             F[3 * gi:3 * gi + 3] += fe[3 * a:3 * a + 3]

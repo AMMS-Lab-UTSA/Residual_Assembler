@@ -91,8 +91,9 @@ STORE_PROVENANCE = {
     "entries": 244,
     "verified": 57,
     "all_six_evidence_gates": 44,
-    "fingerprint": CURRENT_TRANSFORM_FINGERPRINT,
-    "read_from": "schemas/transform_generation.json",
+    "fingerprint": "94a92c01814f107a",
+    "status": "historical_only",
+    "read_from": "retained pass12 fixture transform_fingerprint",
     "read_on": "2026-09-14",
 }
 
@@ -254,7 +255,7 @@ def load(path: Path, *,
         raise FixtureError(
             f"{path.name} was frozen under transform fingerprint "
             f"{carried or 'none recorded'!r} and this reader accepts "
-            f"{fingerprint!r} ({STORE_PROVENANCE['results']}). The same UMAT "
+            f"{fingerprint!r} (the requested generation). The same UMAT "
             f"converted by a different build of the transformation is a "
             f"different experiment: its stress and tangent are evidence about "
             f"that build, so checking today's assembler against them would be "

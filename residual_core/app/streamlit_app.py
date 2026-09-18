@@ -1108,13 +1108,94 @@ def _sidebar() -> None:
         st.caption("Every button runs the real `resasm` CLI in-process.")
 
 
+def _tab_request() -> None:
+    import json
+    import tempfile
+
+    st.header("Residual Sensitivity Solver")
+    inputs = {}
+    uploads = {}
+    for key, label, extension in (("material", "OTI_UMAT.obj", "obj"),
+                                  ("model", "Analysis.inp", "inp"),
+                                  ("odb", "Analysis.odb", "odb"),
+                                  ("request", "sensitivity_request.json", "json")):
+        left, right = st.columns(2)
+        with left:
+            uploads[key] = st.file_uploader(label, type=[extension], key="request_upload_" + key)
+        with right:
+            inputs[key] = st.text_input(label + " path", key="request_path_" + key)
+    output = st.text_input("Output directory", str(DEFAULT_WORKDIR / "request"), key="request_output")
+    with st.expander("Advanced"):
+        mapping = st.text_input("Mapping.json path (optional with adjacent generated sidecar)", key="request_mapping")
+        mapping_upload = st.file_uploader("Mapping.json", type=["json"], key="request_upload_mapping")
+        abaqus = st.text_input("Abaqus executable", "abaqus", key="request_abaqus")
+        validate = st.checkbox("Independent finite-difference validation", value=False, key="request_validate")
+    if st.button("Run sensitivity request", key="btn_request_run",
+                 disabled=not output or not all(inputs[key] or uploads[key] is not None for key in inputs)):
+        st.session_state.pop("request_completed_output", None)
+        st.session_state.pop("request_completed_message", None)
+        try:
+            with tempfile.TemporaryDirectory(prefix="resasm_request_upload_") as temporary:
+                for key, upload in uploads.items():
+                    if upload is not None:
+                        path = Path(temporary) / {"material": "OTI_UMAT.obj", "model": "Analysis.inp",
+                                                 "odb": "Analysis.odb", "request": "sensitivity_request.json"}[key]
+                        path.write_bytes(upload.getvalue())
+                        inputs[key] = str(path)
+                if mapping_upload is not None:
+                    path = Path(temporary) / "Mapping.json"
+                    path.write_bytes(mapping_upload.getvalue())
+                    mapping = str(path)
+                argv = ["request", "--out", output, "--abaqus", abaqus]
+                for key, value in inputs.items():
+                    argv.extend(["--" + key, value])
+                if mapping:
+                    argv.extend(["--mapping", mapping])
+                if validate:
+                    argv.append("--validate")
+                execution = _run(argv)
+                if execution.code:
+                    raise ValueError(execution.stderr or execution.stdout)
+                result = json.loads((Path(output) / "sensitivity_results.json").read_text())
+            st.session_state["request_completed_output"] = str(Path(output).resolve())
+            st.session_state["request_completed_message"] = "Executed: %d scalar results. Independent validation: %s." % (
+                len(result["results"]), "passed" if result["metadata"]["verified"] else "not run")
+        except (ValueError, OSError) as error:
+            st.error(str(error))
+    completed = st.session_state.get("request_completed_output")
+    if completed:
+        st.success(st.session_state["request_completed_message"])
+        for filename in ("sensitivity_results.json", "sensitivity_tables.csv", "run_report.txt"):
+            path = Path(completed) / filename
+            if path.is_file():
+                st.download_button(filename, path.read_bytes(), file_name=filename, key="request_download_" + filename)
+
+
+def _tab_replay() -> None:
+    st.header("7. Connected J2 Replay")
+    record = st.text_input("Record or model JSON", str(REPO_ROOT / "examples/imqcam_j2_cantilever/model.json"), key="replay_record")
+    material_object = st.text_input("Compiled provider object", key="replay_object")
+    contract = st.text_input("Provider contract JSON", key="replay_contract")
+    output = st.text_input("Replay output directory", str(DEFAULT_WORKDIR / "replay"), key="replay_output")
+    solve = st.checkbox("Solve model", value=True, key="replay_solve")
+    verify = st.checkbox("Verify with ORIGINAL finite differences", value=True, key="replay_verify")
+    argv = ["replay", record, "--object", material_object, "--contract", contract, "--out", output]
+    if solve:
+        argv.append("--solve")
+    if verify:
+        argv.append("--verify")
+    _action("Run replay", "replay_run", argv, cwd=REPO_ROOT,
+            disabled=not (material_object and contract and record and output))
+
+
 def main() -> None:
     st.set_page_config(page_title="Residual_Assembler", layout="wide",
-                       page_icon="🧮")
+                       page_icon="🧮", initial_sidebar_state="collapsed")
     _init_state()
     _sidebar()
 
     tabs = st.tabs([
+        "Sensitivity Request",
         "Start here",
         "1. Model",
         "2. Requirements",
@@ -1122,21 +1203,26 @@ def main() -> None:
         "4. Sensitivity",
         "5. Job",
         "6. Backends",
+        "Advanced Replay",
     ])
     with tabs[0]:
-        _tab_start()
+        _tab_request()
     with tabs[1]:
-        _tab_model()
+        _tab_start()
     with tabs[2]:
-        _tab_requirements()
+        _tab_model()
     with tabs[3]:
-        _tab_assemble()
+        _tab_requirements()
     with tabs[4]:
-        _tab_sensitivity()
+        _tab_assemble()
     with tabs[5]:
-        _tab_job()
+        _tab_sensitivity()
     with tabs[6]:
+        _tab_job()
+    with tabs[7]:
         _tab_backends()
+    with tabs[8]:
+        _tab_replay()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,27 @@
 # STATUS — Model-Agnostic Residual Assembly Framework (CP is one example backend)
 
+## Current Recovery Status (2026-09-18)
+
+[Current usage](docs/USAGE_REPORT.md) supersedes the July snapshot below.
+The retained full RA offline result is 419 passed, 11 existing skips, zero
+failures/errors. Five fresh bounded example checks passed in
+[machine-readable evidence](docs/evidence/usage_examples.json); the genuine
+artifact-only J2 presentation consumer also passed its separate analytic check.
+Abaqus is available on this machine; this audit used extraction only, no new job.
+Genuine Python-3.11 OTILib is available and exercised.
+
+Supported finite-strain claims are limited to stateless isotropic total
+neo-Hookean C3D8 and first-order material parameters. Pinned J2 replay is
+small-strain. Generic finite UMAT/FCC, full-size presentation models and
+higher-order full FE remain unestablished. Historical CP numbers below are not
+new recovery verification. Ordinary request output remains `verified=false`.
+
+[Ledger](docs/COMPLETION_LEDGER.md): 104 bounded implemented, 159 partial,
+11 unestablished, 0 final clean-install complete, 274 outstanding. The earlier
+working-tree wheel gate is not a final-branch clone. No skips were added here.
+
+## Historical July Snapshot
+
 Date: 2026-07-10. Honest accounting. The rule "**do not claim success because the
 code runs**" is applied throughout: each claim says exactly what was verified and
 how, and what is still pending a real Abaqus run. Two parts:

@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-14T21:15:24+00:00",
+ "generated": "2026-09-18T17:03:44+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "bundled__generic_ps/src/j2_props.f",
  "source_sha256": "4362e759c4642cb2f74e20c50b86a9472b1e80d6a7fef663bf8faa3dfa8de1c8",
  "repository": "bundled/generic_ps",
- "transform_fingerprint": "94a92c01814f107a",
+ "transform_fingerprint": "6aa20d22e37f14c9",
  "deck_digest": "5bca9c51a7f5aab2",
  "material": {
   "provenance": "bundled__generic_ps/decks/j2.inp: j2.inp *MATERIAL J2: 4 constants, *DEPVAR 1 -- the two names agree on j2, which is a value the author varied rather than a word every file of this kind carries",
@@ -39,32 +39,32 @@
    "abaqus_job_completed": true,
    "all_requested_outputs_present": true,
    "complete_history_finite": true,
-   "derivatives_verified": true,
-   "mechanically_informative": true,
    "primal_agreed": true,
-   "primal_difference_explained_by_a_measured_control": null
+   "primal_difference_explained_by_a_measured_control": null,
+   "derivatives_verified": true,
+   "mechanically_informative": true
   },
   "complete_finite_verification_run": true,
   "history_grouping": {
-   "both_finite_throughout": true,
    "original": {
-    "complete": true,
+    "raw_output_records": 280,
+    "total_increments": 35,
     "complete_increments": 35,
+    "material_points_per_increment": 8,
     "first_incomplete_increment": null,
     "first_non_finite_material_point": null,
-    "material_points_per_increment": 8,
-    "raw_output_records": 280,
-    "total_increments": 35
+    "complete": true
    },
    "transformed": {
-    "complete": true,
+    "raw_output_records": 280,
+    "total_increments": 35,
     "complete_increments": 35,
+    "material_points_per_increment": 8,
     "first_incomplete_increment": null,
     "first_non_finite_material_point": null,
-    "material_points_per_increment": 8,
-    "raw_output_records": 280,
-    "total_increments": 35
-   }
+    "complete": true
+   },
+   "both_finite_throughout": true
   },
   "records_carried": 35,
   "increments_carried": 35,

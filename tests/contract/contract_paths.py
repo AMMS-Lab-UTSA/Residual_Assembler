@@ -22,7 +22,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SCHEMAS = REPO / "schemas"
-FIXTURES = REPO / "tests" / "fixtures" / "verified"
+CURRENT_FIXTURES = REPO / "tests" / "fixtures" / "verified"
+FIXTURES = REPO / "tests" / "fixtures" / "historical" / "94a92c01814f107a"
 SHARED = Path(__file__).resolve().parent / "_shared"
 
 if str(SHARED) not in sys.path:

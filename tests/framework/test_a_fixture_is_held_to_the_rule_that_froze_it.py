@@ -38,10 +38,10 @@ from pathlib import Path
 import pytest
 
 from residual_core.materials.verified_fixture import (
-    CHECKABLE_CLAIMS, CURRENT_TRANSFORM_FINGERPRINT, FixtureError, load,
-    load_all)
+    CHECKABLE_CLAIMS, CURRENT_TRANSFORM_FINGERPRINT, FixtureError)
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "verified"
+from verified_fixtures import (
+    FIXTURES, HISTORICAL_FINGERPRINT, all_fixtures, load_historical as load)
 
 
 @pytest.fixture()
@@ -60,8 +60,8 @@ def _written(tmp_path: Path, payload: dict, name: str = "case.json") -> Path:
 # what is committed here
 # ---------------------------------------------------------------------------
 def test_every_committed_fixture_still_loads():
-    """Measured: ten fixtures, every number a number, every one of them frozen
-    under the transform fingerprint this reader accepts.
+    """All ten historical fixtures remain readable at their recorded generation.
+    They are rejected as current producer evidence by all_fixtures().
 
     Nine carry six increments, which is the exporter's default window. The
     bundled J2 carries all 35 of its four-step cycle, because what makes it
@@ -71,23 +71,24 @@ def test_every_committed_fixture_still_loads():
     that every fixture's window is the length it says, not that every window
     is the same length.
     """
-    fixtures = load_all(FIXTURES)
+    fixtures = all_fixtures()
     assert len(fixtures) == 10
     for fixture in fixtures:
         assert fixture.increments() >= 6
         assert fixture.ntens > 0
         assert fixture.source_id
-        assert fixture.transform_fingerprint == CURRENT_TRANSFORM_FINGERPRINT
+        assert fixture.transform_fingerprint == HISTORICAL_FINGERPRINT
+        assert fixture.transform_fingerprint != CURRENT_TRANSFORM_FINGERPRINT
 
 
 def test_every_committed_fixture_now_carries_every_claim():
-    """The set committed here was re-frozen from the current store, so each
+    """The historical set was frozen from the pass12 store, so each
     carries all five claims rather than naming two as not carried.
 
     Asserted rather than assumed: a fixture that quietly lost a claim on
     re-export would otherwise be reported as clean on it.
     """
-    for fixture in load_all(FIXTURES):
+    for fixture in all_fixtures():
         assert "the run was finite from end to end" in fixture.claims_checked
         assert fixture.claims_not_carried == (), fixture.source_id
         assert len(fixture.claims_checked) == len(CHECKABLE_CLAIMS) == 5

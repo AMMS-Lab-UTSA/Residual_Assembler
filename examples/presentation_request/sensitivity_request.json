@@ -1,0 +1,11 @@
+{
+  "outputs": [
+    {"name": "mean_loaded_U1", "field": "U", "component": 1, "reduction": "mean", "domain": {"nodes": [2, 3, 6, 7]}},
+    {"name": "support_RF1", "field": "RF", "component": 1, "reduction": "sum", "domain": {"nodes": [1, 4, 5, 8]}},
+    {"name": "mean_S11", "field": "S", "component": 1, "reduction": "mean"},
+    {"name": "mean_EQPLAS", "field": "SDV", "component": 1, "reduction": "mean"}
+  ],
+  "parameters": ["E", "nu", "SIGY0", "H"],
+  "domain": {"nodes": "ALL", "elements": "ALL"},
+  "increments": "LAST"
+}

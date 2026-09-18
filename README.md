@@ -1,5 +1,14 @@
 # Residual_Assembler
 
+**Current recovery usage (2026-09-18):** start with the
+[verified usage report](docs/USAGE_REPORT.md). Five bounded examples and the
+artifact-only J2 presentation path have executable evidence. C3D8 first-order
+J2 and bounded finite neo-Hookean sensitivities now work; generic FCC,
+stateful finite UMATs and higher-order full FE are not claimed. The older
+overview below is historical where it conflicts with that report.
+[Requirement audit](docs/COMPLETION_LEDGER.md): 104 bounded implemented,
+159 partial, 11 unestablished; **0 clean-install complete, 274 outstanding**.
+
 **You should not have to provide R. You provide the ingredients, and
 Residual_Assembler builds R.**
 
@@ -18,10 +27,10 @@ R_e     = ∫_Ωe B^T σ(u, a, q) dΩ - f_e^ext
 
 Your model never leaves your machine.
 
-**Read the Status section before you plan around this.** Today the assembly beats
-are verified for C3D8: you can assemble and verify R from exported Abaqus
-ingredients. The *sensitivity* beat does **not** yet run through the C3D8 assembly
-path — see [Status](#status) for exactly what works and what does not.
+**Read the current [usage report](docs/USAGE_REPORT.md) before planning around
+this.** C3D8 stress-driven assembly, pinned J2 total-history sensitivity and
+bounded neo-Hookean finite-strain sensitivity have separate verified workflows.
+They do not establish arbitrary material or full-sized cantilever support.
 
 ## What you provide (the ingredients)
 

@@ -16,8 +16,10 @@ silently skips work or silently breaks it:
                     case whose two builds disagreed is checking assembly
                     against a disagreement.
 
-Every fixture is loaded through the fingerprint gate, so a stale one fails
-here rather than quietly becoming the baseline.
+These are historical numerical experiments, not current producer acceptance.
+Every archived fixture must be refused by the production default loader before
+it is read explicitly at its recorded generation. Current operational coverage
+lives in the contract fixture regression and uses tests/fixtures/verified.
 """
 from __future__ import annotations
 
@@ -27,9 +29,11 @@ import numpy as np
 import pytest
 
 from residual_core.materials.verified_fixture import (
-    CURRENT_TRANSFORM_FINGERPRINT, load_all)
+    CURRENT_TRANSFORM_FINGERPRINT, FixtureError, load)
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "verified"
+HISTORICAL_FINGERPRINT = "94a92c01814f107a"
+FIXTURES = (Path(__file__).resolve().parents[1] / "fixtures" / "historical"
+            / HISTORICAL_FINGERPRINT)
 
 #: A unit cube, which is the geometry the corpus verification decks are
 #: generated on, so the element being checked is the element the numbers were
@@ -38,13 +42,20 @@ UNIT_CUBE = np.array([[0., 0., 0.], [1., 0., 0.], [1., 1., 0.], [0., 1., 0.],
                       [0., 0., 1.], [1., 0., 1.], [1., 1., 1.], [0., 1., 1.]])
 
 
+def load_historical(path):
+    """Read recorded evidence without counting it as current acceptance."""
+    assert HISTORICAL_FINGERPRINT != CURRENT_TRANSFORM_FINGERPRINT
+    with pytest.raises(FixtureError, match="frozen under transform fingerprint"):
+        load(path)
+    fixture = load(path, fingerprint=HISTORICAL_FINGERPRINT)
+    assert fixture.transform_fingerprint == HISTORICAL_FINGERPRINT
+    return fixture
+
+
 def all_fixtures(require_gates: bool = False) -> list:
-    if not FIXTURES.is_dir() or not any(FIXTURES.glob("*.json")):
-        pytest.skip(
-            f"no verified fixtures in {FIXTURES}; export them from the "
-            f"current store with "
-            f"UMAT_source_transformation/tools/export_residual_fixture.py")
-    loaded = load_all(FIXTURES, fingerprint=CURRENT_TRANSFORM_FINGERPRINT)
+    paths = sorted(FIXTURES.glob("*.json"))
+    assert len(paths) == 10, "all ten historical experiments must remain covered"
+    loaded = [load_historical(path) for path in paths]
     if require_gates:
         loaded = [f for f in loaded if f.all_six_gates]
     return loaded

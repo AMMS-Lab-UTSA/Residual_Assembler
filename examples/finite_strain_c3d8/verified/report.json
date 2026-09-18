@@ -1,0 +1,57 @@
+{
+  "schema": "resasm-finite-strain-verification/1",
+  "elements": 2,
+  "ndof": 36,
+  "law": "mu/2*(I1-3)-mu*log(J)+lambda/2*log(J)^2",
+  "constants": [
+    2.3,
+    4.1
+  ],
+  "residual_reference": "independent reference-volume first-Piola quadrature",
+  "residual_relative_error": 5.703447827527888e-16,
+  "residual_norm": 1.7446429238033396,
+  "free_residual_norm": 1.056171682913856e-15,
+  "solution_relative_error": 8.232181767484323e-17,
+  "nodal_tangent_fd": [
+    {
+      "step": 0.0001,
+      "relative_error": 4.439186672945314e-09
+    },
+    {
+      "step": 1e-05,
+      "relative_error": 4.5520094801878364e-11
+    },
+    {
+      "step": 1e-06,
+      "relative_error": 1.090986510175759e-10
+    }
+  ],
+  "oti_solution_fd": [
+    {
+      "step": 0.001,
+      "relative_error": 9.47772104561191e-07
+    },
+    {
+      "step": 0.0001,
+      "relative_error": 9.477926231003939e-09
+    },
+    {
+      "step": 1e-05,
+      "relative_error": 1.0127558267045161e-10
+    }
+  ],
+  "otilib": {
+    "available": true,
+    "api_module": "pyoti.sparse",
+    "repo": "https://github.com/mauriaristi/otilib.git",
+    "license": "GPLv3",
+    "env": {
+      "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+      "PYOTI_PATH": "/home/ammslab3/otilib/build_py311"
+    },
+    "error": ""
+  },
+  "abaqus": "not run by this offline benchmark",
+  "scope": "total isotropic hyperelasticity; first-order parameter sensitivity at real geometry",
+  "passed": true
+}
