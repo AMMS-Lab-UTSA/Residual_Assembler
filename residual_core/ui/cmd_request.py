@@ -12,7 +12,11 @@ def register(subparsers):
     parser.add_argument("--mapping", help="advanced: generated Mapping.json; default discover beside object")
     parser.add_argument("--abaqus", default="abaqus", help="advanced: licensed Abaqus executable for ODB extraction")
     parser.add_argument("--validate", action="store_true", help="explicit independent ORIGINAL finite-difference validation")
-    parser.set_defaults(func=run)
+    # Models inside the bounded presentation scope keep this module's engine;
+    # anything else (prescribed displacements, many increments, any provider)
+    # goes to the history replay engine. route_request decides and says which.
+    from .cmd_history import route_request
+    parser.set_defaults(func=route_request)
 
 
 def run(args):

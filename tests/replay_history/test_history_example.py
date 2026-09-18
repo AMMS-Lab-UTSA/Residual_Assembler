@@ -140,8 +140,12 @@ def test_routing_keeps_bounded_models_and_sends_the_rest_to_the_history_engine(p
     beam = Namespace(model=BEAM / "Analysis.inp", material=built["object"], mapping=None,
                      request=BEAM / "sensitivity_request.json")
     assert bounded_scope_reason(beam)          # tight *Controls, nonzero BCs, sets, MISES ...
-    for key, value in (("model", "/nonexistent.inp"), ):
-        assert bounded_scope_reason(Namespace(**{**vars(bounded), key: value}))
+    # An input neither engine can read is the bounded engine's to report: it
+    # owns the presentation interface's categorised, private diagnostics, and
+    # test_presentation_request pins what it says. Only a READABLE model that
+    # is out of the bounded scope is forwarded to the history engine.
+    for key, value in (("model", "/nonexistent.inp"), ("material", "/nonexistent.obj")):
+        assert bounded_scope_reason(Namespace(**{**vars(bounded), key: value})) is None
 
 
 def test_cross_check_with_the_bounded_j2_engine(provider_factory, tmp_path):
