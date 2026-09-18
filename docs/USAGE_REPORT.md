@@ -1,16 +1,19 @@
 # Residual Assembler: Current Usage
 
-Audited 2026-09-18 in the recovery working tree on Linux, Python 3.11.7,
-gfortran 9.4.0 and genuine compiled OTILib. **Five examples ran and passed their
-bounded numerical checks. This is not completion of the 274 requirements.**
-No final-branch clean clone was tested. No Abaqus analysis was launched in this
-audit; an existing genuine ODB was read using licensed Abaqus Python.
+Updated 2026-09-18 for `main` (the final integration of the IMQCAM directive),
+Linux, Python 3.11.7, gfortran 9.4.0, genuine compiled OTILib and Abaqus
+2021.HF5. The sections below say what was run and what it measured. The
+clean-install gate result for the published `main` commits is in
+[evidence/final_clean_clone.md](evidence/final_clean_clone.md).
 
 ## What Works Now
 
 Use the direct residual templates for scalar-generic order-two sensitivities;
 the C3D8 stress-driven path for supplied integration-point stresses; the pinned
-J2 replay for first-order total-history material sensitivities; and the bounded
+J2 replay for first-order total-history material sensitivities; the history
+replay engine (`resasm history`, and `resasm request` for any model outside the
+bounded presentation scope) for full-size small-strain C3D8 analyses with any
+UMAT-OTI provider, prescribed displacements and many increments; and the bounded
 neo-Hookean path for finite-strain assembly and first-order parameter sensitivity.
 These are different supported paths, not a generic arbitrary-material FE engine.
 
@@ -29,13 +32,14 @@ is not established. RA requires NumPy; select `gui`, `yaml`, `test` extras for
 these workflows. The companion's `paper` extra supplies plotting for the joint
 reproducer. Do not select RA's historical `bridge` pin for this recovery pair.
 
-With source checkouts available, the following is an installation recipe, not
-a claim that a clean final-branch clone was tested here:
+From two fresh clones:
 
 ```sh
-RA="$HOME/softwarex_work/imq-ra-recovery"
-UMAT="$HOME/softwarex_work/imq-umat-recovery"
-BASE_PYTHON="$HOME/anaconda3/bin/python3.11"
+git clone https://github.com/AMMS-Lab-UTSA/Residual_Assembler.git
+git clone https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git
+RA="$PWD/Residual_Assembler"
+UMAT="$PWD/UMAT_source_transformation"
+BASE_PYTHON=python3.11          # any healthy Python >= 3.10 with venv, ctypes, ssl
 ENV=$(mktemp -d /tmp/resasm-env-XXXXXX)
 "$BASE_PYTHON" -m venv "$ENV"
 "$ENV/bin/python" -m pip install "$RA[gui,yaml,test]" "$UMAT[test,paper]"
@@ -43,27 +47,40 @@ ENV=$(mktemp -d /tmp/resasm-env-XXXXXX)
 "$ENV/bin/resasm" --help
 ```
 
-The previous [working-tree wheel gate](evidence/recovery_install.md) used a new
-venv and scratch HOME, verified installed resources and the artifact-only J2
-workflow. It predates later edits and is **not final-branch clean-clone proof**.
-Examples/templates and some source discovery need the checkout, not just a wheel.
-After setting the shared environment below, the joint wheel gate can be rerun
-with a new external work directory:
+The clean-install gate builds both wheels from the two clean trees, installs
+them in a new venv with a scratch HOME and no inherited Python path, and runs
+the workflows from the installed commands only: the provider build, the
+collaborator request on a genuine ODB with an analytic check, the same request
+with every read of a Fortran source denied, both GUIs up to HTTP readiness, and
+with `--cantilever` the full-size J2 cantilever of slide 39 (collaborator
+command on its Abaqus ODB, then a re-equilibrated replay that must satisfy the
+J2 homogeneity identity at every increment):
 
 ```sh
-"$PY" scripts/clean_install_gate.py --umat-repo "$UMAT" \
-  --python "$BASE_PYTHON" \
-  --odb "$RA/../imq_abaqus/recovery_presentation/imqrp_reference/collaborator/Analysis.odb"
+python "$RA/scripts/clean_install_gate.py" --umat-repo "$UMAT" --branch main \
+  --python "$BASE_PYTHON" --abaqus abaqus \
+  --odb /path/to/presentation/Analysis.odb \
+  --cantilever /path/to/cantilever/work --work /new/directory/outside/both/clones
 ```
+
+The presentation ODB is the Abaqus run of
+`examples/presentation_request/Analysis.inp`; the cantilever directory is what
+[examples/presentation_cantilevers](../examples/presentation_cantilevers/README.md)
+produces (`j2/claude_j2_nominal.inp` and `.odb`). The report records each
+repository's branch, commit and origin head, every command with its exit code
+and log, and the wheel digests; `final_branch_clean_clone` is true only when
+both commits are the named branch's published head. The earlier
+[working-tree gate](evidence/recovery_install.md) is historical.
+Examples/templates and some source discovery need the checkout, not just a wheel.
 
 The shared verification environment already exists. Use these exact selectors
 for the remaining source-tree commands; the globally installed editable console
 scripts can otherwise resolve to the original checkouts:
 
 ```sh
-WORKSPACE="$HOME/softwarex_work"
-RA="$WORKSPACE/imq-ra-recovery"
-UMAT="$WORKSPACE/imq-umat-recovery"
+WORKSPACE="$HOME/softwarex_work"        # where the two clones and the venv live
+RA="$WORKSPACE/Residual_Assembler"
+UMAT="$WORKSPACE/UMAT_source_transformation"
 PY="$WORKSPACE/.venv/bin/python"
 BASE_PYTHON="$HOME/anaconda3/bin/python3.11"
 export PATH="$WORKSPACE/.venv/bin:$PATH"
@@ -88,7 +105,7 @@ and counted as a successful scientific check.
 ## CLI Reference
 
 [Captured help](evidence/usage_help.json) contains the actual stdout/stderr,
-argv, cwd and exit code for the root and **all 17 public subcommands**, plus
+argv, cwd and exit code for the root and the 17 public subcommands that existed when it was captured (`history` came later; its help is in [REPLAY_HISTORY.md](REPLAY_HISTORY.md)), plus
 example/gate scripts and Streamlit. Every listed help invocation exited zero.
 Help proves argument availability, not successful physics for arbitrary inputs.
 `--config FILE` is a global option and goes before the subcommand.
@@ -111,7 +128,8 @@ Help proves argument availability, not successful physics for arbitrary inputs.
 | `doctor MODEL --write-config-template CONFIG` | Diagnostic/template generation |
 | `template --formulation NAME` | Declared contract; alternatively `--material NAME` |
 | `replay RECORD --object OBJ --contract MAPPING --out DIR` | Pinned connected J2 replay; `--solve` creates a synthetic equilibrated record; `--verify` adds independent ORIGINAL FD |
-| `request --model INP --odb ODB --material OBJ --request JSON --out DIR` | Actual ODB collaborator interface below |
+| `request --model INP --odb ODB --material OBJ --request JSON --out DIR` | Actual ODB collaborator interface below; a model outside the bounded presentation scope is handed to `history`, which the report says |
+| `history --model INP (--odb ODB / --fields NPZ) --material OBJ --request JSON --out DIR` | Full-size history replay for any provider with `UMAT_OTI_EVAL_TOTAL`; `--reequilibrate`, `--verify tangent/fd` ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)) |
 
 `--odb` on legacy assemble/requirements/verify is an alias for exported
 `--fields` JSON, **not** direct binary ODB extraction. Use `request` for the
@@ -271,12 +289,15 @@ Reductions: component (one location), unweighted sum/mean, Euclidean L2, signed
 max. Zero-norm L2 and tied maxima fail. Mean is not volume weighted, sum is not
 a volume integral, and L2 is not von Mises. Unknown fields/ids/options fail.
 
-Supported INP/ODB: one homogeneous pinned J2 C3D8/B-bar static NLGEOM=NO step,
-one untransformed instance, virgin state, zero fixed BCs, ramped nodal loads.
-Every frame including frame zero must contain U/RF/CF/S/SDV1 and matching
-mesh/history. No interpolation of missing frames. Pressure, body loads, contact,
-amplitudes, multiple steps/materials/instances, nonzero prescribed displacement,
-initial state, finite strain, generic FCC and full-size cantilevers are refused.
+Bounded engine scope: one homogeneous pinned J2 C3D8/B-bar static NLGEOM=NO
+step, one untransformed instance, virgin state, zero fixed BCs, ramped nodal
+loads. Every frame including frame zero must contain U/RF/CF/S/SDV1 and matching
+mesh/history. No interpolation of missing frames. A readable model outside that
+scope (nonzero prescribed displacements, many increments, `*Controls`, sets,
+von Mises outputs, any other provider, the full-size cantilevers) is handed to
+the history engine below; pressure, body loads, contact, amplitudes, multiple
+steps/materials/instances, initial state and finite strain are refused by both
+and named in `run_report.txt`.
 
 ODB acceptance: scaled free residual <`1e-5`; stress/RF relative tolerance
 `2e-5` with field-scaled absolute floor; state `rtol=2e-5, atol=1e-8`; zero BC
@@ -296,6 +317,47 @@ the exact public file list and the independent check. Reproduce with:
 This copies only the five existing genuine collaborator artifacts into new
 scratch space and calls `consume`, never `prepare`. The external ODB is required
 and is not shipped in the repository. See [exact interface](PRESENTATION_INTERFACE.md).
+
+## Full-Size Models: History Replay
+
+```sh
+resasm request --model claude_j2_nominal.inp --odb claude_j2_nominal.odb \
+  --material umat_m3_j2_oti.obj --request j2_request.json --out j2_results
+resasm history --model claude_j2_nominal.inp --fields j2_results/private/fields.npz \
+  --material umat_m3_j2_oti.obj --request j2_request.json --out j2_polished --reequilibrate
+```
+
+The same four inputs as above; the first command routes the cantilever to the
+history engine (the report names the reason), the second reuses its ODB export
+and Newton-polishes every recorded increment to double-precision equilibrium
+first. Requests add `MISES`, volume-weighted `volume_mean`, element sets,
+`weighted_shares` and `full_field` to the keys above; any provider parameter
+names and any SDV component are accepted. The mathematics, tolerances and
+supported deck subset are in [REPLAY_HISTORY.md](REPLAY_HISTORY.md); the decks,
+Abaqus scripts and requests of both presentation cantilevers are in
+[examples/presentation_cantilevers](../examples/presentation_cantilevers/README.md).
+
+Measured on 2026-09-18 (evidence: [claude_C.md](evidence/claude_C.md)):
+
+| | J2, slide 39 | FCC, slide 15 |
+| --- | --- | --- |
+| mesh, DOF, integration points, increments, parameters | 1,536 C3D8, 7,497, 12,288, 40, 4 | 384 C3D8, 2,025, 3,072, 25, 10 |
+| engine time, recorded state / re-equilibrated | 9.9 s / 25.2 s | 18.8 s / 71.5 s |
+| OTI vs whole-model FD of the ORIGINAL UMAT (worst, resolved increments) | E 6.6e-8, nu 5.8e-8, SIGY0 7.9e-9, H 5.4e-6 | all 10 parameters <= 6.7e-7 |
+| homogeneity identity, re-equilibrated (every increment) | 1.0e-12 | 1.2e-13 |
+
+The homogeneity identity: J2 with linear hardening is homogeneous of degree
+one in (E, SIGY0, H) at fixed nu, the FCC crystal in (C11, C12, C44, g0, gsat,
+h0); under prescribed displacements sum p dQ/dp therefore equals Q for
+reactions, stresses and von Mises and 0 for displacements and plastic strain,
+at every increment. The engine does not use it, so it is an independent check;
+`tests/replay_history/test_history_example.py` applies it to the committed
+Abaqus beam (9.4e-15) and the clean-install gate to the J2 cantilever.
+Where the whole-model FD has no step-size plateau (points on the yield surface
+between the +h and -h runs) the FD, not the OTI result, is unresolved; the
+evidence lists those increments. The slide-33 shares are reported as measured:
+the elastic E share is 98.2 % (slide ~96 %), and the SIGY0 71 % / E 24 % pair
+occurs at step 16, not at yield onset (step 7).
 
 ## GUI And Report Interpretation
 
