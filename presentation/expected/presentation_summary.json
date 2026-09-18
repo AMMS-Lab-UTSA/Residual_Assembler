@@ -304,17 +304,14 @@
       },
       "measured": {
         "cases": 19,
-        "compared": 17,
-        "overall_pass": 15,
-        "ddsdde_exact": 10,
+        "compared": 19,
+        "overall_pass": 17,
+        "ddsdde_exact": 12,
         "ddsdde_differs": 7,
-        "slide_cases_compared": 16,
-        "slide_cases_pass": 15,
-        "slide_cases_exact": 10,
-        "not_compared": [
-          "UMAT_HIN",
-          "UMAT_PCO"
-        ],
+        "slide_cases_compared": 18,
+        "slide_cases_pass": 17,
+        "slide_cases_exact": 12,
+        "not_compared": [],
         "failing": [
           "UMAT_NKH_1.02",
           "UMAT_VPDCL_R"
@@ -326,20 +323,10 @@
           "exact": 12,
           "differs_within_tolerance": 6,
           "rows_from_variants": [
-            "UMAT_HIN",
-            "UMAT_NKH_1.02",
-            "UMAT_PCO"
+            "UMAT_NKH_1.02"
           ]
         },
         "variants": {
-          "UMAT_HIN": {
-            "status": "compared",
-            "classification": "exact",
-            "ddsdde_max_abs": 0.0,
-            "ddsdde_max_rel": 0.0,
-            "overall_pass": true,
-            "why": "the contract promotes ONE, TWO, ZERO, which the source initialises by DATA (KFORMC, KDLT2) and the current transformer refuses DATA-initialised promoted variables; they are the numeric constants 1, 2, 0 and carry no derivative, so the variant lists them as constants instead"
-          },
           "UMAT_NKH_1.02": {
             "status": "compared",
             "classification": "differs",
@@ -347,14 +334,6 @@
             "ddsdde_max_rel": 0.0007475703019135795,
             "overall_pass": true,
             "why": "with the probe's PROPS(1)=1.0 the source takes THTA=PROPS(1) and never sets DTHTA, then reads it for the thermal strain (line 111; a -finit-real=snan build traps there), so each build computes with whatever memory holds; the variant sets PROPS(1)=0, which takes THTA=TEMP and DTHTA=DTEMP from Abaqus, and gives every node the initial temperature 1.0, the value PROPS(1) held, so the material is the probe's with DTHTA = 0 defined"
-          },
-          "UMAT_PCO": {
-            "status": "compared",
-            "classification": "exact",
-            "ddsdde_max_abs": 0.0,
-            "ddsdde_max_rel": 0.0,
-            "overall_pass": true,
-            "why": "UMAT_PCO.for calls helpers it does not define (KCLEAR, KMMULT, ...); the variant transforms the source's resolved routine closure (umat_oti.transform.dependency_resolution, entry file first so the contract's line anchors hold)"
           },
           "UMAT_VPDCL_R": {
             "status": "compared",
@@ -390,11 +369,11 @@
           ]
         },
         "UMAT_HIN": {
-          "status": "transform_failed",
-          "classification": "not compared",
-          "ddsdde_max_abs": null,
-          "ddsdde_max_rel": null,
-          "pass": null,
+          "status": "compared",
+          "classification": "exact",
+          "ddsdde_max_abs": 0.0,
+          "ddsdde_max_rel": 0.0,
+          "pass": true,
           "slide": [
             "0 / 0",
             "Exact"
@@ -456,11 +435,11 @@
           ]
         },
         "UMAT_PCO": {
-          "status": "transform_failed",
-          "classification": "not compared",
-          "ddsdde_max_abs": null,
-          "ddsdde_max_rel": null,
-          "pass": null,
+          "status": "compared",
+          "classification": "exact",
+          "ddsdde_max_abs": 0.0,
+          "ddsdde_max_rel": 0.0,
+          "pass": true,
           "slide": [
             "0 / 0",
             "Exact"
@@ -573,17 +552,6 @@
             "Exact"
           ]
         },
-        "UMAT_HIN__variant": {
-          "status": "compared",
-          "classification": "exact",
-          "ddsdde_max_abs": 0.0,
-          "ddsdde_max_rel": 0.0,
-          "pass": true,
-          "slide": [
-            "0 / 0",
-            "Exact"
-          ]
-        },
         "UMAT_NKH_1.02__variant": {
           "status": "compared",
           "classification": "differs",
@@ -593,17 +561,6 @@
           "slide": [
             "0.72 / 2.1e-3",
             "Notching of derivative terms"
-          ]
-        },
-        "UMAT_PCO__variant": {
-          "status": "compared",
-          "classification": "exact",
-          "ddsdde_max_abs": 0.0,
-          "ddsdde_max_rel": 0.0,
-          "pass": true,
-          "slide": [
-            "0 / 0",
-            "Exact"
           ]
         },
         "UMAT_VPDCL_R__variant": {
@@ -647,7 +604,7 @@
             "GDIA": "-",
             "ANP1P": "-",
             "BNP1P": "-",
-            "CEVPI": "Exact (variant)"
+            "CEVPI": "Exact"
           },
           "UMAT_NKH_1.02": {
             "FJAC": "Pass",
@@ -726,7 +683,7 @@
     }
   },
   "provenance": {
-    "timestamp_utc": "2026-09-18T17:55:19+00:00",
+    "timestamp_utc": "2026-09-18T21:19:38+00:00",
     "host": "ammslab3-Precision-5820-Tower",
     "cpu": "Intel(R) Xeon(R) W-2265 CPU @ 3.50GHz",
     "python": "3.11.7",
@@ -737,15 +694,15 @@
     "repositories": {
       "residual_assembler": {
         "path": "/home/ammslab3/softwarex_work/claude-ra-P",
-        "commit": "d6c75e25563b86294aceff9e3a440d6c1de81c46",
+        "commit": "36b62fd807919631738705ff9ccc629816d3b75d",
         "branch": "claude/P-2026-09-18",
-        "dirty_files": 5
+        "dirty_files": 0
       },
       "umat_source_transformation": {
         "path": "/home/ammslab3/softwarex_work/claude-umat-P",
-        "commit": "884d39ebf86367a7a1d5596d937b7d42cdf95d88",
+        "commit": "0b075b4dd35423e11e1a95a82a48a748582e64aa",
         "branch": "claude/P-2026-09-18",
-        "dirty_files": 1
+        "dirty_files": 0
       }
     },
     "imports": {

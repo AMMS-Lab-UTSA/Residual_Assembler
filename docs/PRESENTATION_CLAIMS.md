@@ -41,7 +41,7 @@ compiler), Abaqus 2021 with ifort (claims 3 and 4 with `--abaqus`), and, for cla
 | 13 | 18/20 models, 76 parameter directions, DSIGMA_DP and dσ_vM/dp within 1.6e-7 of FD, both < 1e-5 | `presentation/claim1_sensitivity_sweep.py` | centred FD of the ORIGINAL UMAT re-marched over the whole path (step ladder, plateau) | **20/20 models, 84 directions**, worst 1.56e-7 (m6_fcc DSIGMA_DP; inside its FD plateau uncertainty 3.2e-7); strict max-over-path metric also < 1e-5 for all 20 | reproduced, differs (more models pass than the slide shows) |
 | 26–27 | OTI vs hand-coded flow-rule Jacobian: max rel. error ~1e-15; FD error ~1e7× larger; FD ~9× slower | `presentation/claim2_flowrule_jacobian.py` | the hand-coded analytical derivatives; centred/forward FD of the analytical routine | OTI vs analytical **7.1e-15**; FD/OTI error ratio **4.5e5** (centred, best step) … **2.9e6** (centred, plateau step) … **1.7e8** (forward, best step); FD time **6.0×** OTI (ifort -O2, known step), **41.9×** with the step search | first statement reproduced; FD ratios depend on the unrecorded FD protocol: reproduced, differs |
 | 28–32 | single C3D8 shear, six σ_vM sensitivities in one OTI run; regimes; OTI vs analytic chain rule NRMSE < 1e-8; same on a larger mesh; plain vs HYPAD vs FD cost | `presentation/claim3_cp_residual_c3d8.py [--abaqus]` | hand-derived chain rule (implicit-function theorem) of the same update; centred FD of the ORIGINAL with the C3D8 re-solved; Abaqus | NRMSE **2.9e-16**; 4×4×4 vs 1 element **1.0e-14**; Abaqus σ_vM path vs this solver **1.1e-15**, FD of Abaqus vs OTI **≤ 6.2e-11**; HYPAD **9.2–10.0×** a plain UMAT pass (compiled kernel; 2.5× in the whole Python analysis) vs **13×** for central FD; regime statements: 3 of 5 hold, "H small" and "τ0, ΔG, q dominate" do not | reproduced for the surrogate model m5_cpflow; the slide's own 12-slip model is not in the repositories |
-| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `presentation/claim4_benchmark_ddsdde.py --abaqus --variants` | the original UMAT's own DDSDDE in a paired Abaqus run (claudeP_ jobs) | committed contracts: 16 of 18 run, **15 pass** (10 exact, 5 within tolerance), NKH fails (uninitialised DTHTA in the source), HIN and PCO refused by the transformer; with three documented input corrections **18/18 verified, 12 exact, 6 within tolerance**; absolute differences 0.7234 (NKH), 0.2370 (VPDCL), 0.3716 (VPDCO), 0.03125, 0.015625 as on the slide; spin_elas_def 868.3 (slide 740) | reproduced with documented variants; two transformer defects fixed on the way |
+| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `presentation/claim4_benchmark_ddsdde.py --abaqus --variants` | the original UMAT's own DDSDDE in a paired Abaqus run (claudeP_ jobs) | committed contracts: **18 of 18 run, 17 pass (12 exact, 5 within tolerance)**; NKH fails because its source reads DTHTA unset; with NKH's labelled variant row (PROPS(1) = 0 and an initial temperature) **18/18 verified, 12 exact, 6 within tolerance**; absolute differences 0.7234 (NKH), 0.2370 (VPDCL), 0.3716 (VPDCO), 0.03125, 0.015625 as on the slide; spin_elas_def 868.3 (slide 740) | reproduced (NKH through a labelled source-defect variant); four transformer/contract gaps fixed on the way |
 | 25 | 19 internal Jacobian entries, 14 exact, 5 within 1e-5 | `presentation/claim5_constitutive_jacobians.py` | centred FD of the ORIGINAL at the converged local solve; the hand-coded value | all **21** (UMAT, symbol) pairs present in the sources measured; OTI agrees with FD in every one (≤ 2e-9); hand-coded vs OTI: **5 exact, 10 within 1e-5 (8 of them ≤ 1e-12), 6 differ** — NKH ANP1P/BNP1P 1.9e-4, VPDCO and VPDCL_R FJAC 2.6e-3 and GDIA 6.7e-5, the hand-coded value being the wrong one (FD) | reproduced, differs (hand-coded Jacobians of NKH, VPDCO, VPDCL_R are wrong where the slide says Exact/Pass) |
 
 The other slides are listed in [All slides](#all-slides).
@@ -248,16 +248,36 @@ largest entry of the increment's matrices (the slide's relative column used the
 older entry-wise definition, which is why the absolute values agree and the
 relative ones do not).
 
-Three rows need a documented input correction (`--variants`, reported as separate
-rows, the committed-contract row is always shown too):
+Two rows that failed on the current code were product gaps and are fixed in the
+UMAT repository, so they run from their committed contracts:
 
-* UMAT_HIN: the contract promotes ONE, TWO, ZERO, which the source initialises by
-  DATA; the current transformer refuses DATA-initialised promoted variables. The
-  variant lists these numeric constants (1, 2, 0) as constants.
-* UMAT_PCO: `UMAT_PCO.for` calls helpers it does not define (KCLEAR, KMMULT, …);
-  the transformer refuses the single file. The variant transforms its resolved
-  routine closure (`umat_oti.transform.dependency_resolution`, entry file first,
-  so the contract's line anchors are unchanged).
+* UMAT_HIN: the contract promotes ONE, TWO, ZERO, which the source's helpers set
+  by DATA and never assign; the transformer refused DATA-initialised promoted
+  names. A DATA-initialised name that nothing assigns is now kept real (it is a
+  compile-time constant nothing seeded can reach); an assigned one is still
+  refused (`src/umat_oti/transform/source_transform.py`, test
+  `tests/test_a_data_constant_in_the_promote_list_stays_real.py`).
+* UMAT_PCO: `UMAT_PCO.for` calls KCLEAR, KMMULT, KSMULT, KMTRAN, KMAVEC, KUPDVEC,
+  KCLEARV and KMATSUB and defines none of them. The committed contract
+  `benchmarks/UMAT_PCO.json` now declares `"dependency_roots": ["../UMATs/UMATs/ICP"]`;
+  the transformation service resolves the routine closure (here from the sibling
+  `UMAT_ECL_TEMP.for`), writes it entry file first so every line anchor holds,
+  transforms it and records the closure; the paired validation compiles the
+  original from the same resolved file (`src/umat_oti/services/transformation.py`,
+  one line in `tools/run_completed_json_batch.py`, test
+  `tests/test_a_contract_resolves_its_helper_closure.py`). The helper sources are
+  in the repository: `UMATs/UMATs/ICP/*.for` are, after line-ending
+  normalisation, byte-identical to `UMATS/*.for` of
+  `https://github.com/jgomezc1/ABAQUS-US` (Juan Gómez, Universidad EAFIT; MIT
+  licence, "Copyright (c) 2015 Juan Gomez"), which the upstream itself pairs with
+  its UEL files (`UELS/UEL8_PCOR.for` carries the same helpers). MIT permits
+  inclusion provided the copyright and permission notice are kept; note that
+  `THIRD_PARTY_NOTICES.md` currently describes these files as the authors' own
+  under GPL-3.0-only, which does not match their MIT upstream (left for the
+  lead: licence text is not this lane's to change).
+
+One row stays a labelled variant, because the defect is in the source:
+
 * UMAT_NKH_1.02: with the probe's PROPS(1) = 1 the source takes THTA = PROPS(1)
   and never sets DTHTA, then uses it in the thermal strain (line 111; a
   `-finit-real=snan` build traps there), so each build computes with whatever
@@ -266,22 +286,25 @@ rows, the committed-contract row is always shown too):
   node the initial temperature 1.0, i.e. the probe's material with DTHTA = 0
   defined.
 
-Two transformer defects, found by this run and fixed in the UMAT repository (see
-the end of this file), made UMAT_PCL, PCLI, PCLI_R and PCLK fail to compile in
-Abaqus and UMAT_VPDCL/NKH return a wrong stress; before the fix the same run gave
-10 passes out of 16 compared slide cases (`imq_abaqus/claude_P/claim4_before_transformer_fix.json`).
+Four transformer or contract defects were found by this run and fixed in the
+UMAT repository (see the end of this file): lost statement labels (PCL, PCLI,
+PCLI_R, PCLK did not compile in Abaqus), skipped predictor-stiffness inputs
+(VPDCL, NKH wrong stress), DATA constants listed under promote (HIN refused) and
+the missing helper closure (PCO refused). Before the first two fixes the same run
+gave 10 passes of 16 compared slide cases
+(`imq_abaqus/claude_P/claim4_before_transformer_fix.json`).
 
-| UMAT | Committed contract: DDSDDE max abs / rel, verdict | Documented variant | Slide (abs / rel, explanation) |
+| UMAT | Committed contract: DDSDDE max abs / rel, verdict | Labelled variant (source defect) | Slide (abs / rel, explanation) |
 |---|---|---|---|
 | UMAT_ECL_TEMP | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_ECO | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_HIN | transform refused (DATA-initialised promoted constants) | 0 / 0 pass | 0 / 0, Exact |
+| UMAT_HIN | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_NKH_1.02 | 2657 / 8.9e-01 FAIL (uninitialised DTHTA) | **0.7234** / 7.5e-04 pass | 0.72 / 2.1e-3, notching |
 | UMAT_PCL | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_PCLI | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_PCLI_R | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_PCLK | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_PCO | transform refused (helpers not defined in the file) | 0 / 0 pass | 0 / 0, Exact |
+| UMAT_PCO | 0 / 0 pass (resolved helper closure) | – | 0 / 0, Exact |
 | UMAT_VPDCL | **0.2370** / 2.5e-04 pass | – | 0.24 / 1.2e-3, notching |
 | UMAT_VPDCO | **0.3716** / 3.6e-04 pass | – | 0.37 / 1.1e-3, notching |
 | code_exp | **0.03125** / 1.1e-07 pass | – | 0.031 / 1.6e-7, rounding |
@@ -293,13 +316,12 @@ Abaqus and UMAT_VPDCL/NKH return a wrong stress; before the fix the same run gav
 | visco_imp | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_VPDCL_R (not on the slide) | both jobs fail (3-D deck; source in bounds only for NTENS = 4) | 0.3673 / 3.2e-04 pass (plane-strain deck) | – |
 
-**Measured vs slide.** Committed contracts: 16 of the 18 slide cases run, 15 pass
-(10 exact, 5 differ within tolerance), NKH fails on its uninitialised DTHTA, HIN
-and PCO are refused by the transformer. With the three documented variants:
-**18/18 compared and verified, 12 exact, 6 differing within tolerance** — the
-slide's counts; the absolute differences of NKH, VPDCL, VPDCO, code_exp and
-code_imp are the slide's to the digits it shows. spin_elas_def differs by 868.3
-(slide 740): its stress is integrated from DFGRD0/DFGRD1 with a spin correction,
+**Measured vs slide.** Committed contracts: all 18 slide cases run, **17 pass
+(12 exact, 5 differ within tolerance)**; NKH fails on its uninitialised DTHTA.
+With NKH's labelled variant row: **18/18 compared and verified, 12 exact, 6
+differing within tolerance** — the slide's counts; the absolute differences of
+NKH, VPDCL, VPDCO, code_exp and code_imp are the slide's to the digits it shows.
+spin_elas_def differs by 868.3 (slide 740): its stress is integrated from DFGRD0/DFGRD1 with a spin correction,
 so the OTI tangent carries stress-dependent terms (0.1–0.3 % of the diagonal) that
 the hand-coded elastic DDSDDE omits; the shear diagonal differs by 2.6e-4
 relative, **not by a factor of two** (the slide's "stray factor of two in a shear
@@ -337,7 +359,7 @@ differences of OTI and of the hand-coded value against FD, then the slide's cell
 
 | UMAT | FJAC | DETDG | GDIA | ANP1P | BNP1P | CEVPI |
 |---|---|---|---|---|---|---|
-| HIN | – | – | – | – | – | Exact (claim 4 DDSDDE, contract variant); slide Exact |
+| HIN | – | – | – | – | – | Exact (claim 4 DDSDDE, committed contract); slide Exact |
 | NKH_1.02 | Pass 7e-14 (FD: OTI 6e-14, hand 1e-13); slide Pass | Exact (FD 4e-14); slide Exact | – | **Differs 1.9e-4** (FD: OTI 4e-11, hand 1.9e-4); slide Exact | **Differs 1.9e-4** (FD: OTI 7e-11, hand 1.9e-4); slide Exact | – |
 | PCL | Pass 3.5e-16 (FD 4e-13 both); slide Exact | – | – | – | – | – |
 | PCLI | Pass 2.2e-13 (FD 2e-9 both); slide Exact | – | Pass 1.5e-16 (FD 2e-11 both); slide Exact | – | – | – |
@@ -387,10 +409,19 @@ supported (OTI = FD everywhere).
 
 ## Changes to existing files
 
-See `docs/evidence/claude_P.md`. In the UMAT repository two transformer defects
-found by claim 4 were fixed (`src/umat_oti/transform/source_transform.py`: labelled
-statements lost their label; `src/umat_oti/fortran/regions.py`: inputs of a DDSDDE
-used as the predictor stiffness were skipped), with regression tests
-`tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py`. This moves
-the transform fingerprint, so `tests/test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
+See `docs/evidence/claude_P.md`. In the UMAT repository four defects found by
+claim 4 were fixed, each with a regression test that fails without the fix:
+
+| Commit | File | Defect |
+|---|---|---|
+| `884d39e` | `src/umat_oti/transform/source_transform.py` | labelled statements lost their label (PCL, PCLI, PCLI_R, PCLK did not compile) |
+| `884d39e` | `src/umat_oti/fortran/regions.py` | inputs of a DDSDDE used as the predictor stiffness were skipped (VPDCL, NKH wrong stress) |
+| `1cd2e58` | `src/umat_oti/transform/source_transform.py` | a DATA constant listed under promote refused the file (HIN) |
+| `0b075b4` | `src/umat_oti/services/transformation.py`, `benchmarks/UMAT_PCO.json`, `tools/run_completed_json_batch.py` | a contract could not name the published helper sources its UMAT calls (PCO) |
+
+Tests: `tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py`,
+`tests/test_a_data_constant_in_the_promote_list_stays_real.py`,
+`tests/test_a_contract_resolves_its_helper_closure.py`. The transformer edits move
+the transform fingerprint, so
+`tests/test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
 fails until the lead re-freezes `transform_generation.json` (reserved to the lead).
