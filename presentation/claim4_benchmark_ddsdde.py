@@ -85,10 +85,13 @@ VARIANTS = {
     },
     "UMAT_NKH_1.02": {
         "props": {1: 0.0},
+        "initial_temperature": 1.0,
         "why": ("with the probe's PROPS(1)=1.0 the source takes THTA=PROPS(1) and never sets DTHTA, "
                 "then reads it for the thermal strain (line 111; a -finit-real=snan build traps "
                 "there), so each build computes with whatever memory holds; the variant sets "
-                "PROPS(1)=0, which takes the temperature and its increment from Abaqus"),
+                "PROPS(1)=0, which takes THTA=TEMP and DTHTA=DTEMP from Abaqus, and gives every node "
+                "the initial temperature 1.0, the value PROPS(1) held, so the material is the "
+                "probe's with DTHTA = 0 defined"),
     },
     "UMAT_VPDCL_R": {
         "ntens": 4,
@@ -141,7 +144,23 @@ def probe_props(source_path: Path, ntens: int, overrides: Dict[int, float]) -> L
     return values
 
 
-def prepare(config_path: Path, work: Path, props_override: Dict[int, float] | None = None) -> Dict[str, object]:
+def add_initial_temperature(deck: Path, value: float) -> None:
+    """Insert *INITIAL CONDITIONS, TYPE=TEMPERATURE for every node before *STEP."""
+    lines = deck.read_text().splitlines()
+    nodes, in_nodes = [], False
+    for line in lines:
+        if line.strip().upper().startswith("*"):
+            in_nodes = line.strip().upper().startswith("*NODE") and "OUTPUT" not in line.upper()
+            continue
+        if in_nodes and line.strip():
+            nodes.append(line.split(",")[0].strip())
+    step = next(i for i, line in enumerate(lines) if line.strip().upper().startswith("*STEP"))
+    block = ["*Initial Conditions, type=TEMPERATURE"] + [f"{n}, {value!r}" for n in nodes]
+    deck.write_text("\n".join(lines[:step] + block + lines[step:]) + "\n")
+
+
+def prepare(config_path: Path, work: Path, props_override: Dict[int, float] | None = None,
+            initial_temperature: float | None = None) -> Dict[str, object]:
     """Transform one benchmark contract and build its paired validation workspace."""
     from umat_oti.cli_json import run_config_transform
     from umat_oti.core.config_loader import load_project_config_json
@@ -188,6 +207,10 @@ def prepare(config_path: Path, work: Path, props_override: Dict[int, float] | No
         comparison_ddsdde_abs_tolerance=batch._validation_float(config, "ddsdde_absolute_tolerance"),
         comparison_ddsdde_rel_tolerance=batch._validation_float(config, "ddsdde_relative_tolerance"),
     )
+    if initial_temperature is not None:
+        for deck in ("original_umat_validation.inp", "otis_umat_validation.inp"):
+            add_initial_temperature(validation_dir / deck, initial_temperature)
+        record["initial_temperature"] = initial_temperature
     record["validation_dir"] = str(validation_dir)
     record["material_test_mode"] = batch._material_test_mode(config)
     record["status"] = "prepared"
@@ -272,10 +295,59 @@ def classify(row: Dict[str, object]) -> str:
     return "exact" if float(rel) == 0.0 else "differs"
 
 
+def summarise(rows: List[Dict[str, object]]) -> Dict[str, object]:
+    variant_rows = [r for r in rows if r.get("variant")]
+    rows_main = [r for r in rows if not r.get("variant")]
+    compared = [r for r in rows_main if r.get("compared")]
+    on_slide = [r for r in compared if r["case"] in SLIDE]
+    # the slide's 18 cases, each from its committed contract where that runs and
+    # passes, otherwise from its documented variant (listed)
+    best, from_variants = [], []
+    for case in SLIDE:
+        main = next((r for r in rows_main if r["case"] == case), None)
+        variant = next((r for r in variant_rows if r["case"] == case and r.get("compared")), None)
+        if main and main.get("compared") and main["compared"]["overall_pass"]:
+            best.append(main)
+        elif variant:
+            best.append(variant)
+            from_variants.append(case)
+        elif main:
+            best.append(main)
+    best_compared = [r for r in best if r.get("compared")]
+    return {
+        "cases": len(rows_main), "compared": len(compared),
+        "overall_pass": sum(1 for r in compared if r["compared"]["overall_pass"]),
+        "ddsdde_exact": sum(1 for r in compared if r["classification"] == "exact"),
+        "ddsdde_differs": sum(1 for r in compared if r["classification"] == "differs"),
+        "slide_cases_compared": len(on_slide),
+        "slide_cases_pass": sum(1 for r in on_slide if r["compared"]["overall_pass"]),
+        "slide_cases_exact": sum(1 for r in on_slide if r["classification"] == "exact"),
+        "not_compared": [r["case"] for r in rows_main if not r.get("compared")],
+        "failing": [r["case"] for r in compared if not r["compared"]["overall_pass"]],
+        "slide_cases_with_documented_variants": {
+            "cases": len(best), "compared": len(best_compared),
+            "pass": sum(1 for r in best_compared if r["compared"]["overall_pass"]),
+            "exact": sum(1 for r in best_compared if r["classification"] == "exact"
+                         and r["compared"]["overall_pass"]),
+            "differs_within_tolerance": sum(1 for r in best_compared if r["classification"] == "differs"
+                                            and r["compared"]["overall_pass"]),
+            "rows_from_variants": from_variants},
+        "variants": {r["case"]: {"status": r["status"], "classification": r["classification"],
+                                 "ddsdde_max_abs": (r.get("compared") or {}).get("ddsdde_max_abs"),
+                                 "ddsdde_max_rel": (r.get("compared") or {}).get("ddsdde_max_rel"),
+                                 "overall_pass": (r.get("compared") or {}).get("overall_pass"),
+                                 "why": r.get("variant")}
+                     for r in variant_rows},
+        "slide": {"verified": "18/18", "exact": 12, "differ": 6},
+    }
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--case", action="append", dest="cases")
     parser.add_argument("--abaqus", action="store_true", help="run the Abaqus jobs (one at a time)")
+    parser.add_argument("--merge", action="store_true",
+                        help="replace only the rows run now in an existing claim4_benchmark_ddsdde.json")
     parser.add_argument("--variants", action="store_true",
                         help="also run the documented input corrections (separate rows)")
     parser.add_argument("--out", type=Path, default=default_out())
@@ -296,7 +368,8 @@ def main(argv=None) -> int:
         try:
             source_config = variant_config(config, work) if variant else config
             row = prepare(source_config, work,
-                          VARIANTS[config.stem].get("props") if variant else None)
+                          VARIANTS[config.stem].get("props") if variant else None,
+                          VARIANTS[config.stem].get("initial_temperature") if variant else None)
         except Exception as exc:  # noqa: BLE001 - recorded, never skipped
             row = {"case": config.stem, "status": "error", "error": f"{type(exc).__name__}: {exc}"[:500],
                    "transform_success": False, "blockers": []}
@@ -316,32 +389,19 @@ def main(argv=None) -> int:
               f"{format_e(c.get('ddsdde_max_rel'), 2)}  pass={c.get('overall_pass')}  slide {row['slide']}",
               flush=True)
         rows.append(row)
-    variant_rows = [r for r in rows if r.get("variant")]
-    rows_main = [r for r in rows if not r.get("variant")]
-    compared = [r for r in rows_main if r.get("compared")]
-    on_slide = [r for r in compared if r["case"] in SLIDE]
-    summary = {
-        "cases": len(rows_main), "compared": len(compared),
-        "overall_pass": sum(1 for r in compared if r["compared"]["overall_pass"]),
-        "ddsdde_exact": sum(1 for r in compared if r["classification"] == "exact"),
-        "ddsdde_differs": sum(1 for r in compared if r["classification"] == "differs"),
-        "slide_cases_compared": len(on_slide),
-        "slide_cases_pass": sum(1 for r in on_slide if r["compared"]["overall_pass"]),
-        "slide_cases_exact": sum(1 for r in on_slide if r["classification"] == "exact"),
-        "not_compared": [r["case"] for r in rows_main if not r.get("compared")],
-        "variants": {r["case"]: {"status": r["status"], "classification": r["classification"],
-                                 "ddsdde_max_abs": (r.get("compared") or {}).get("ddsdde_max_abs"),
-                                 "ddsdde_max_rel": (r.get("compared") or {}).get("ddsdde_max_rel"),
-                                 "overall_pass": (r.get("compared") or {}).get("overall_pass")}
-                     for r in variant_rows},
-        "slide": {"verified": "18/18", "exact": 12, "differ": 6},
-    }
+    out = args.out.resolve()
+    target = out / "claim4_benchmark_ddsdde.json"
+    if args.merge and target.is_file():
+        fresh = {(r["case"], bool(r.get("variant"))) for r in rows}
+        previous = [r for r in json.loads(target.read_text())["rows"]
+                    if (r["case"], bool(r.get("variant"))) not in fresh]
+        rows = sorted(previous + rows, key=lambda r: (bool(r.get("variant")), r["case"]))
+    summary = summarise(rows)
     payload = {"claim": "slide 8", "summary": summary, "rows": rows,
                "procedure": "run_config_transform + build_validation_workspace (DDSDDE forced) + "
                             "paired Abaqus jobs + extract_results + compare_validation_results",
                "provenance": provenance(), "imports": origins}
-    out = args.out.resolve()
-    write_json(out / "claim4_benchmark_ddsdde.json", payload)
+    write_json(target, payload)
     print(json.dumps(summary, indent=1))
     print(f"wrote {out / 'claim4_benchmark_ddsdde.json'}")
     return 0

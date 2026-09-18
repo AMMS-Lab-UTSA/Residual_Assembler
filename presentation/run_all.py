@@ -108,6 +108,8 @@ def main(argv=None) -> int:
     parser.add_argument("--abaqus", action="store_true")
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--only", action="append", choices=["1", "2", "3", "4", "5"])
+    parser.add_argument("--summary-only", action="store_true",
+                        help="only rebuild presentation_summary.json from the results already in --out")
     parser.add_argument("--out", type=Path, default=default_out())
     parser.add_argument("--work", type=Path, default=default_work())
     args = parser.parse_args(argv)
@@ -130,7 +132,7 @@ def main(argv=None) -> int:
         "5": (claim5_constitutive_jacobians.main, common + ["--work", str(work / "claim5")]),
     }
     status = {}
-    for key in (args.only or ["1", "2", "3", "4", "5"]):
+    for key in ([] if args.summary_only else (args.only or ["1", "2", "3", "4", "5"])):
         function, arguments = plan[key]
         started = time.perf_counter()
         print(f"\n===== claim {key}: {' '.join(arguments)}", flush=True)
