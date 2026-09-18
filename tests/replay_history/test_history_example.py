@@ -104,6 +104,62 @@ def test_elastic_increments_obey_the_scaling_laws(replayed):
             assert row["derivatives"]["SIGY0"] == 0.0 and row["derivatives"]["H"] == 0.0
 
 
+def test_every_increment_obeys_the_homogeneity_identity(provider_factory, tmp_path):
+    """Euler's theorem for the J2 model, elastic AND plastic increments.
+
+    With linear isotropic hardening the J2 stress update is homogeneous of
+    degree one in (E, SIGY0, H) at fixed nu: scaling the three by lambda scales
+    every stress for the same strain history, and the yield test f = q -
+    (SIGY0 + H*eqplas) scales with it, so no branch changes. Under prescribed
+    displacements the equilibrium displacements therefore do not change at
+    all, and stresses and reactions scale by lambda. Differentiating at
+    lambda = 1 gives, at EVERY increment,
+
+        E dQ/dE + SIGY0 dQ/dSIGY0 + H dQ/dH = Q    (Q = RF, S, MISES)
+        E dQ/dE + SIGY0 dQ/dSIGY0 + H dQ/dH = 0    (Q = U, eqplas)
+
+    an exact identity the sensitivities must satisfy whatever the history, and
+    one that no part of the engine uses. Re-equilibrated to double precision
+    (free residual <= 1e-10 of its scale, pinned above), the identity holds to
+    roundoff: measured 9.4e-15 of the largest term on 2026-09-18. The bound
+    1e-11 leaves three orders for platform differences and still catches a
+    single derivative wrong by 1e-6 (that alone leaves a residual of about
+    1e-9 here). The recorded-state replay satisfies it only to the size of the
+    ODB's single-precision residual (8e-6 measured), which is why this runs
+    with --reequilibrate.
+    """
+    obj, _, _ = provider_factory("m3_j2")
+    request = tmp_path / "request.json"
+    request.write_text(json.dumps({
+        "outputs": [
+            {"name": "tip_RF2", "field": "RF", "component": 2, "reduction": "sum", "domain": {"nset": "TIP"}},
+            {"name": "midtop_U2", "field": "U", "component": 2, "reduction": "component", "domain": {"nodes": [59]}},
+            {"name": "e1_ip1_S11", "field": "S", "component": 1, "reduction": "component",
+             "domain": {"elements": [1], "points": [1]}},
+            {"name": "mises_mean", "field": "MISES", "component": 1, "reduction": "volume_mean",
+             "domain": {"elements": "ALL"}},
+            {"name": "mises_root_max", "field": "MISES", "component": 1, "reduction": "max",
+             "domain": {"elset": "ROOTEL"}},
+            {"name": "eqplas_max", "field": "SDV", "component": 1, "reduction": "max", "domain": {"elements": "ALL"}}],
+        "parameters": "ALL", "domain": {"nodes": "ALL", "elements": "ALL"}, "increments": "ALL"}))
+    out = tmp_path / "results"
+    assert resasm(["history", "--model", str(BEAM / "Analysis.inp"), "--fields", str(BEAM / "fields.npz"),
+                   "--material", str(obj), "--request", str(request), "--out", str(out),
+                   "--reequilibrate"]) == 0
+    results = json.loads((out / "sensitivity_results.json").read_text())
+    degree = {"RF": 1, "S": 1, "MISES": 1, "U": 0, "SDV": 0}
+    plastic_increments = set()
+    for row in results["results"]:
+        weighted = [row["weighted"][name] for name in ("E", "SIGY0", "H")]
+        largest = max(max(abs(w) for w in weighted), abs(row["value"]))
+        residual = sum(weighted) - degree[row["field"]] * row["value"]
+        assert abs(residual) <= 1e-11 * largest, (row["output"], row["increment"], residual, largest)
+        if row["output"] == "eqplas_max" and row["value"] > 0:
+            plastic_increments.add(row["increment"])
+    # the identity must have been exercised where plasticity is active
+    assert len(plastic_increments) >= 5, sorted(plastic_increments)
+
+
 def test_weighted_shares(replayed):
     _, results = replayed
     shares = results["weighted_shares"]
