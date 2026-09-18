@@ -103,6 +103,9 @@ def _cmd_assemble(args):
 
 
 def _cmd_verify(args):
+    if not np.isfinite(args.atol) or args.atol < 0:
+        print("Verification tolerance --atol must be finite and nonnegative.", file=sys.stderr)
+        return 2
     prob, _ = _load_problem(args.model, args.config)
     fields = getattr(args, "fields", None) or getattr(args, "odb", None)
     if fields:
@@ -111,23 +114,32 @@ def _cmd_verify(args):
     if not report.runnable:
         print(report.render(), file=sys.stderr)
         return 2
-    R = prob.assemble(mode="stress-driven")
-    free_R, pres_idx, reac = _split_safe(prob, R)
+    try:
+        if prob.model.equations:
+            raise NotImplementedError("linear equation constraints are not supported by verification")
+        R = prob.assemble(mode="stress-driven")
+        free_R, pres_idx, reac = _split_residual(prob, R)
+    except (ValueError, KeyError, RuntimeError, NotImplementedError) as exc:
+        print("Cannot verify equilibrium: %s" % exc, file=sys.stderr)
+        return 2
+    residual_norm = float(np.linalg.norm(free_R))
+    passed = bool(np.all(np.isfinite(R)) and np.isfinite(residual_norm)
+                  and residual_norm <= args.atol)
     print("stress-driven verification:")
     print("  ndof                 = %d" % R.size)
     print("  ||R_free||           = %.6e   (should be ~0 at equilibrium)"
-          % float(np.linalg.norm(free_R)))
+          % residual_norm)
     print("  ||reaction (at BC)|| = %.6e" % float(np.linalg.norm(reac)))
-    return 0
+    print("  absolute tolerance   = %.6e (model force units)" % args.atol)
+    print("  equilibrium          = %s" % ("PASS" if passed else "FAIL"))
+    print("  reaction reference   = NOT CHECKED (assembled reactions only)")
+    return 0 if passed else 1
 
 
-def _split_safe(prob, R):
-    try:
-        from ..core import constraints as _c
-        free_mask, pres_idx, _ = _c.partition(prob.model, prob.dof_manager)
-        return R[free_mask], pres_idx, (R[pres_idx] if pres_idx.size else np.zeros(0))
-    except Exception:
-        return R, np.zeros(0, int), np.zeros(0)
+def _split_residual(prob, R):
+    from ..core import constraints as _c
+    free_mask, pres_idx, _ = _c.partition(prob.model, prob.dof_manager)
+    return R[free_mask], pres_idx, R[pres_idx]
 
 
 def _cmd_doctor(args):
@@ -528,6 +540,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("model")
     s.add_argument("--fields", help="exported element field (JSON)")
     s.add_argument("--odb", help="alias for --fields")
+    s.add_argument("--atol", type=float, default=1e-6,
+                   help="maximum free-residual Euclidean norm in model force units (default: 1e-6)")
     s.set_defaults(func=_cmd_verify)
 
     s = sub.add_parser("doctor", help="diagnose readiness; optionally emit config")
