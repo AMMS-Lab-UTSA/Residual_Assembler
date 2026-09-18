@@ -1,0 +1,39 @@
+         855741 function calls (855482 primitive calls) in 11.201 seconds
+   Ordered by: cumulative time
+   List reduced from 670 to 18 due to restriction <18>
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.003    0.003   11.203   11.203 <scratch>/prof_j2.py:7(go)
+        1    0.111    0.111    9.796    9.796 <repo>/residual_core/replay/history.py:213(run_history)
+       40    0.001    0.000    5.273    0.132 <venv>/scipy/sparse/linalg/_dsolve/linsolve.py:329(splu)
+       40    5.263    0.132    5.263    0.132 {built-in method scipy.sparse.linalg._dsolve._superlu.gstrf}
+       40    0.019    0.000    2.864    0.072 <repo>/residual_core/replay/history.py:265(evaluate)
+     1897    0.009    0.000    1.530    0.001 <venv>/numpy/_core/einsumfunc.py:1244(einsum)
+       40    1.413    0.035    1.438    0.036 <repo>/residual_core/replay/history_material.py:266(total)
+       40    0.001    0.000    1.258    0.031 <repo>/residual_core/replay/history.py:146(stiffness)
+      440    0.814    0.002    1.081    0.002 <venv>/numpy/_core/einsumfunc.py:1146(bmm_einsum)
+        1    0.001    0.001    0.904    0.904 <repo>/residual_core/replay/history.py:96(__init__)
+        1    0.058    0.058    0.897    0.897 <repo>/residual_core/replay/kinematics.py:12(batch_operators)
+     1536    0.013    0.000    0.778    0.001 <repo>/residual_core/replay/kinematics.py:17(<listcomp>)
+    12288    0.011    0.000    0.766    0.000 <repo>/residual_core/formulations/c3d8_kernel.py:186(b_matrix_reference)
+    12288    0.254    0.000    0.755    0.000 <repo>/residual_core/formulations/c3d8_kernel.py:154(_b_from_coords)
+      201    0.003    0.000    0.566    0.003 <venv>/scipy/sparse/_compressed.py:30(__init__)
+     2177    0.406    0.000    0.406    0.000 {built-in method numpy._core._multiarray_umath.c_einsum}
+     1736    0.325    0.000    0.325    0.000 {method 'reshape' of 'numpy.ndarray' objects}
+       40    0.297    0.007    0.297    0.007 {method 'solve' of 'SuperLU' objects}
+         855741 function calls (855482 primitive calls) in 11.201 seconds
+   Ordered by: internal time
+   List reduced from 670 to 12 due to restriction <12>
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       40    5.263    0.132    5.263    0.132 {built-in method scipy.sparse.linalg._dsolve._superlu.gstrf}
+       40    1.413    0.035    1.438    0.036 <repo>/residual_core/replay/history_material.py:266(total)
+      440    0.814    0.002    1.081    0.002 <venv>/numpy/_core/einsumfunc.py:1146(bmm_einsum)
+     2177    0.406    0.000    0.406    0.000 {built-in method numpy._core._multiarray_umath.c_einsum}
+     1736    0.325    0.000    0.325    0.000 {method 'reshape' of 'numpy.ndarray' objects}
+       40    0.297    0.007    0.297    0.007 {method 'solve' of 'SuperLU' objects}
+        2    0.257    0.129    0.257    0.129 {method 'poll' of 'select.poll' objects}
+    12288    0.254    0.000    0.755    0.000 <repo>/residual_core/formulations/c3d8_kernel.py:154(_b_from_coords)
+     8181    0.218    0.000    0.218    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+       40    0.181    0.005    0.181    0.005 {built-in method scipy.sparse._sparsetools.csr_sort_indices}
+    12288    0.168    0.000    0.176    0.000 <repo>/residual_core/formulations/c3d8_kernel.py:132(shape_grad_natural)
+       41    0.135    0.003    0.135    0.003 {built-in method scipy.sparse._sparsetools.coo_tocsr}
+{'material': 1.5077335349633358, 'assembly': 1.8872236951137893, 'factorisation_and_solve': 6.028468051052187, 'checks': 0.17416469671297818, 'total': 9.79534758295631}
