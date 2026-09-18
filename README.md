@@ -315,9 +315,12 @@ Outputs split into `private/` (full arrays — stays on your machine) and `publi
 pip install -e .            # exposes the `resasm` command
 ```
 
-Requires Python ≥ 3.9 and numpy. `PyYAML` is optional (`pip install -e .[yaml]`); a
-minimal YAML reader is bundled. The Streamlit GUI is also optional
-(`pip install -e ".[gui]"`); nothing in `residual_core` imports it.
+Requires Python ≥ 3.9 (3.10 with UMAT-OTI), NumPy and SciPy. `PyYAML` is
+optional (`pip install -e .[yaml]`); a minimal YAML reader is bundled. The
+Streamlit GUI is also optional (`pip install -e ".[gui]"`); nothing in
+`residual_core` imports it. For the collaborator workflow install UMAT-OTI
+beside it; [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) gives the full recipe
+and the clean-install gate that checks it.
 
 Path A (assembly, inspection, verification) needs nothing else from PyPI, but
 the offline test suite reads one **external source submodule**. A fresh clone
@@ -329,9 +332,14 @@ does not contain it, so run:
 
 That fetches only `sources/permissive/` (MIT / BSD-3). Copyleft and
 license-unknown submodules are marked `update = none` and are never fetched by
-setup. Without the bootstrap, `pytest -q` reports `60 passed, 17 skipped` and the
-affected tests skip with a message naming the missing file and this command;
-with it, `68 passed, 9 skipped`. See
+setup. Without the bootstrap the tests that need it skip with a message naming
+the missing file and this command. The offline suite
+(`pytest -q -m "not abaqus and not arc and not network"`, with OTILib and the
+UMAT-OTI checkout beside this one) gave 499 passed, 19 skipped and 1 failed on
+2026-09-18 in the development environment; the failure is an installed-package
+test that found an editable install of an older UMAT-OTI checkout there. The
+clean-clone run is in
+[docs/evidence/final_clean_clone.md](docs/evidence/final_clean_clone.md). See
 [sources/SUBMODULES.md](sources/SUBMODULES.md) for the tier policy, the pinned
 commits, and the clean-clone verification procedure.
 
