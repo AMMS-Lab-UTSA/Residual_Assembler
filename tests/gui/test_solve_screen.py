@@ -68,7 +68,7 @@ def provider(tmp_path_factory):
 
 @pytest.fixture
 def inputs(provider, tmp_path, monkeypatch):
-    from residual_core.replay import verification
+    from residual_core.replay import presentation
 
     for name in ("OTI_UMAT.obj", "Mapping.json"):
         shutil.copyfile(provider / name, tmp_path / name)

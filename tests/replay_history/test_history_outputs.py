@@ -6,7 +6,7 @@ from residual_core.replay.history import HistoryEngine, run_history
 from residual_core.replay.history_outputs import (Fields, RequestError, reduce, select,
                                                   validate_request, weighted_shares)
 
-from conftest import beam_model
+from history_support import beam_model
 
 
 def test_reductions_and_their_gradients():

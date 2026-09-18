@@ -12,7 +12,7 @@ from residual_core.replay.history import HistoryEngine, ReplayMismatch, run_hist
 from residual_core.replay.history_inputs import RecordedFields, UnsupportedFeature, read_history_model
 from residual_core.replay.history_verify import summarize_fd, tangent_check, whole_model_fd
 
-from conftest import beam_model
+from history_support import beam_model
 
 ELASTIC = (200000.0, 0.3, 1e9, 2000.0)          # yield stress out of reach: linear elastic J2
 

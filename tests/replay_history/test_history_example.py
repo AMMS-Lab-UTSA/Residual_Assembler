@@ -17,7 +17,7 @@ from residual_core.replay.history import HistoryEngine, run_history
 from residual_core.replay.history_inputs import load_recorded_fields, read_history_model
 from residual_core.ui.cli import main as resasm
 
-from conftest import EXAMPLE, RA_ROOT
+from history_support import CONTRACTS, EXAMPLE, RA_ROOT, umat_repository
 
 BEAM = EXAMPLE / "j2_beam"
 EPS32 = float(np.finfo(np.float32).eps)
@@ -188,7 +188,6 @@ def test_reequilibration_changes_little_on_a_tightly_converged_odb(provider_fact
 def test_routing_keeps_bounded_models_and_sends_the_rest_to_the_history_engine(provider_factory, tmp_path):
     from residual_core.ui.cmd_history import bounded_scope_reason
     from umat_oti.provider import build_provider
-    from conftest import CONTRACTS, umat_repository
     built = build_provider(umat_repository() / CONTRACTS["m3_j2"][0], tmp_path / "provider")
     bounded = Namespace(model=RA_ROOT / "examples/presentation_request/Analysis.inp", material=built["object"],
                         mapping=None, request=RA_ROOT / "examples/presentation_request/sensitivity_request.json")

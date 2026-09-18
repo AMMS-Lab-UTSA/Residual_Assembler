@@ -14,7 +14,7 @@ import pytest
 
 from residual_core.ui.cli import main as resasm
 
-from conftest import EXAMPLE, RA_ROOT, umat_repository
+from history_support import EXAMPLE, RA_ROOT, umat_repository
 
 pytestmark = pytest.mark.abaqus
 
