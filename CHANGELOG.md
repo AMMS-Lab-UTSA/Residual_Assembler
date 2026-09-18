@@ -26,7 +26,7 @@ public interfaces may still change.
   `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
 - Shared transform generation re-frozen at `da1f183708c19072` with the two
   current fixtures regenerated in Abaqus (`docs/evidence/final_refreeze.md`).
-- The `bridge` extra pins UMAT-OTI `4822108`; CI checks the companion out at
+- The `bridge` extra pins UMAT-OTI `09d661b`; CI checks the companion out at
   that commit beside this repository (`docs/COMPATIBILITY.md`).
 
 ### Added
