@@ -65,7 +65,8 @@ shows only the reduced value the request computed.
 - `tests/gui/test_imqcam_solve_screen.py` (AppTest, offline suite, 6 tests),
   `tests/gui/test_imqcam_solve_screen_browser.py` (`-m gui`, abaqus, 1 test),
   `tests/gui/gui_helpers.py`, `tests/gui/conftest.py`.
-- `docs/GUI.md`, `docs/screenshots/resasm_solve.png`.
+- `docs/GUI.md`, `docs/screenshots/resasm_solve.png`,
+  `docs/screenshots/resasm_solve_sdv_all_points.png`.
 
 ## Commands and results (2026-09-18)
 
@@ -78,7 +79,7 @@ python -m pytest -q -p no:cacheprovider tests/gui/test_imqcam_solve_screen.py \
   tests/integration/test_presentation_request.py tests/framework/test_gui_is_a_thin_cli_front_end.py
     -> 45 passed
 python -m pytest -q -p no:cacheprovider -m gui tests/gui
-    -> 1 passed, 6 deselected (real ODB through abaqus python, 29 s)
+    -> 1 passed, 6 deselected (real ODB through abaqus python, two Solves, 41 s)
 ```
 
 Real-ODB run (inputs: provider built by `python -m umat_oti.provider.collaborator`
