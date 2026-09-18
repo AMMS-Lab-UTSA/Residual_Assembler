@@ -69,3 +69,58 @@ def test_source_denial_allows_only_generated_link_shim(tmp_path):
     console.write_text("from pathlib import Path\nPath('source_denied_results/private/link/path_shim.for').write_text('shim')")
     runner.run([sys.executable, "-I", "-c", gate.SOURCE_DENIED_PROBE, console])
     assert (link / "path_shim.for").read_text() == "shim"
+
+
+def test_provider_checkout_override_is_independent_of_names(tmp_path, monkeypatch):
+    from repository_paths import umat_repo_root
+
+    checkout = tmp_path / "arbitrary-producer-name"
+    (checkout / "src/umat_oti").mkdir(parents=True)
+    monkeypatch.setenv("UMAT_OTI_REPO", str(checkout))
+    monkeypatch.chdir(tmp_path)
+    assert umat_repo_root() == checkout
+    monkeypatch.setenv("UMAT_OTI_REPO", str(tmp_path / "missing"))
+    with pytest.raises(FileNotFoundError, match="set UMAT_OTI_REPO"):
+        umat_repo_root()
+
+
+def test_provider_checkout_default_is_canonical(tmp_path, monkeypatch):
+    import repository_paths
+
+    checkout = tmp_path / "UMAT_source_transformation"
+    (checkout / "src/umat_oti").mkdir(parents=True)
+    monkeypatch.delenv("UMAT_OTI_REPO", raising=False)
+    monkeypatch.setattr(repository_paths, "__file__", str(tmp_path / "consumer/tests/integration/repository_paths.py"))
+    assert repository_paths.umat_repo_root() == checkout
+
+
+@pytest.mark.parametrize("template", ["python", "blackbox", "blackbox-order2", "cpp", "fortran"])
+def test_installed_template_data_is_declared_and_discoverable(tmp_path, monkeypatch, template):
+    import shutil
+    import sysconfig
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        import tomli as tomllib
+    from residual_core.ui import cli
+
+    repository = Path(__file__).resolve().parents[2]
+    settings = tomllib.loads((repository / "pyproject.toml").read_text())
+    folder = cli._TEMPLATES[template]
+    relative = "share/residual-assembler/templates/" + folder
+    declared = settings["tool"]["setuptools"]["data-files"][relative]
+    assert all((repository / filename).is_file() for filename in declared)
+    assert "templates/" + folder + "/resasm.yml" in declared
+    assert "templates/" + folder + "/solution.npy" in declared
+    destination = tmp_path / relative
+    destination.mkdir(parents=True)
+    for filename in declared:
+        shutil.copy2(repository / filename, destination)
+    original_get_path = sysconfig.get_path
+    monkeypatch.setattr(sysconfig, "get_path", lambda name: str(tmp_path) if name == "data" else original_get_path(name))
+    monkeypatch.chdir(tmp_path)
+    assert cli._templates_root() == str(destination.parent)
+    output = tmp_path / "user-job"
+    assert cli.main(["init", "--template", template, "--out", str(output)]) == 0
+    assert (output / "resasm.yml").read_bytes() == (destination / "resasm.yml").read_bytes()
+    assert (output / "solution.npy").read_bytes() == (destination / "solution.npy").read_bytes()

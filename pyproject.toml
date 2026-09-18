@@ -12,7 +12,7 @@ license = { text = "GPL-3.0-only" }
 dependencies = ["numpy"]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+test = ["pytest>=7", "wheel", "mpmath>=1.3", "matplotlib>=3.8", "tomli>=2; python_version < '3.11'"]
 yaml = ["PyYAML"]
 # Optional Streamlit front end (residual_core/app, launched by scripts/app.py).
 # It is an extra, not a dependency: the GUI only builds argv lists and calls
@@ -44,6 +44,13 @@ exclude = ["tests*", "sources*", "scripts*"]
 "residual_core.replay" = ["contract/*.json", "contract/*.h"]
 "residual_core.examples" = ["*/*.json", "*/*.md"]
 "residual_core.umat_adapter_fortran" = ["*.f90", "aba_stubs/*.f", "aba_stubs/*.f90"]
+
+[tool.setuptools.data-files]
+"share/residual-assembler/templates/user_python_residual" = ["templates/user_python_residual/resasm.yml", "templates/user_python_residual/solution.npy", "templates/user_python_residual/user_residual.py", "templates/user_python_residual/README.md"]
+"share/residual-assembler/templates/user_blackbox_residual" = ["templates/user_blackbox_residual/resasm.yml", "templates/user_blackbox_residual/solution.npy", "templates/user_blackbox_residual/my_solver.py", "templates/user_blackbox_residual/README.md"]
+"share/residual-assembler/templates/user_blackbox_order2_residual" = ["templates/user_blackbox_order2_residual/resasm.yml", "templates/user_blackbox_order2_residual/solution.npy", "templates/user_blackbox_order2_residual/my_solver.py", "templates/user_blackbox_order2_residual/README.md"]
+"share/residual-assembler/templates/user_cpp_residual" = ["templates/user_cpp_residual/resasm.yml", "templates/user_cpp_residual/solution.npy", "templates/user_cpp_residual/residual.cpp", "templates/user_cpp_residual/CMakeLists.txt", "templates/user_cpp_residual/README.md"]
+"share/residual-assembler/templates/user_fortran_residual" = ["templates/user_fortran_residual/resasm.yml", "templates/user_fortran_residual/solution.npy", "templates/user_fortran_residual/residual.f90", "templates/user_fortran_residual/Makefile", "templates/user_fortran_residual/README.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

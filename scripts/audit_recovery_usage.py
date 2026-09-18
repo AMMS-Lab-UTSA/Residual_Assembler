@@ -21,6 +21,8 @@ def main(argv=None):
     parser.add_argument("--umat", type=Path, required=True)
     parser.add_argument("--phase", choices=("help", "examples", "gui", "presentation", "ledger", "docs"), required=True)
     parser.add_argument("--work", type=Path)
+    parser.add_argument("--imports", choices=("installed", "environment"), default="installed")
+    parser.add_argument("--evidence-dir", type=Path, help="write separate evidence instead of replacing historical usage reports")
     args = parser.parse_args(argv)
     ra = Path(__file__).resolve().parents[1]
     umat = args.umat.resolve()
@@ -28,11 +30,10 @@ def main(argv=None):
     work.mkdir(parents=True, exist_ok=True)
     environment = dict(os.environ)
     environment["PATH"] = str(Path(sys.executable).parent) + os.pathsep + environment["PATH"]
-    environment["PYTHONPATH"] = os.pathsep.join((str(ra), str(umat / "src"),
-                                                str(Path.home() / "otilib/build_py311")))
+    if args.imports == "installed":
+        environment.pop("PYTHONPATH", None)
+        environment.pop("PYTHONHOME", None)
     environment["UMAT_OTI_REPO"] = str(umat)
-    for name in ("PYOTI_PATH", "OTILIB_ROOT"):
-        environment[name] = str(Path.home() / "otilib/build_py311")
     environment["RUN_OTILIB_TESTS"] = "1"
     records = {"RA": [], "UMAT": []}
     roots = {"RA": ra, "UMAT": umat}
@@ -46,15 +47,21 @@ def main(argv=None):
     def save():
         for name, root in roots.items():
             destination = root / "docs/evidence" / ("usage_" + args.phase + ".json")
+            if args.evidence_dir:
+                destination = args.evidence_dir.resolve() / name / destination.name
+                destination.parent.mkdir(parents=True, exist_ok=True)
             payload = {"clean_install_verified": False, "phase": args.phase,
                        "python": sys.executable, "work": str(work),
-                       "environment": {key: environment[key] for key in
+                       "imports": args.imports,
+                       "environment": {key: environment.get(key) for key in
                                        ("PYTHONPATH", "UMAT_OTI_REPO", "PYOTI_PATH", "OTILIB_ROOT", "RUN_OTILIB_TESTS")},
                        "commands": records[name], "previous_failures": previous_failures[name]}
             destination.write_text(json.dumps(payload, indent=2) + "\n")
 
     def run(repo, name, arguments, cwd=None):
         command = [str(value) for value in arguments]
+        if args.imports == "installed" and command[0] == sys.executable:
+            command.insert(1, "-I")
         started = time.monotonic()
         completed = subprocess.run(command, cwd=cwd or roots[repo], env=environment,
                                    capture_output=True, text=True)
@@ -76,7 +83,8 @@ def main(argv=None):
 
     python = sys.executable
     cli = [python, "-m", "residual_core.ui.cli"]
-    run("RA", "environment", [python, "-c", "import sys,residual_core,umat_oti,pyoti.sparse; "
+    run("RA", "environment", [python, "-c", "from residual_core.algebra.otilib_adapter import OtiContext; OtiContext(1,1); "
+        "import sys,residual_core,umat_oti,pyoti.sparse; "
         "from umat_oti.store import transform_fingerprint; "
         "print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); "
         "print(pyoti.sparse.__file__); print(transform_fingerprint())"])
@@ -146,7 +154,8 @@ def main(argv=None):
                            and np.allclose(np.max(np.abs(residual)), 25, atol=1e-10, rtol=0))}
         save()
         assert record["verification"]["passed"]
-        record = run("RA", "R-X4", [python, "scripts/reproduce_imqcam_pipeline.py", "--skip-abaqus", "--out", work / "R-X4"])
+        record = run("RA", "R-X4", [python, "scripts/reproduce_imqcam_pipeline.py", "--skip-abaqus",
+                 "--provider-repo", umat, "--imports", args.imports, "--out", work / "R-X4"])
         proof("RA", record, work / "R-X4/private/manifest.json")
         assert record["proof"]["data"]["passed"]
         record = run("RA", "R-X5", [python, "examples/finite_strain_c3d8/benchmark.py", "--out", work / "R-X5"])
