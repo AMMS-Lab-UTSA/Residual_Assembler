@@ -103,12 +103,21 @@ The same request through `resasm request` gave identical numbers. Stress was
 reproduced to 4.1e-07, ‖du/dp‖ was 0.00422, and the maximum scaled free
 residual was 4.12e-07.
 
+A second Solve on the same analysis chose state variable SDV1 (equivalent
+plastic strain) over the whole mesh. The table has one row per integration
+point, all eight of them. Each has EQPLAS 2.500000e-2 = (300-SIGY0)/H,
+dEQPLAS/dSIGY0 = -5.000000e-4 = -1/H and dEQPLAS/dH = -1.250000e-5 =
+-(300-SIGY0)/H². dE is at most 9.3e-23 and dnu at most 3.1e-17, both zero to
+rounding as the uniaxial reference says:
+
+![Equivalent plastic strain and its derivatives at every integration point](screenshots/resasm_solve_sdv_all_points.png)
+
 ## Tests
 
 | Test | What it drives | Run |
 | --- | --- | --- |
 | `tests/gui/test_imqcam_solve_screen.py` | the screen through `streamlit.testing` (AppTest), with a freshly built OTI object and its Mapping.json. The ODB export is replaced by the genuine export of the same ODB (`tests/fixtures/presentation_j2/fields.json`). Checks the ticks, output, region and Solve for U on node set LOADED, S11 and SDV1 at every integration point, and RF1 on XZERO against the uniaxial references and against `resasm request`. Also checks that a supplied request file still wins and that there is nothing to tick without a mapping | the offline suite |
-| `tests/gui/test_imqcam_solve_screen_browser.py` | slide 17's hand-over consumed by slide 18 in headless Chromium, on the real ODB (licensed Abaqus Python). Writes `docs/screenshots/resasm_solve.png` | `python -m pytest -m gui tests/gui` (also marked `abaqus`) |
+| `tests/gui/test_imqcam_solve_screen_browser.py` | slide 17's hand-over consumed by slide 18 in headless Chromium, on the real ODB (licensed Abaqus Python): U1 on node set LOADED, then SDV1 on the whole mesh. Writes `docs/screenshots/resasm_solve.png` and `docs/screenshots/resasm_solve_sdv_all_points.png` | `python -m pytest -m gui tests/gui` (also marked `abaqus`) |
 | `tests/integration/test_presentation_request.py` | Copilot's request-file route, unchanged | the offline suite |
 
 `scripts/check_presentation_browser.py` is the request-file route in a

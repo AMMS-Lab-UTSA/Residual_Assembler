@@ -128,7 +128,30 @@ def test_slide18_point_tick_choose_solve(server, handed_over, tmp_path):
             downloads[name] = tmp_path / name
             event.value.save_as(downloads[name])
         save_screenshot(panel, "resasm_solve.png")
+
+        # The same analysis, the equivalent plastic strain at every integration
+        # point of the whole mesh: a new output directory, one more Solve.
+        panel.get_by_label("Output directory", exact=True).fill(str(tmp_path / "gui_sdv"))
+        panel.get_by_label("Output directory", exact=True).press("Enter")
+        settle(page)
+        output = panel.get_by_role("combobox", name="output", exact=True)
+        output.click()
+        output.fill("state variable SDV1")  # the list is long; type to filter it
+        page.get_by_role("option", name="state variable SDV1", exact=True).click()
+        settle(page)
+        expect(panel.get_by_role("combobox", name="region", exact=True)).to_match_aria_snapshot(
+            '- combobox "region": whole mesh')
+        panel.get_by_role("button", name="Solve", exact=True).click()
+        expect(panel.get_by_text(re.compile(r"^Solved — d\(mean_SDV1_all\)/dp at all 8 locations"))).to_be_visible(
+            timeout=600000)
+        settle(page)
+        save_screenshot(panel, "resasm_solve_sdv_all_points.png")
         browser.close()
+    sdv = json.loads((tmp_path / "gui_sdv" / "sensitivity_results.json").read_text())
+    (sdv_row,) = sdv["results"]
+    assert sdv_row["value"] == pytest.approx((300 - SIGY0) / H, rel=1e-5)
+    assert sdv_row["derivatives"]["SIGY0"] == pytest.approx(-1 / H, rel=1e-5)
+    assert sdv_row["derivatives"]["H"] == pytest.approx(-(300 - SIGY0) / H ** 2, rel=1e-5)
 
     summary = json.loads(downloads["sensitivity_results.json"].read_text())
     assert "Status: executed successfully" in downloads["run_report.txt"].read_text()
