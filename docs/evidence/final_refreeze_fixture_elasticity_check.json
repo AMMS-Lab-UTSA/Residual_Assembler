@@ -1,0 +1,298 @@
+{
+ "schema": "residual-assembler/fixture-residual-check/1",
+ "fixture": "tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json",
+ "fixture_sha256": "084615334c14007cebf42c2ba847e05f94ce9a56a869e2ae8b66ad3c086c3b78",
+ "recorded_generation": "da1f183708c19072",
+ "checks": [
+  {
+   "name": "dR/du",
+   "increment": "step 1 increment 6",
+   "status": "holds",
+   "detail": "K from the converted build's DDSDDE against a centred difference of the element residual: agrees to 1.476e-13 at h=0.01, over a plateau of 7 step sizes (0.01 to 1e-08); no model of this material is carried here, so the recorded linearization sigma_n + D_n B du is differenced: this checks shape functions, quadrature, B, Voigt mapping and the element Jacobian against the element residual, not the constitutive tangent",
+   "analytic_source": "converted build's DDSDDE (Abaqus, OTI)",
+   "worst_components": [
+    [
+     [
+      21,
+      12
+     ],
+     1.4763012492133112e-13
+    ],
+    [
+     [
+      21,
+      9
+     ],
+     1.4763012492133112e-13
+    ],
+    [
+     [
+      0,
+      9
+     ],
+     1.4759327266848007e-13
+    ],
+    [
+     [
+      0,
+      12
+     ],
+     1.4759327266848007e-13
+    ],
+    [
+     [
+      12,
+      9
+     ],
+     1.2990879783157948e-13
+    ]
+   ],
+   "step": null,
+   "sweep": [
+    {
+     "step": 0.01,
+     "relative": 1.4763012492133112e-13
+    },
+    {
+     "step": 0.001,
+     "relative": 2.120220663277863e-12
+    },
+    {
+     "step": 0.0001,
+     "relative": 1.860917156532571e-11
+    },
+    {
+     "step": 1e-05,
+     "relative": 2.702148691642777e-10
+    },
+    {
+     "step": 1e-06,
+     "relative": 1.5945927053330396e-09
+    },
+    {
+     "step": 1e-07,
+     "relative": 2.6757333717180258e-08
+    },
+    {
+     "step": 1e-08,
+     "relative": 2.513257380014541e-07
+    }
+   ],
+   "best": 1.4763012492133112e-13,
+   "plateau": 7,
+   "plateau_span": [
+    0.01,
+    1e-08
+   ]
+  },
+  {
+   "name": "dR/dq",
+   "increment": "step 1 increment 6",
+   "status": "not_established",
+   "detail": "this fixture carries no d sigma/dq and this repository has no model of the material to take one from",
+   "would_establish": "a fixture carrying the transformed UMAT's own DSIGMA_DQ / DSIGMA_DP, or a model of this material",
+   "step": null
+  },
+  {
+   "name": "dR/dp",
+   "increment": "step 1 increment 6",
+   "status": "not_established",
+   "detail": "this fixture carries no d sigma/dp and this repository has no model of the material to take one from",
+   "would_establish": "a fixture carrying the transformed UMAT's own DSIGMA_DQ / DSIGMA_DP, or a model of this material",
+   "step": null
+  }
+ ],
+ "refused": "",
+ "fixture_fingerprint": "da1f183708c19072",
+ "source_id": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
+ "element_type": "C3D8",
+ "eligibility": {
+  "eligible": true,
+  "reasons": [],
+  "gates": {
+   "abaqus_job_completed": true,
+   "all_requested_outputs_present": true,
+   "complete_history_finite": true,
+   "derivatives_verified": true,
+   "mechanically_informative": true,
+   "primal_agreed": true
+  }
+ },
+ "material_model": "none",
+ "diagnosis": {
+  "ok": true,
+  "complete": false,
+  "blame": null,
+  "not_established": [
+   "state_sensitivity",
+   "parameter_sensitivity",
+   "mapping"
+  ],
+  "findings": [
+   {
+    "stage": "umat",
+    "layer": "umat",
+    "status": "holds",
+    "ok": true,
+    "detail": "6 increments, all finite, stress responding to strain",
+    "measured": {
+     "stress_change": 0.8333333333333334,
+     "increments": 6
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "transformation",
+    "layer": "transformation",
+    "status": "holds",
+    "ok": true,
+    "detail": "original and converted agree to 0.000e+00 in stress and 0.000e+00 in state over 6 increments",
+    "measured": {
+     "stress": 0.0,
+     "state": 0.0,
+     "gates_not_true": []
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "constitutive_derivative",
+    "layer": "constitutive_derivative",
+    "status": "holds",
+    "ok": true,
+    "detail": "the tangent differentiates its own stress: the material reading holds to 4.022e-16 over 5 increment(s) and the jaumann one misses by 5.500e-03, a separation of 1.37e+13. The assembler must build this material's stiffness in the 'material' reading",
+    "measured": {
+     "material_reading": 4.0215752119211123e-16,
+     "jaumann_reading": 0.005499999999999593,
+     "reading": "material",
+     "separation": 13676233093182.0,
+     "increments_used": 5,
+     "volumetric_strain_increment": 0.0010000000000000005,
+     "prediction_overshoot": 1.0000000000000004
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "state_sensitivity",
+    "layer": "state_sensitivity",
+    "status": "not_established",
+    "ok": false,
+    "detail": "no dR/dq was offered to difference. The fixture's own state moves by 0.000e+00 over its window, which says the material has a state -- it does not say anything about the derivative with respect to it.",
+    "measured": {
+     "state_movement": 0.0,
+     "state_components": 1
+    },
+    "would_establish": "a dR/dq assembled at a frozen state, with a way to re-assemble R at a perturbed state, so the two can be differenced over a plateau"
+   },
+   {
+    "stage": "parameter_sensitivity",
+    "layer": "parameter_sensitivity",
+    "status": "not_established",
+    "ok": false,
+    "detail": "no dR/dp was offered to difference. The fixture carries 2 material constants and no d sigma/d p.",
+    "measured": {
+     "constants": 2
+    },
+    "would_establish": "a dR/dp assembled from a d sigma/d p, with a way to re-assemble R at a perturbed constant"
+   },
+   {
+    "stage": "mapping",
+    "layer": "mapping",
+    "status": "not_established",
+    "ok": false,
+    "detail": "6 components as 3 direct and 3 engineering shear, and the tangent is shaped and signed accordingly. But the carried window applies effectively NO shear strain -- the largest shear component is 4.52e-18 of the largest extension -- so these numbers cannot tell engineering shear from tensorial: the two differ by a factor of two in components that are all zero here.",
+    "measured": {
+     "shear_exercised": 4.517509052022933e-18,
+     "ntens": 6,
+     "ndi": 3,
+     "nshr": 3,
+     "exercised_at": 1e-06
+    },
+    "would_establish": "a fixture window inside the deck's shear step, where a factor of two in the shear convention changes the stress"
+   },
+   {
+    "stage": "element_integration",
+    "layer": "element_integration",
+    "status": "holds",
+    "ok": true,
+    "detail": "a constant stress integrates to its surface tractions (1.960e-16), a linearly varying one to an independent target (2.184e-14) -- which is what tests the stress-to-point pairing -- and a rigid translation strains nothing (1.110e-16)",
+    "measured": {
+     "uniform_stress_vs_tractions": 1.9601178917520005e-16,
+     "linear_stress_vs_independent_target": 2.1842610025217424e-14,
+     "rigid_translation_strain": 1.1102230246251565e-16,
+     "partition_of_unity": 0.0,
+     "linear_gradient": 2.220446049250313e-16,
+     "sub_layer": "quadrature",
+     "points": 8
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "residual_assembly",
+    "layer": "residual_assembly",
+    "status": "holds",
+    "ok": true,
+    "detail": "B^T sigma integrates to the independent reference within 0.000e+00, and the nodal forces of a uniform stress cancel to 6.703e-17 of their own size",
+    "measured": {
+     "relative": 0.0,
+     "net_force_relative": 6.702625353201851e-17
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "element_jacobian",
+    "layer": "element_jacobian",
+    "status": "holds",
+    "ok": true,
+    "detail": "B^T D B is the derivative of the element force with the increment-6 tangent: agrees to 1.477e-13 at h=0.01, over a plateau of 5 step sizes (0.01 to 1e-06)",
+    "measured": {
+     "best": 1.4766697717418218e-13,
+     "plateau": 5,
+     "errors": [
+      1.4766697717418218e-13,
+      2.1202575155307133e-12,
+      1.860917156532571e-11,
+      2.702145743462548e-10,
+      1.5945924105150163e-09
+     ],
+     "increment": 6,
+     "symmetric": 7.37045057021178e-17
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "boundary_conditions",
+    "layer": "boundary_conditions",
+    "status": "holds",
+    "ok": true,
+    "detail": "step 1 prescribes 24 of 24 degrees of freedom and leaves 0 free, a partition with no overlap; reading the deck's steps as one flat list would get 0 of them wrong",
+    "measured": {
+     "ndof": 24,
+     "prescribed": 24,
+     "free": 0,
+     "step": 1,
+     "dofs_a_flat_read_would_get_wrong": 0
+    },
+    "would_establish": ""
+   },
+   {
+    "stage": "global_dof_mapping",
+    "layer": "global_dof_mapping",
+    "status": "holds",
+    "ok": true,
+    "detail": "24 global rows, one per (node, component), dense and without collision, and every element gathers the rows its own connectivity resolves to (highest row used: 23)",
+    "measured": {
+     "ndof": 24,
+     "elements": 1
+    },
+    "would_establish": ""
+   }
+  ]
+ },
+ "summary": {
+  "held": 1,
+  "failed": 0,
+  "not_established": 2,
+  "headline": "1 held, 0 failed, 2 not established",
+  "all_applicable_held": true
+ }
+}
