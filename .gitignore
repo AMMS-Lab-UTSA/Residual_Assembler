@@ -24,3 +24,7 @@ abq_val_log.txt
 
 # Scratch workspace written by the optional Streamlit GUI (residual_core/app).
 resasm_gui_workspace/
+
+# presentation-claim reproductions: run-time results (small JSON/CSV) are regenerated;
+# only presentation/expected/ is committed
+presentation/results/
