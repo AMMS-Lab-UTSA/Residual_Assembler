@@ -8,6 +8,17 @@ from residual_core.replay.path_material import PathMaterial
 from repository_paths import umat_repo_root
 
 
+def _require_otilib():
+    """Skip when OTILib is absent -- unless RUN_OTILIB_TESTS=1 demands it."""
+    import os
+    from residual_core.algebra import otilib_adapter as adapter
+    if adapter.otilib_available():
+        return
+    assert os.environ.get("RUN_OTILIB_TESTS") != "1", (
+        "RUN_OTILIB_TESTS=1 but OTILib is not installed; install: scripts/setup_otilib.sh")
+    pytest.skip("OTILib not installed: %s" % adapter.otilib_status()["error"].splitlines()[0])
+
+
 ROOT = Path(__file__).resolve().parents[2]
 PROVIDER = umat_repo_root()
 CONTRACT = PROVIDER / "parameter_sensitivity/models/m3_j2/contract_v2.json"
@@ -85,6 +96,7 @@ def test_path_validation(material, method):
 
 
 def test_no_live_oti_cast(material):
+    _require_otilib()
     from residual_core.algebra.otilib_adapter import OtiContext
     from residual_core.replay.j2_history import real_array
     seeded = OtiContext(1, 1).seed(2., 1)
@@ -201,6 +213,7 @@ def test_recorded_physical_state_is_checked(material):
 
 
 def test_field_inputs_reject_live_oti():
+    _require_otilib()
     from residual_core.algebra.otilib_adapter import OtiContext
     from residual_core.core.field_sensitivity import _as_tangent_ip, _as_dsigma_ip, fields_from_statev
     seeded = OtiContext(1, 1).seed(2., 1)
