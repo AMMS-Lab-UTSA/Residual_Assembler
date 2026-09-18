@@ -15,6 +15,9 @@ def test_every_benchmark_is_prepared_or_carries_its_reason(out_dirs):
     assert claim4.main(["--out", str(out), "--work", str(work)]) == 0
     payload = json.loads((out / "claim4_benchmark_ddsdde.json").read_text())
     assert payload["summary"]["cases"] == 19
+    status = {row["case"]: row["status"] for row in payload["rows"]}
+    # HIN (DATA constants) and PCO (helper closure) run from their committed contracts
+    assert status["UMAT_HIN"] == "prepared" and status["UMAT_PCO"] == "prepared"
     for row in payload["rows"]:
         if row["status"] == "prepared":
             assert row["compare_outputs_used"] == ["STRESS", "STATEV", "DDSDDE", "CONVERGENCE"]

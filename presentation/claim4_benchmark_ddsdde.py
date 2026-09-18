@@ -70,19 +70,6 @@ FORCED_OUTPUTS = ["STRESS", "STATEV", "DDSDDE", "CONVERGENCE"]
 #: Documented input corrections, run only with --variants and reported as
 #: separate rows; the benchmark rows above are always the contracts as committed.
 VARIANTS = {
-    "UMAT_HIN": {
-        "demote": ["ONE", "TWO", "ZERO"],
-        "why": ("the contract promotes ONE, TWO, ZERO, which the source initialises by DATA "
-                "(KFORMC, KDLT2) and the current transformer refuses DATA-initialised promoted "
-                "variables; they are the numeric constants 1, 2, 0 and carry no derivative, so the "
-                "variant lists them as constants instead"),
-    },
-    "UMAT_PCO": {
-        "closure": True,
-        "why": ("UMAT_PCO.for calls helpers it does not define (KCLEAR, KMMULT, ...); the variant "
-                "transforms the source's resolved routine closure (umat_oti.transform."
-                "dependency_resolution, entry file first so the contract's line anchors hold)"),
-    },
     "UMAT_NKH_1.02": {
         "props": {1: 0.0},
         "initial_temperature": 1.0,
@@ -113,18 +100,9 @@ def variant_config(config_path: Path, work: Path) -> Path:
     raw = json.loads(config_path.read_text())
     source = (config_path.parent / raw["source"]).resolve()
     directory = fresh_dir(work / f"{config_path.stem}__variant_input")
-    if spec.get("closure"):
-        from umat_oti.transform.dependency_resolution import combined_source, resolve_closure
-        graph = resolve_closure(source, entry="UMAT", roots=[source.parent])
-        if graph.missing:
-            raise RuntimeError(f"closure unresolved: {[m.symbol for m in graph.missing]}")
-        resolved = directory / source.name
-        resolved.write_text(combined_source(graph), encoding="utf-8")
-        source = resolved
     raw["source"] = str(source)
-    for name in spec.get("demote", []):
-        raw["promote"] = [v for v in raw.get("promote", []) if v != name]
-        raw["constant"] = sorted(set(raw.get("constant", [])) | {name})
+    if raw.get("dependency_roots"):
+        raw["dependency_roots"] = [str((config_path.parent / r).resolve()) for r in raw["dependency_roots"]]
     if "ntens" in spec:
         raw["ntens"] = spec["ntens"]
     target = directory / f"{config_path.stem}__variant.json"
@@ -190,6 +168,12 @@ def prepare(config_path: Path, work: Path, props_override: Dict[int, float] | No
     if not record["transform_success"] or record["blockers"]:
         record["status"] = "transform_failed"
         return record
+    # a contract that declares dependency_roots is transformed from its resolved
+    # routine closure; the original must be compiled from the same file
+    closure = summary.get("dependency_closure") or {}
+    record["dependency_closure"] = closure or None
+    if closure.get("resolved_source"):
+        source_path = Path(closure["resolved_source"])
     validation_dir = fresh_dir(work / name / "validation")
     material_props = probe_props(source_path, ntens, props_override) if props_override else None
     record["material_props_override"] = props_override
