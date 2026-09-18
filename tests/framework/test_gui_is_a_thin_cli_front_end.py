@@ -58,16 +58,26 @@ def test_the_app_does_not_import_the_assembler_directly():
         "residual_core.formulations.registry",
         "residual_core.materials.registry",
         "residual_core.algebra.otilib_adapter",  # honest sidebar status
+        # The Solve screen's parameter/output/region widgets (slide 18). The
+        # module is part of the GUI and is walked below by the same rule; it
+        # may read the .inp only to offer the .inp's own sets in a dropdown.
+        "residual_core.app.request_screen",
+        "residual_core.io.abaqus_inp_parser",
     }
-    with open(_APP_SOURCE, "r", encoding="utf-8") as fh:
-        tree = ast.parse(fh.read())
-
+    sources = [_APP_SOURCE, os.path.join(_ROOT, "residual_core", "app", "request_screen.py")]
     imported = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            imported.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
-            imported.add(node.module)
+    for source in sources:
+        with open(source, "r", encoding="utf-8") as fh:
+            tree = ast.parse(fh.read())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                imported.add(node.module)
+                # `from residual_core.app import request_screen` names the
+                # module in the alias, not in node.module.
+                imported.update(f"{node.module}.{alias.name}" for alias in node.names
+                                if node.module == "residual_core.app")
 
     # `from residual_core.ui import cli` records the package, not the module,
     # so every parent of an allowed module is allowed too.
