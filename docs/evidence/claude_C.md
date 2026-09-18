@@ -163,8 +163,8 @@ E (du/dE = 0) while stresses and reactions scale with E. Measured:
 (The recorded-state values carry the ODB's own residual; the identity is a
 property of the exact equilibrium.) Under load control the other identity
 holds: du/dE = -u/E and dS/dE = 0 (`test_elastic_load_control_scaling`,
-<= 1e-12; the example's elastic increments: E dRF2/dE = RF2 and
-E dS11/dE = S11 to 2e-5 relative in recorded mode).
+<= 1e-12; in the committed example's elastic increments, recorded mode,
+E dRF2/dE = RF2 and E dS11/dE = S11 within the asserted 2e-5).
 
 ### (b) Whole-model FD of the ORIGINAL UMAT, re-equilibrated in Python
 
@@ -197,14 +197,40 @@ about 300 s per parameter): increments where the FD has a plateau (spread
 | SIGY0 | 2.6e-9 | 3.0e-9 | 3.1e-9 | 7.9e-9 | 9.1e-11 |
 | H | 3.1e-7 | 5.4e-6 | 2.2e-6 | 7.2e-7 | 9.9e-9 |
 
-The FD has no plateau at increments 11-14 (E, SIGY0) and 33-36 (H): an
-integration point sits on the yield surface there, so p(1+h) and p(1-h) land
-on different branches for every h tried. Even there the OTI result differs
-from the finest FD by <= 1e-7, except the reactions at increment 11
-(1e-4 against an FD spread of 7e-5 to 9e-5) and SIGY0 stresses at increment
-33 (5.9e-2 against a spread of 2.6e-2).
+Where the three steps do not agree to 1e-5 (E and SIGY0 from increment 11 on
+in S and SDV, H from increment 33 on; mostly because FD(1e-3) carries
+truncation and yield-branch effects of 1e-5 to 1e-4), the OTI result still
+agrees with the finer FD estimate to <= 3e-8, with two exceptions: the
+reactions at increment 11 for E and SIGY0 (1e-4 against FD spreads of 7e-5 and
+9e-5), and SIGY0 at increment 33 (S 3e-2, SDV 1e-2, MISES 6e-2 against FD
+spreads of 1e-2, 6e-3 and 3e-2). Both are increments at which integration
+points sit on the yield surface, so p(1+h) and p(1-h) land on different
+branches for every h tried; the FD, not the OTI result, is unresolved there.
 
-FCC full size: FCC_FULLSIZE_PLACEHOLDER
+Full-size FCC cantilever (slide-15 constants, 25 increments, all 10
+parameters, ladder 1e-3/1e-4/1e-5, Newton to 1e-12, about 600 s per
+parameter, one process each): the FD has a plateau (spread <= 1e-5) at every
+increment and field, and
+
+| parameter | U | RF | S | MISES | SDV |
+| --- | --- | --- | --- | --- | --- |
+| g0 | 8.4e-8 | 9.8e-8 | 1.1e-7 | 5.2e-8 | 8.1e-9 |
+| h0 | 2.5e-8 | 4.3e-8 | 9.3e-8 | 8.4e-8 | 2.6e-10 |
+| q | 8.5e-9 | 5.7e-8 | 9.9e-8 | 5.7e-8 | 2.7e-10 |
+| gd0 | 6.7e-7 | 1.9e-7 | 3.1e-7 | 3.0e-7 | 2.7e-8 |
+| m | 9.9e-8 | 6.0e-8 | 1.6e-7 | 7.7e-8 | 8.3e-9 |
+| gsat | 7.9e-8 | 2.0e-7 | 4.5e-7 | 2.9e-7 | 3.4e-10 |
+| C11 | 4.0e-9 | 5.4e-9 | 2.4e-8 | 2.7e-8 | 3.6e-8 |
+| C12 | 1.9e-9 | 5.9e-9 | 3.0e-8 | 2.1e-8 | 1.8e-8 |
+| C44 | 2.4e-8 | 5.0e-8 | 7.5e-8 | 3.5e-8 | 3.3e-9 |
+| a | 1.2e-8 | 4.4e-8 | 1.2e-7 | 8.4e-8 | 9.2e-10 |
+
+(max|OTI - FD| / max|FD| over each field, worst increment; 1,206 nonzero
+field-increment comparisons, and 44 zero references agreeing to 2.4e-10 on the
+field scale; per-increment data in `claude_C/fullsize_python_fd_summary.json`). This is the
+reference for C44 and m, which the Abaqus FD does not resolve. The first
+attempt at Newton tolerance 1e-13 stopped at increment 16 at the roundoff
+floor (3.9e-12 against 3.3e-12), which is why full-size runs use 1e-12.
 
 ### (a) Abaqus finite differences
 
@@ -335,7 +361,7 @@ a 6.4, C44 3.3, gd0 2.5, m 1.9. (The presentation prints no FCC share numbers.)
 - RA: `tests/replay_history` 47 offline tests passed (provider 6, engine 16,
   outputs 16, example 9) plus 1 `abaqus`-marked live test passed
   (`RESASM_ABAQUS_JOB_PREFIX=claudeC_`, 21.6 s). Full offline RA suite
-  (`-m "not abaqus and not arc and not network"`): 324 passed, 19 skipped,
+  (`-m "not abaqus and not arc and not network"`): 340 passed, 19 skipped,
   56 failed, 5 errors; all 61 failures/errors are the snapshot's pre-existing
   `FixtureError` (verified fixtures frozen under transform fingerprint
   94a92c01814f107a while `schemas/transform_generation.json` says
@@ -346,7 +372,12 @@ a 6.4, C44 3.3, gd0 2.5, m 1.9. (The presentation prints no FCC share numbers.)
 `route_request` (in `cmd_history.py`) sends models inside the bounded scope to
 `presentation.run_request` and everything else to the history engine
 (`--validate` -> `--verify fd`). Tested: the bounded example stays bounded; the
-beam example (nonzero BCs, `*Controls`, sets, MISES) is routed. The one edit in
+beam example (nonzero BCs, `*Controls`, sets, MISES) is routed. End to end: the
+arguments parsed by `cmd_request`'s own parser for the J2 cantilever
+(`resasm request --model claude_j2_nominal.inp --odb claude_j2_nominal.odb
+--material umat_m3_j2_oti.obj --request j2_request.json --out routed_run`)
+were routed ("unsupported *Static options: ['direct']" in the bounded reader),
+executed with the ODB export, exit 0. The one edit in
 `residual_core/ui/cmd_request.py` that activates it is in
 `docs/REPLAY_HISTORY.md` (replace `parser.set_defaults(func=run)` by
 `from .cmd_history import route_request; parser.set_defaults(func=route_request)`);
@@ -361,16 +392,25 @@ not applied here.
   merging this branch, or exclude `provider/` from the fingerprint if the
   provider wrappers are judged not to be transform code (the transformed
   UMATs of the corpus are unaffected: emit.py only adds a wrapper routine).
+- That change makes `tests/test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
+  fail on this branch until `schemas/transform_generation.json` is re-frozen
+  (not done here: re-freezes are the lead's).
 - Objects built before this change lack `UMAT_OTI_EVAL_TOTAL`; the history
   engine refuses them with a rebuild message.
+- The J2 handoff's "first plastic IPs at step 10" should read step 7 (4 IPs).
+- Large data (not committed): `imq_abaqus/claude_C/cantilevers/` (full fields,
+  both modes, both cantilevers), `j2_fd_tight/` (25 tight-tolerance Abaqus
+  reruns, exports only), `fd_fullsize/` (Python FD per parameter),
+  `providers/`, `example/` (the committed example's Abaqus exports).
 
 ## What remains
 
 - The slide-33 percentages at "yield onset" are not reproduced (measured
   values above); the definition used is the recovered old one.
-- Abaqus FD resolves the plastic-range sensitivities only to about 1e-2 (J2 E,
-  SIGY0) because of float32 output and yield-front crossings; the tight
-  references are the Python whole-model FD.
+- Abaqus FD resolves the plastic-range J2 sensitivities only to about 1e-2
+  (E, SIGY0) because of float32 output and yield-front crossings; the tight
+  references are the Python whole-model FD (J2 and FCC at full size, <= 6.7e-7
+  wherever the FD has a plateau).
 - `cmd_request.py` routing edit left to the merge.
 - Scope limits (single static step, C3D8, ramp amplitude, small strain,
   identity DROT/DFGRD) are documented and enforced.
