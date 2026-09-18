@@ -13,7 +13,7 @@ import pytest
 
 from residual_core.replay.history_inputs import read_history_model
 
-from conftest import RA_ROOT
+from history_support import RA_ROOT
 
 sys.path.insert(0, str(RA_ROOT / "examples" / "cantilevers"))
 from gen_cantilever import MODELS, deck  # noqa: E402

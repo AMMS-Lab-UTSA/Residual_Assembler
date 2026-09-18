@@ -40,7 +40,7 @@ EXAMPLE = ROOT / "examples/presentation_request"
 ])
 def test_unit_failure_diagnostics_are_private(tmp_path, monkeypatch, capsys, stage, category, action):
     """Injected failures test disclosure boundaries, not numerical correctness."""
-    from residual_core.replay import verification
+    from residual_core.replay import presentation
     from residual_core.ui.cli import main
     from streamlit.testing.v1 import AppTest
     from subprocess import CompletedProcess
@@ -170,7 +170,7 @@ def compiled(tmp_path_factory):
 
 @pytest.fixture
 def offline_inputs(compiled, tmp_path, monkeypatch):
-    from residual_core.replay import verification
+    from residual_core.replay import presentation
     built, contract, result, fields = compiled
     shutil.copyfile(built["object"], tmp_path / "OTI_UMAT.obj")
     (tmp_path / "Mapping.json").write_text(json.dumps(contract))
@@ -222,7 +222,7 @@ def test_request_cli_and_malformed_input(offline_inputs):
 
 @pytest.mark.parametrize("field", ["U", "RF", "CF", "S", "SDV"])
 def test_missing_odb_field_has_safe_action(offline_inputs, compiled, monkeypatch, field):
-    from residual_core.replay import verification
+    from residual_core.replay import presentation
     fields = copy.deepcopy(compiled[3])
     fields["frames"][1].pop(field)
     monkeypatch.setattr(presentation, "export_odb", lambda *args: (fields, ["offline-test-transport"]))
