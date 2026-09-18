@@ -1,0 +1,58 @@
+{
+ "outputs": [
+  {
+   "name": "tip_RF2",
+   "field": "RF",
+   "component": 2,
+   "reduction": "sum",
+   "domain": {
+    "nset": "TIP"
+   }
+  },
+  {
+   "name": "mises_mean",
+   "field": "MISES",
+   "component": 1,
+   "reduction": "volume_mean",
+   "domain": {
+    "elements": "ALL"
+   }
+  },
+  {
+   "name": "mises_root_mean",
+   "field": "MISES",
+   "component": 1,
+   "reduction": "volume_mean",
+   "domain": {
+    "elset": "ROOTEL"
+   }
+  },
+  {
+   "name": "e1_ip1_S11",
+   "field": "S",
+   "component": 1,
+   "reduction": "component",
+   "domain": {
+    "elements": [
+     1
+    ],
+    "points": [
+     1
+    ]
+   }
+  }
+ ],
+ "parameters": "ALL",
+ "domain": {
+  "nodes": "ALL",
+  "elements": "ALL"
+ },
+ "increments": "ALL",
+ "weighted_shares": {
+  "field": "MISES",
+  "domain": {
+   "elements": "ALL"
+  }
+ },
+ "full_field": true
+}
