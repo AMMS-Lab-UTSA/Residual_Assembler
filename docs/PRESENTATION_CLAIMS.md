@@ -40,9 +40,9 @@ compiler), Abaqus 2021 with ifort (claims 3 and 4 with `--abaqus`), and, for cla
 |---|---|---|---|---|---|
 | 13 | 18/20 models, 76 parameter directions, DSIGMA_DP and dσ_vM/dp within 1.6e-7 of FD, both < 1e-5 | `presentation/claim1_sensitivity_sweep.py` | centred FD of the ORIGINAL UMAT re-marched over the whole path (step ladder, plateau) | **20/20 models, 84 directions**, worst 1.56e-7 (m6_fcc DSIGMA_DP; inside its FD plateau uncertainty 3.2e-7); strict max-over-path metric also < 1e-5 for all 20 | reproduced, differs (more models pass than the slide shows) |
 | 26–27 | OTI vs hand-coded flow-rule Jacobian: max rel. error ~1e-15; FD error ~1e7× larger; FD ~9× slower | `presentation/claim2_flowrule_jacobian.py` | the hand-coded analytical derivatives; centred/forward FD of the analytical routine | OTI vs analytical **7.1e-15**; FD/OTI error ratio **4.5e5** (centred, best step) … **2.9e6** (centred, plateau step) … **1.7e8** (forward, best step); FD time **6.0×** OTI (ifort -O2, known step), **41.9×** with the step search | first statement reproduced; FD ratios depend on the unrecorded FD protocol: reproduced, differs |
-| 28–32 | single C3D8 shear, six σ_vM sensitivities in one OTI run; regimes; OTI vs analytic chain rule NRMSE < 1e-8; same on a larger mesh; plain vs HYPAD vs FD cost | `presentation/claim3_cp_residual_c3d8.py [--abaqus]` | hand-derived chain rule (implicit-function theorem) of the same update; centred FD of the ORIGINAL with the C3D8 re-solved; Abaqus | NRMSE **2.9e-16**; 4×4×4 vs 1 element **1.0e-14**; Abaqus σ_vM path vs this solver **1.1e-15**, FD of Abaqus vs OTI **≤ 6.2e-11**; HYPAD **9.8×** a plain UMAT pass (compiled kernel) vs **13×** for central FD; regime statements: 3 of 5 hold, "H small" and "τ0, ΔG, q dominate" do not | reproduced for the surrogate model m5_cpflow; the slide's own 12-slip model is not in the repositories |
-| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `presentation/claim4_benchmark_ddsdde.py --abaqus [--variants]` | the original UMAT's own DDSDDE in a paired Abaqus run | see [claim 4](#claim-4--slide-8-benchmark-ddsdde-in-abaqus) | see claim 4 |
-| 25 | 19 internal Jacobian entries, 14 exact, 5 within 1e-5 | `presentation/claim5_constitutive_jacobians.py` | centred FD of the ORIGINAL at the converged local solve; the hand-coded value | 20 of 21 (UMAT, symbol) pairs measured; OTI agrees with FD in every one (≤ 1.4e-7); hand-coded vs OTI: 3 exact, 12 within 1e-5, 5 differ (NKH ANP1P/BNP1P 1.9e-4, VPDCO and VPDCL_R FJAC 2.6e-3 and GDIA 6.7e-5, each confirmed by FD) | reproduced, differs (the hand-coded Jacobians of NKH, VPDCO and VPDCL_R are wrong where the slide says Exact/Pass) |
+| 28–32 | single C3D8 shear, six σ_vM sensitivities in one OTI run; regimes; OTI vs analytic chain rule NRMSE < 1e-8; same on a larger mesh; plain vs HYPAD vs FD cost | `presentation/claim3_cp_residual_c3d8.py [--abaqus]` | hand-derived chain rule (implicit-function theorem) of the same update; centred FD of the ORIGINAL with the C3D8 re-solved; Abaqus | NRMSE **2.9e-16**; 4×4×4 vs 1 element **1.0e-14**; Abaqus σ_vM path vs this solver **1.1e-15**, FD of Abaqus vs OTI **≤ 6.2e-11**; HYPAD **9.2–10.0×** a plain UMAT pass (compiled kernel; 2.5× in the whole Python analysis) vs **13×** for central FD; regime statements: 3 of 5 hold, "H small" and "τ0, ΔG, q dominate" do not | reproduced for the surrogate model m5_cpflow; the slide's own 12-slip model is not in the repositories |
+| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `presentation/claim4_benchmark_ddsdde.py --abaqus --variants` | the original UMAT's own DDSDDE in a paired Abaqus run (claudeP_ jobs) | committed contracts: 16 of 18 run, **15 pass** (10 exact, 5 within tolerance), NKH fails (uninitialised DTHTA in the source), HIN and PCO refused by the transformer; with three documented input corrections **18/18 verified, 12 exact, 6 within tolerance**; absolute differences 0.7234 (NKH), 0.2370 (VPDCL), 0.3716 (VPDCO), 0.03125, 0.015625 as on the slide; spin_elas_def 868.3 (slide 740) | reproduced with documented variants; two transformer defects fixed on the way |
+| 25 | 19 internal Jacobian entries, 14 exact, 5 within 1e-5 | `presentation/claim5_constitutive_jacobians.py` | centred FD of the ORIGINAL at the converged local solve; the hand-coded value | all **21** (UMAT, symbol) pairs present in the sources measured; OTI agrees with FD in every one (≤ 2e-9); hand-coded vs OTI: **5 exact, 10 within 1e-5 (8 of them ≤ 1e-12), 6 differ** — NKH ANP1P/BNP1P 1.9e-4, VPDCO and VPDCL_R FJAC 2.6e-3 and GDIA 6.7e-5, the hand-coded value being the wrong one (FD) | reproduced, differs (hand-coded Jacobians of NKH, VPDCO, VPDCL_R are wrong where the slide says Exact/Pass) |
 
 The other slides are listed in [All slides](#all-slides).
 
@@ -200,11 +200,11 @@ the provider's carried DSIGMA_DP) gives all six sensitivities in one enriched ru
 | σ_vM at the end | 1582.677 MPa (Abaqus: 1582.677, rel. diff 1.1e-15) | ≈ 2.1 GPa (other model) |
 | six sensitivities in one run | yes; max\|du/dp\| 5.8e-19 (homogeneous shear) | yes |
 | OTI vs hand-derived chain rule, NRMSE (RMSE / max\|ref\|) | 2.9e-16 worst of six | < 1e-8 |
-| chain rule vs FD of its own primal (reference self-check) | ≤ 1e-7 (see JSON) | |
+| chain rule vs FD of its own primal (reference self-check) | NRMSE ≤ 6.2e-11 | |
 | central FD of the ORIGINAL (C3D8 re-solved), best step | NRMSE 1.3e-11 … 5.1e-11 | FD "best case, h optimised" |
 | FD of Abaqus (26 jobs, double-precision .fil) vs OTI | NRMSE ≤ 6.2e-11 | |
 | 4×4×4 mesh (affine field on the boundary, 81 free dof) vs 1 element | 1.0e-14 (Abaqus 4×4×4 vs 1 element: 2.9e-16) | "remain the same" (old 1.0e-14) |
-| cost, compiled kernel (8 IPs × 50 incs, same object and flags) | plain 1, HYPAD 9.8 (EVAL or MARCH), central FD 13 | HYPAD "small overhead", FD 13 runs |
+| cost, compiled kernel (8 IPs × 50 incs, same object and flags; 5 samples × 2000 repetitions, median) | plain 1, HYPAD 9.2 (MARCH) / 10.0 (EVAL with carry), central FD 13 | HYPAD "small overhead" (old study figure ×1.1), FD 13 runs |
 | cost, whole Python analysis driver | plain 1, HYPAD 2.5, central FD 13 | |
 
 Regimes (plastic fraction dε̄p/(dγ/√3): elastic < 0.05, plastic flow ≥ 0.95×steady,
@@ -223,7 +223,89 @@ repository's parameters behaves differently.
 
 ## Claim 4 – slide 8: benchmark DDSDDE in Abaqus
 
-(filled from the final run; see the section at the end of this file)
+**How the slide table was produced.** `~/Documents/UMAT_source_transformation/
+validate_all_local.py` transformed every completed benchmark contract, built the
+paired Abaqus workspace with DDSDDE **forced** into the compared outputs (the
+committed spin_elas_def contract does not request it), ran the original and the
+transformed UMAT in Abaqus locally and wrote `umat_oti_workspace/validate_all/
+summary.json`; RA commit `3521485` (`results/make_transform_table.py`) rendered the
+slide table from it (19 cases; UMAT_VPDCL_R failed to run and was left off). The
+ARC run of the same batch (`paper_results/arc_791506`) has the same absolute
+differences for the rows it compared; it did not request DDSDDE for spin_elas_def.
+
+**What is run now.** For each `benchmarks/*.json` of the UMAT repository:
+`run_config_transform` and `build_validation_workspace` (what
+`tools/run_completed_json_batch.py --validate` calls) with STRESS, STATEV,
+DDSDDE, CONVERGENCE compared; both Abaqus 2021.HF5 jobs one at a time, named
+`claudeP_c4_<case>_{orig,oti}`, `double=both`; a job counts only with the
+completion mark (the documented teardown abort is recognised by the repository's
+`completed_despite_teardown_abort`); `extract_results`,
+`compare_validation_results`. Material: the paired-validation probe vector (unit
+constants, 0.3 for Poisson-like names) the job builder writes — as on the slide.
+The DDSDDE "max error" is the largest entry-wise |original − transformed| over the
+compared increments; the relative column of the current comparator divides by the
+largest entry of the increment's matrices (the slide's relative column used the
+older entry-wise definition, which is why the absolute values agree and the
+relative ones do not).
+
+Three rows need a documented input correction (`--variants`, reported as separate
+rows, the committed-contract row is always shown too):
+
+* UMAT_HIN: the contract promotes ONE, TWO, ZERO, which the source initialises by
+  DATA; the current transformer refuses DATA-initialised promoted variables. The
+  variant lists these numeric constants (1, 2, 0) as constants.
+* UMAT_PCO: `UMAT_PCO.for` calls helpers it does not define (KCLEAR, KMMULT, …);
+  the transformer refuses the single file. The variant transforms its resolved
+  routine closure (`umat_oti.transform.dependency_resolution`, entry file first,
+  so the contract's line anchors are unchanged).
+* UMAT_NKH_1.02: with the probe's PROPS(1) = 1 the source takes THTA = PROPS(1)
+  and never sets DTHTA, then uses it in the thermal strain (line 111; a
+  `-finit-real=snan` build traps there), so each build computes with whatever
+  memory holds (the committed-contract run differs by 2657 in DDSDDE and 0.9 % in
+  stress between the two builds). The variant sets PROPS(1) = 0 and gives every
+  node the initial temperature 1.0, i.e. the probe's material with DTHTA = 0
+  defined.
+
+Two transformer defects, found by this run and fixed in the UMAT repository (see
+the end of this file), made UMAT_PCL, PCLI, PCLI_R and PCLK fail to compile in
+Abaqus and UMAT_VPDCL/NKH return a wrong stress; before the fix the same run gave
+10 passes out of 16 compared slide cases (`imq_abaqus/claude_P/claim4_before_transformer_fix.json`).
+
+| UMAT | Committed contract: DDSDDE max abs / rel, verdict | Documented variant | Slide (abs / rel, explanation) |
+|---|---|---|---|
+| UMAT_ECL_TEMP | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_ECO | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_HIN | transform refused (DATA-initialised promoted constants) | 0 / 0 pass | 0 / 0, Exact |
+| UMAT_NKH_1.02 | 2657 / 8.9e-01 FAIL (uninitialised DTHTA) | **0.7234** / 7.5e-04 pass | 0.72 / 2.1e-3, notching |
+| UMAT_PCL | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_PCLI | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_PCLI_R | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_PCLK | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_PCO | transform refused (helpers not defined in the file) | 0 / 0 pass | 0 / 0, Exact |
+| UMAT_VPDCL | **0.2370** / 2.5e-04 pass | – | 0.24 / 1.2e-3, notching |
+| UMAT_VPDCO | **0.3716** / 3.6e-04 pass | – | 0.37 / 1.1e-3, notching |
+| code_exp | **0.03125** / 1.1e-07 pass | – | 0.031 / 1.6e-7, rounding |
+| code_imp | **0.015625** / 6.2e-08 pass | – | 0.016 / 8.2e-8, rounding |
+| elastic | 0 / 0 pass | – | 0 / 0, Exact |
+| spin_elas_def | **868.3** / 3.1e-03 pass | – | 740 / 2.6e-3, "error in original UMAT" |
+| spin_elastic | 0 / 0 pass | – | 0 / 0, Exact |
+| visco_beam | 0 / 0 pass | – | 0 / 0, Exact |
+| visco_imp | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_VPDCL_R (not on the slide) | both jobs fail (3-D deck; source in bounds only for NTENS = 4) | 0.3673 / 3.2e-04 pass (plane-strain deck) | – |
+
+**Measured vs slide.** Committed contracts: 16 of the 18 slide cases run, 15 pass
+(10 exact, 5 differ within tolerance), NKH fails on its uninitialised DTHTA, HIN
+and PCO are refused by the transformer. With the three documented variants:
+**18/18 compared and verified, 12 exact, 6 differing within tolerance** — the
+slide's counts; the absolute differences of NKH, VPDCL, VPDCO, code_exp and
+code_imp are the slide's to the digits it shows. spin_elas_def differs by 868.3
+(slide 740): its stress is integrated from DFGRD0/DFGRD1 with a spin correction,
+so the OTI tangent carries stress-dependent terms (0.1–0.3 % of the diagonal) that
+the hand-coded elastic DDSDDE omits; the shear diagonal differs by 2.6e-4
+relative, **not by a factor of two** (the slide's "stray factor of two in a shear
+term" is not what this comparison shows for spin_elas_def, and no other benchmark
+row shows one). Whether the OTI tangent is the one Abaqus's co-rotational update
+needs was not checked against an independent finite-strain reference here.
 
 ## Claim 5 – slide 25: internal constitutive Jacobians
 
@@ -249,7 +331,36 @@ unset), unit-constant PROPS headroom for the KUHARD table read. Every source fir
 passes a gate that compiles the ORIGINAL with `-finit-real=snan -ffpe-trap=invalid`
 and runs the chosen path (a trap means it computes with unwritten memory).
 
-(table filled from the final run; see the end of this file)
+Cell: slide classification of hand-coded vs OTI (Exact = identical; Pass = relative
+difference ≤ 1e-5; otherwise the measured difference), then the relative
+differences of OTI and of the hand-coded value against FD, then the slide's cell.
+
+| UMAT | FJAC | DETDG | GDIA | ANP1P | BNP1P | CEVPI |
+|---|---|---|---|---|---|---|
+| HIN | – | – | – | – | – | Exact (claim 4 DDSDDE, contract variant); slide Exact |
+| NKH_1.02 | Pass 7e-14 (FD: OTI 6e-14, hand 1e-13); slide Pass | Exact (FD 4e-14); slide Exact | – | **Differs 1.9e-4** (FD: OTI 4e-11, hand 1.9e-4); slide Exact | **Differs 1.9e-4** (FD: OTI 7e-11, hand 1.9e-4); slide Exact | – |
+| PCL | Pass 3.5e-16 (FD 4e-13 both); slide Exact | – | – | – | – | – |
+| PCLI | Pass 2.2e-13 (FD 2e-9 both); slide Exact | – | Pass 1.5e-16 (FD 2e-11 both); slide Exact | – | – | – |
+| PCLI_R | Pass 2.2e-13 (FD 2e-9 both); slide Exact | – | Pass 1.5e-16 (FD 2e-11 both); not on slide | – | – | – |
+| PCLK | Pass 3.5e-16 (FD 7e-13 both); slide Exact | – | – | – | – | – |
+| PCO | Pass 2.2e-13 (FD 2e-9 both); slide Exact | – | Pass 1.5e-16 (FD 2e-11 both); slide Exact | – | – | – |
+| VPDCL | Pass 1.1e-16 (FD 3e-14 both); slide Pass | Exact (FD 2e-14); slide Exact | – | – | – | – |
+| VPDCL_R | **Differs 2.6e-3** (FD: OTI 4e-11, hand 2.6e-3); slide Pass | Exact (FD 8e-14); slide Exact | **Differs 6.7e-5** (FD: OTI 6e-11, hand 6.7e-5); not on slide | – | – | – |
+| VPDCO | **Differs 2.6e-3** (FD: OTI 4e-11, hand 2.6e-3); slide Pass | Exact (FD 8e-14); slide Exact | **Differs 6.7e-5** (FD: OTI 6e-11, hand 6.7e-5); slide Pass | – | – | – |
+
+**Measured vs slide.** The sources contain 21 (UMAT, symbol) pairs (the slide
+shows 19; PCLI_R and VPDCL_R also carry GDIA). All 21 were measured; the OTI
+value agrees with FD in every one (worst 2e-9, the FD reference's own limit).
+Against the hand-coded value: 5 exact, 10 within 1e-5 (eight of them at 1e-13 or
+below, i.e. one to a few units in the last place, which the slide would have
+called Exact), and 6 that differ — every one of the six because the hand-coded
+Jacobian is wrong (it disagrees with FD by the same amount): NKH's ANP1P and BNP1P
+drop a factor (1 − D), VPDCO's and VPDCL_R's GDIA(3,3) drop (1 − D), and their
+FJAC, which uses GDIA, is 2.6e-3 off. With damage D = 0 these would be exact; the
+probe path activates damage. The slide's "14 exact, 5 within tolerance" is
+therefore not what the current code measures for these hand-coded values; the
+statement "all needed derivatives can be computed with our framework" is
+supported (OTI = FD everywhere).
 
 ## All slides
 

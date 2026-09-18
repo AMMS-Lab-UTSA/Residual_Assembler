@@ -333,13 +333,22 @@ def measure(model: str, source: Path, symbols: List[str], props: List[float], nt
         entry = oti.get((target, y_slot)) or {}
         oti_value = entry.get("GSEED", entry.get("gseed"))
         fd_values = [ladder[s][target - 1][y_slot - 1] for s in FD_STEPS]
-        gaps = [(abs(a - b) / max(abs(a), abs(b), 1e-300), i) for i, (a, b) in enumerate(zip(fd_values, fd_values[1:]))]
-        best_gap, best_i = min(gaps)
+        response = seeded_run.statev[target - 1][y_slot - 1]
+        # consecutive-step agreement, but never below the round-off floor of the
+        # finer step, eps*|Y|/(2h): two steps that quantise the response to the
+        # same bits agree exactly and are not thereby converged
+        scores = []
+        for i, (a, b) in enumerate(zip(fd_values, fd_values[1:])):
+            gap = abs(a - b) / max(abs(a), abs(b), 1e-300)
+            h_fine = FD_STEPS[i + 1] * max(abs(gamma), 1e-300)
+            floor = 2.220446049250313e-16 * max(abs(response), 1e-300) / (2.0 * h_fine) / max(abs(b), 1e-300)
+            scores.append((max(gap, floor), gap, i))
+        _score, best_gap, best_i = min(scores)
         fd = fd_values[best_i]
         rows.append({
             "symbol": symbol, "component": component, "response": response,
             "hand_coded": hand, "oti": oti_value, "fd": fd, "fd_step": FD_STEPS[best_i],
-            "fd_plateau_gap": best_gap,
+            "fd_plateau_gap": best_gap, "fd_plateau_score": _score,
             "oti_vs_hand_rel": _rel(oti_value, hand), "oti_vs_fd_rel": _rel(oti_value, fd),
             "hand_vs_fd_rel": _rel(hand, fd), "response_value": seeded_run.statev[target - 1][y_slot - 1],
         })
@@ -456,8 +465,8 @@ def main(argv=None) -> int:
     summary = {
         "symbol_model_pairs_in_sources": sum(1 for row in table.values() for c in row.values() if c != "-"),
         "pairs_measured": len(measured),
-        "exact": sum(1 for m, s in measured if table[m][s] == "Exact"),
-        "pass": sum(1 for m, s in measured if table[m][s] == "Pass"),
+        "exact": sum(1 for m, s in measured if table[m][s].split(" ")[0] == "Exact"),
+        "pass": sum(1 for m, s in measured if table[m][s].split(" ")[0] == "Pass"),
         "differs": [f"{m}/{s}: {table[m][s]}" for m, s in measured if table[m][s].startswith("Differs")],
         "not_measured": [f"{m}/{s}: {c}" for m, row in table.items() for s, c in row.items() if c.startswith("not")],
         "slide": {"entries": 19, "exact": 14, "pass": 5},
@@ -475,16 +484,19 @@ def main(argv=None) -> int:
 def _cevpi_cell(model: str, claim4) -> Dict[str, object]:
     if not claim4:
         return {"cell": "not measured (claim 4 result absent)"}
-    row = next((r for r in claim4.get("rows", []) if r.get("case") == model), None)
-    if not row:
-        return {"cell": "not measured (no claim-4 row)"}
-    compared = row.get("compared")
-    if not compared:
-        return {"cell": f"not measured (claim 4: {row.get('status')})",
-                "reason": "; ".join(row.get("blockers", []))[:400]}
-    rel = compared.get("ddsdde_max_rel")
+    rows = [r for r in claim4.get("rows", []) if r.get("case") == model]
+    main = next((r for r in rows if not r.get("variant")), None)
+    variant = next((r for r in rows if r.get("variant") and r.get("compared")), None)
+    chosen, note = main, "claim 4 Abaqus DDSDDE = (1-D) CEVPI, committed contract"
+    if (not main or not main.get("compared")) and variant:
+        chosen, note = variant, ("claim 4 Abaqus DDSDDE = (1-D) CEVPI, documented contract variant: "
+                                 + variant["variant"])
+    if not chosen or not chosen.get("compared"):
+        return {"cell": f"not measured (claim 4: {(main or {}).get('status')})",
+                "reason": "; ".join((main or {}).get("blockers", []))[:400]}
+    rel = chosen["compared"].get("ddsdde_max_rel")
     cell = "Exact" if rel == 0.0 else ("Pass" if rel is not None and rel <= PASS_TOLERANCE else f"Differs {rel}")
-    return {"cell": cell, "source": "claim 4 Abaqus DDSDDE = (1-D) CEVPI", "ddsdde_max_rel": rel}
+    return {"cell": cell + (" (variant)" if chosen is variant else ""), "source": note, "ddsdde_max_rel": rel}
 
 
 if __name__ == "__main__":
