@@ -22,17 +22,19 @@ adding geometric stiffness. This is an exact linearization, not an approximate
 
 ## Reproduce Offline
 
-Run commands sequentially from the recovery checkout. Genuine OTILib is
-required; the unrelated PyPI `pyoti` is not a substitute.
+Run commands sequentially from a Residual_Assembler checkout. Genuine OTILib
+is required (`scripts/setup_otilib.sh`); the unrelated PyPI `pyoti` is not a
+substitute.
 
 ```bash
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PYTHONPATH="$PWD:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311"
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+cd /path/to/Residual_Assembler
+export UMAT_OTI_REPO=/path/to/UMAT_source_transformation
+export OTILIB=/path/to/otilib/build_py311
+export PYTHONPATH="$PWD:$UMAT_OTI_REPO/src:$OTILIB"
+export PYOTI_PATH="$OTILIB"
+export OTILIB_ROOT="$OTILIB"
 export RUN_OTILIB_TESTS=1
-export UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery
-PY=/home/ammslab3/softwarex_work/.venv/bin/python
+PY=/path/to/venv/bin/python
 "$PY" examples/finite_strain_c3d8/benchmark.py
 "$PY" -m residual_core.ui.cli --config examples/finite_strain_c3d8/verified/config.json assemble examples/finite_strain_c3d8/verified/model.json --mode material-replay --tangent
 "$PY" -m residual_core.ui.cli --config examples/finite_strain_c3d8/verified/config.json sensitivity examples/finite_strain_c3d8/verified/model.json --params examples/finite_strain_c3d8/verified/params.json
@@ -65,8 +67,8 @@ global assembler, then solved using the existing sensitivity package.
 
 ## Abaqus Check
 
-One real Abaqus 2021.HF5 job, `imqr6_hyper`, completed in
-`/home/ammslab3/softwarex_work/imq_abaqus/recovery_finite`.
+One real Abaqus 2021.HF5 job, `imqr6_hyper`, completed (in a work directory
+outside the repository, `imq_abaqus/recovery_finite` on the machine that ran it).
 The independent [neo_hookean_uhyper.for](neo_hookean_uhyper.for) provides energy
 derivatives in modified invariants, not DDSDDE from the Python implementation.
 Seven sequential steps prescribe a homogeneous finite deformation, then three

@@ -22,8 +22,14 @@ crystal plasticity): replayed stress, state and reactions match the ODB at
 every integration point; the J2 case runs in about 10 s (25 s re-equilibrated);
 OTI sensitivities agree with whole-model central finite differences of the
 original UMAT to 6.6e-8 (E), 5.8e-8 (nu), 7.9e-9 (sigma_y) and 5.4e-6 (H), and
-to at most 6.7e-7 for all ten FCC parameters. Details and what did not
-reproduce: [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md),
+to at most 6.7e-7 for all ten FCC parameters. A check that needs no finite
+differences holds too: both models are homogeneous of degree one in their
+stress-dimensioned parameters, so the parameter-weighted sensitivities of every
+stress and reaction must add up to the value itself (and to zero for
+displacements) at every increment, which the re-equilibrated results do to
+1e-12 (J2) and 1.2e-13 (FCC). Rerun them with
+[examples/presentation_cantilevers](examples/presentation_cantilevers/README.md);
+details and what did not reproduce: [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md),
 [docs/PRESENTATION_CLAIMS.md](docs/PRESENTATION_CLAIMS.md).
 
 **New here?** Read [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — installation,
@@ -48,9 +54,12 @@ R_e     = ∫_Ωe B^T σ(u, a, q) dΩ - f_e^ext
 Your model never leaves your machine.
 
 **Read the current [usage report](docs/USAGE_REPORT.md) before planning around
-this.** C3D8 stress-driven assembly, pinned J2 total-history sensitivity and
-bounded neo-Hookean finite-strain sensitivity have separate verified workflows.
-They do not establish arbitrary material or full-sized cantilever support.
+this.** C3D8 stress-driven assembly, total-history sensitivity of small-strain
+C3D8 analyses with any UMAT-OTI provider (`resasm history`, which `resasm
+request` uses outside its bounded example), and bounded neo-Hookean
+finite-strain sensitivity have separate verified workflows. Finite-strain
+plasticity, other element types, several steps or materials, and distributed
+loads are refused by name rather than approximated.
 
 ## What you provide (the ingredients)
 

@@ -21,11 +21,12 @@ and three public output names remain unchanged. Installation, installed GUI
 launch commands, and the executable joint wheel gate are documented in
 [evidence/recovery_install.md](evidence/recovery_install.md).
 
-For development from the recovery checkout only:
+For development from source checkouts only (from the Residual_Assembler root,
+with UMAT_source_transformation beside it):
 
 ```sh
-export PY=/home/ammslab3/softwarex_work/.venv/bin/python
-export PYTHONPATH="$PWD:../imq-umat-recovery/src"
+export PY=/path/to/venv/bin/python
+export PYTHONPATH="$PWD:../UMAT_source_transformation/src"
 "$PY" -m residual_core.ui.cli request \
   --model /path/to/Analysis.inp --odb /path/to/Analysis.odb \
   --material /path/to/OTI_UMAT.obj \

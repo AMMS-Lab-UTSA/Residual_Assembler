@@ -3,9 +3,8 @@
 The primary interface now consumes the original slide-12 inputs directly:
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PY=/home/ammslab3/softwarex_work/.venv/bin/python
-export PYTHONPATH="$PWD:../imq-umat-recovery/src"
+cd /path/to/Residual_Assembler
+export PY=/path/to/venv/bin/python        # a venv with both packages installed
 "$PY" -m residual_core.ui.cli request \
   --model /path/to/Analysis.inp --odb /path/to/Analysis.odb \
   --material /path/to/OTI_UMAT.obj \
@@ -45,15 +44,17 @@ No prebuilt provider or generated scratch directory is a required input.
 
 ## Environment
 
-Run from the recovery checkout, not the editable install's main checkout:
+Run from a Residual_Assembler checkout with the UMAT_source_transformation
+checkout beside it and a genuine OTILib build (`scripts/setup_otilib.sh`):
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PY=/home/ammslab3/softwarex_work/.venv/bin/python
-export UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery
-export PYTHONPATH="$PWD:$UMAT_OTI_REPO/src:/home/ammslab3/otilib/build_py311"
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+cd /path/to/Residual_Assembler
+export PY=/path/to/venv/bin/python
+export UMAT_OTI_REPO=/path/to/UMAT_source_transformation
+export OTILIB=/path/to/otilib/build_py311
+export PYTHONPATH="$PWD:$UMAT_OTI_REPO/src:$OTILIB"
+export PYOTI_PATH="$OTILIB"
+export OTILIB_ROOT="$OTILIB"
 export RUN_OTILIB_TESTS=1
 "$PY" -c 'import residual_core,umat_oti,pyoti; print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.__file__)'
 ```
