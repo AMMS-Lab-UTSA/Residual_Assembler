@@ -238,8 +238,21 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
         raise ValueError(str(error)) from error
 
 
+def _command_line(name, args, keys):
+    """The command as parsed (not sys.argv, which is the host process when called in-process)."""
+    words = ["resasm", name]
+    for key in keys:
+        value = getattr(args, key, None)
+        if value is None or value is False:
+            continue
+        flag = "--" + key.replace("_", "-")
+        words += [flag] if value is True else [flag, str(value)]
+    return " ".join(shlex.quote(word) for word in words)
+
+
 def run(args):
-    command = "resasm " + " ".join(shlex.quote(a) for a in sys.argv[1:]) if sys.argv else "resasm history"
+    command = _command_line("history", args, ("model", "odb", "fields", "material", "mapping", "request",
+                                              "out", "reequilibrate", "verify", "fd_steps", "abaqus"))
     try:
         report = run_history_request(
             model=args.model, material=args.material, request=args.request, out=args.out,
@@ -296,7 +309,8 @@ def route_request(args):
         return bounded(args)
     print("resasm request: outside the bounded presentation scope (%s); using the history "
           "replay engine" % reason)
-    command = "resasm " + " ".join(shlex.quote(a) for a in sys.argv[1:]) if sys.argv else "resasm request"
+    command = _command_line("request", args, ("model", "odb", "material", "mapping", "request", "out",
+                                              "abaqus", "validate"))
     try:
         report = run_history_request(
             model=args.model, material=args.material, request=args.request, out=args.out,
