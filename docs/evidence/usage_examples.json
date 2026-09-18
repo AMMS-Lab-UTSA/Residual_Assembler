@@ -287,7 +287,7 @@
       "name": "R-X4",
       "argv": [
         "/home/ammslab3/softwarex_work/.venv/bin/python",
-        "scripts/reproduce_imqcam_pipeline.py",
+        "scripts/reproduce_connected_pipeline.py",
         "--skip-abaqus",
         "--out",
         "/tmp/recovery_usage__l41upif/R-X4"
@@ -333,7 +333,7 @@
                 "-m",
                 "residual_core.ui.cli",
                 "replay",
-                "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/imqcam_j2_cantilever/model.json",
+                "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/bounded_j2_c3d8/model.json",
                 "--object",
                 "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.obj",
                 "--contract",
@@ -393,7 +393,7 @@
             "residual_assembler": {
               "path": "/home/ammslab3/softwarex_work/imq-ra-recovery",
               "commit": "69ac77cf4865ef5cfc2a46fad987bb7fb6d73e21",
-              "status": " M README.md\n M START_HERE.md\n M STATUS.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M resasm_user/__init__.py\n M residual_core/app/streamlit_app.py\n M residual_core/core/assembler.py\n M residual_core/formulations/c3d8_kernel.py\n M residual_core/formulations/c3d8_sensitivity.py\n M residual_core/formulations/solid_c3d8_finite_strain.py\n M residual_core/io/abaqus_odb_export.py\n M residual_core/io/neutral_model_io.py\n M residual_core/materials/registry.py\n M residual_core/materials/verified_fixture.py\n M residual_core/ui/cli.py\n M residual_core/ui/wizard.py\n M schemas/contract_lock.json\n M schemas/transform_generation.json\n M tests/contract/contract_paths.py\n M tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py\n D tests/fixtures/verified/compresibleneohookean--d78e61195f.json\n M tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json\n M tests/fixtures/verified/j2_props--2feae9f158.json\n D tests/fixtures/verified/lemaitredamagenonlocal--e7f8623ec9.json\n D tests/fixtures/verified/neohookean_umat--10759f1ffd.json\n D tests/fixtures/verified/umat--b8fa38353e.json\n D tests/fixtures/verified/umat_biofilm_visco_phase2--42eacbd5e8.json\n D tests/fixtures/verified/umat_elastic--7e9bb4c291.json\n D tests/fixtures/verified/umat_iso_stretch--890619c18d.json\n D tests/fixtures/verified/umat_viscoelastic--c6ae96a734.json\n M tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py\n M tests/framework/test_a_verified_umat_drives_the_assembler.py\n M tests/framework/test_otilib_fe_sensitivity.py\n M tests/framework/test_the_assembled_residual_derivative_is_differenced.py\n M tests/framework/test_user_layer.py\n M tests/framework/test_which_layer_the_failure_came_from.py\n M tests/framework/verified_fixtures.py\n?? docs/IMQCAM_WORKFLOW.md\n?? docs/PRESENTATION_INTERFACE.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/finite_strain_c3d8/\n?? examples/imqcam_j2_cantilever/\n?? examples/presentation_request/\n?? examples/residual_sensitivity_c3d8/\n?? residual_core/core/field_sensitivity.py\n?? residual_core/formulations/finite_strain_sensitivity.py\n?? residual_core/interface/\n?? residual_core/io/derivative_fields.py\n?? residual_core/materials/neo_hookean.py\n?? residual_core/replay/\n?? residual_core/runtime/\n?? residual_core/ui/cmd_replay.py\n?? residual_core/ui/cmd_request.py\n?? scripts/audit_recovery_usage.py\n?? scripts/check_presentation_browser.py\n?? scripts/clean_install_gate.py\n?? scripts/regenerate_recovery_fixture.py\n?? scripts/reproduce_imqcam_pipeline.py\n?? scripts/reproduce_presentation_request.py\n?? tests/abaqus_derivative_export/\n?? tests/fixtures/historical/\n?? tests/fixtures/presentation_j2/\n?? tests/framework/test_binary_compat.py\n?? tests/framework/test_field_sensitivity.py\n?? tests/framework/test_finite_strain_hyperelastic.py\n?? tests/framework/test_interface_versions.py\n?? tests/integration/\n",
+              "status": " M README.md\n M START_HERE.md\n M STATUS.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M resasm_user/__init__.py\n M residual_core/app/streamlit_app.py\n M residual_core/core/assembler.py\n M residual_core/formulations/c3d8_kernel.py\n M residual_core/formulations/c3d8_sensitivity.py\n M residual_core/formulations/solid_c3d8_finite_strain.py\n M residual_core/io/abaqus_odb_export.py\n M residual_core/io/neutral_model_io.py\n M residual_core/materials/registry.py\n M residual_core/materials/verified_fixture.py\n M residual_core/ui/cli.py\n M residual_core/ui/wizard.py\n M schemas/contract_lock.json\n M schemas/transform_generation.json\n M tests/contract/contract_paths.py\n M tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py\n D tests/fixtures/verified/compresibleneohookean--d78e61195f.json\n M tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json\n M tests/fixtures/verified/j2_props--2feae9f158.json\n D tests/fixtures/verified/lemaitredamagenonlocal--e7f8623ec9.json\n D tests/fixtures/verified/neohookean_umat--10759f1ffd.json\n D tests/fixtures/verified/umat--b8fa38353e.json\n D tests/fixtures/verified/umat_biofilm_visco_phase2--42eacbd5e8.json\n D tests/fixtures/verified/umat_elastic--7e9bb4c291.json\n D tests/fixtures/verified/umat_iso_stretch--890619c18d.json\n D tests/fixtures/verified/umat_viscoelastic--c6ae96a734.json\n M tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py\n M tests/framework/test_a_verified_umat_drives_the_assembler.py\n M tests/framework/test_otilib_fe_sensitivity.py\n M tests/framework/test_the_assembled_residual_derivative_is_differenced.py\n M tests/framework/test_user_layer.py\n M tests/framework/test_which_layer_the_failure_came_from.py\n M tests/framework/verified_fixtures.py\n?? docs/CONNECTED_WORKFLOW.md\n?? docs/REQUEST_INTERFACE.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/finite_strain_c3d8/\n?? examples/bounded_j2_c3d8/\n?? examples/presentation_request/\n?? examples/residual_sensitivity_c3d8/\n?? residual_core/core/field_sensitivity.py\n?? residual_core/formulations/finite_strain_sensitivity.py\n?? residual_core/interface/\n?? residual_core/io/derivative_fields.py\n?? residual_core/materials/neo_hookean.py\n?? residual_core/replay/\n?? residual_core/runtime/\n?? residual_core/ui/cmd_replay.py\n?? residual_core/ui/cmd_request.py\n?? scripts/audit_recovery_usage.py\n?? scripts/check_presentation_browser.py\n?? scripts/clean_install_gate.py\n?? scripts/regenerate_recovery_fixture.py\n?? scripts/reproduce_connected_pipeline.py\n?? scripts/reproduce_presentation_request.py\n?? tests/abaqus_derivative_export/\n?? tests/fixtures/historical/\n?? tests/fixtures/presentation_j2/\n?? tests/framework/test_binary_compat.py\n?? tests/framework/test_field_sensitivity.py\n?? tests/framework/test_finite_strain_hyperelastic.py\n?? tests/framework/test_interface_versions.py\n?? tests/integration/\n",
               "source_tree_sha256": "f94d61f18c83bf79ad683279b583c374caefe886347f5f73c9d7411c3dfea10d",
               "source_sha256": {
                 "residual_core/__init__.py": "9d140b7c994b1282bd8fc0a8ffc18aebae70555ed91fea78723aa7026f2bd8ea",
@@ -497,9 +497,9 @@
                 "residual_core/ui/examples.py": "e923027aaabd5d8e76458be020dbf0aae337fdfa0302a6ff464ac9806c8753ad",
                 "residual_core/ui/wizard.py": "79140199fda695af537ed2f61735e3073a92a1bf28c001fe42b1dd4eced98ec4",
                 "residual_core/umat_adapter_fortran/umat_replay.py": "0faab248b9685918a8a927cc84b4400110e64c0ee51441e49d90d2535789aab7",
-                "scripts/reproduce_imqcam_pipeline.py": "c99d95acfbaf58052b4afa5e333f05422d82fb2ab325b6fe02e0d29b6f2462ca",
-                "examples/imqcam_j2_cantilever/README.md": "f2a61f71ac7023081118bfd014fdd664b808ee088e74739092fbd0479e2932a3",
-                "examples/imqcam_j2_cantilever/model.json": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19",
+                "scripts/reproduce_connected_pipeline.py": "c99d95acfbaf58052b4afa5e333f05422d82fb2ab325b6fe02e0d29b6f2462ca",
+                "examples/bounded_j2_c3d8/README.md": "f2a61f71ac7023081118bfd014fdd664b808ee088e74739092fbd0479e2932a3",
+                "examples/bounded_j2_c3d8/model.json": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19",
                 "tests/abaqus_derivative_export/README.md": "224b339d39fde203601fbfff113bb63fafb67138edcb1584e9481d77fa19909b",
                 "tests/abaqus_derivative_export/derivative_layout.json": "a8ff28177ffdebc5dac3f4fc48ee91a0ae3d229af1423f35a6c86bb1b9a03fe1",
                 "tests/abaqus_derivative_export/elastic_export_umat.for": "75dd3a3ba0fa964e24b70c0dc56009ad3324315e63a6df61030cac81805989dd",
@@ -741,7 +741,7 @@
             }
           },
           "model": {
-            "path": "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/imqcam_j2_cantilever/model.json",
+            "path": "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/bounded_j2_c3d8/model.json",
             "sha256": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19"
           },
           "provider": {

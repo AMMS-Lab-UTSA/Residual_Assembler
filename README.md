@@ -1,47 +1,73 @@
 # Residual_Assembler
 
+[![CI](https://github.com/AMMS-Lab-UTSA/Residual_Assembler/actions/workflows/ci.yml/badge.svg)](https://github.com/AMMS-Lab-UTSA/Residual_Assembler/actions/workflows/ci.yml)
+[![License: GPL-3.0-only](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 Residual_Assembler computes **parameter sensitivities of a converged
-finite-element analysis without re-running it**. Given the saved analysis
-(`Analysis.inp` + `Analysis.odb`), a compiled OTI material provider
+finite-element analysis without re-running it**. From the saved analysis
+(`Analysis.inp` + `Analysis.odb`), a compiled material provider
 (`OTI_UMAT.obj` + `Mapping.json`, built by the companion
-[UMAT-OTI](https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation)
-project) and a `sensitivity_request.json`, it replays the material at every
-integration point and increment, assembles the residual `R`, its tangent `K`
-and `dR/dp`, solves `K du/dp = -dR/dp`, and writes full-field sensitivities
-(`sensitivity_results.json`, `sensitivity_tables.csv`, `run_report.txt`; full
-arrays under `private/`). The material source never reaches the collaborator.
+[UMAT-OTI](https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation)) and a
+`sensitivity_request.json`, it replays the material at every integration point
+and increment, assembles the residual `R`, its tangent `K` and `dR/dp`, solves
+
+    K du/dp = -dR/dp
+
+and writes the requested sensitivities (`sensitivity_results.json`,
+`sensitivity_tables.csv`, `run_report.txt`; full fields under `private/`). The
+material's source code never reaches the person running the analysis.
 
 ```bash
 resasm request --model Analysis.inp --odb Analysis.odb \
     --material OTI_UMAT.obj --request sensitivity_request.json --out results
 ```
 
-Measured on the two IMQCAM Annual Meeting cantilevers (Abaqus 2021 runs of
-1,536 C3D8 / 40 steps with J2 plasticity and 384 C3D8 / 25 steps with FCC
-crystal plasticity): replayed stress, state and reactions match the ODB at
-every integration point; the J2 case runs in about 10 s (25 s re-equilibrated);
-OTI sensitivities agree with whole-model central finite differences of the
-original UMAT to 6.6e-8 (E), 5.8e-8 (nu), 7.9e-9 (sigma_y) and 5.4e-6 (H), and
-to at most 6.7e-7 for all ten FCC parameters. A check that needs no finite
-differences holds too: both models are homogeneous of degree one in their
-stress-dimensioned parameters, so the parameter-weighted sensitivities of every
-stress and reaction must add up to the value itself (and to zero for
-displacements) at every increment, which the re-equilibrated results do to
-1e-12 (J2) and 1.2e-13 (FCC). Rerun them with
-[examples/presentation_cantilevers](examples/presentation_cantilevers/README.md);
-details and what did not reproduce: [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md),
-[docs/PRESENTATION_CLAIMS.md](docs/PRESENTATION_CLAIMS.md).
+## Quick start
 
-**New here?** Read [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — installation,
-every command with its real output, the GUI, examples and troubleshooting.
+```bash
+git clone https://github.com/AMMS-Lab-UTSA/Residual_Assembler.git
+git clone https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git
+python3 -m venv .venv && . .venv/bin/activate
+pip install -e "./Residual_Assembler[gui,yaml,test]" "./UMAT_source_transformation[test]"
+resasm --help
+```
 
-**You should not have to provide R. You provide the ingredients, and
-Residual_Assembler builds R.**
+Linux with Python 3.10+ and `gfortran`. Abaqus (tested: 2021.HF5) is needed
+only to export an ODB; the sensitivity computation itself does not call it.
+[docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) is the full user guide: every
+command with real output, the GUI, the examples and troubleshooting.
 
-Abaqus hides the global residual. It owns it internally and never exposes it — so
-"just write your residual function" is not something an Abaqus user can do. But R
-is not magic. It is assembled from element residuals, materials, solution fields,
-loads and constraints. So those are what we ask for.
+## Examples
+
+| Example | What it shows |
+| --- | --- |
+| [examples/cantilevers](examples/cantilevers/README.md) | Two full-size models: a J2-plastic cantilever (1,536 C3D8, 7,497 DOF, 40 increments, 4 parameters) and an FCC crystal-plasticity cantilever (384 C3D8, 25 increments, 10 parameters), with the deck generator, the Abaqus scripts and the requests |
+| [examples/replay_history/j2_beam](examples/replay_history/) | A small committed Abaqus J2 beam that the test suite replays offline |
+| [examples/bounded_j2_c3d8](examples/bounded_j2_c3d8/README.md) | One element, cyclic loading, the complete provider-to-sensitivity pipeline in one command |
+| [examples/finite_strain_c3d8](examples/finite_strain_c3d8/README.md) | Finite-strain neo-Hookean assembly and sensitivities |
+| `resasm init --template python` | The smallest sensitivity calculation, on a residual you write yourself |
+
+Measured on the two cantilevers: the replayed stress, state and reactions match
+the ODB at every integration point; the J2 model runs in about 10 s (25 s when
+every increment is first re-equilibrated to double precision). The
+sensitivities agree with whole-model central finite differences of the original
+UMAT to 6.6e-8 (E), 5.8e-8 (nu), 7.9e-9 (initial yield stress) and 5.4e-6 (H),
+and to at most 6.7e-7 for all ten FCC parameters. A check that needs no finite
+differences holds as well: both models are homogeneous of degree one in their
+stress-dimensioned parameters, so at every increment the parameter-weighted
+sensitivities of each stress and reaction sum to the value itself, and those of
+each displacement sum to zero. The re-equilibrated results satisfy this to
+1e-12 (J2) and 1.2e-13 (FCC). Method and full results:
+[docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md),
+[docs/VERIFICATION_RECORD.md](docs/VERIFICATION_RECORD.md).
+
+## How it works
+
+**You do not have to provide R. You provide the ingredients, and
+Residual_Assembler builds R.** Abaqus keeps its global residual internal, so
+"write your residual function" is not something an Abaqus user can do. But R is
+assembled from element residuals, materials, solution fields, loads and
+constraints, and those are what the program asks for:
 
 ```
 R(u, a) = F_internal(u, a, q) - F_external(a, t) + F_constraints(u, t)
@@ -49,17 +75,13 @@ R(u, a) = F_internal(u, a, q) - F_external(a, t) + F_constraints(u, t)
 R_e     = ∫_Ωe B^T σ(u, a, q) dΩ - f_e^ext
 ```
 
-> **One model recipe. One converged solution. One parameter list. Sensitivities out.**
-
-Your model never leaves your machine.
-
-**Read the current [usage report](docs/USAGE_REPORT.md) before planning around
-this.** C3D8 stress-driven assembly, total-history sensitivity of small-strain
-C3D8 analyses with any UMAT-OTI provider (`resasm history`, which `resasm
-request` uses outside its bounded example), and bounded neo-Hookean
-finite-strain sensitivity have separate verified workflows. Finite-strain
-plasticity, other element types, several steps or materials, and distributed
-loads are refused by name rather than approximated.
+Supported, each with its own verified workflow: C3D8 stress-driven assembly;
+total-history sensitivities of small-strain C3D8 analyses with any UMAT-OTI
+provider (`resasm history`, which `resasm request` uses automatically for every
+model outside its bounded single-material example); and finite-strain
+neo-Hookean sensitivities. Finite-strain plasticity, other element types,
+several steps or materials and distributed loads are refused with a named
+reason rather than approximated.
 
 ## What you provide (the ingredients)
 
@@ -195,8 +217,7 @@ pip install -e ".[gui]"
 streamlit run scripts/app.py
 ```
 
-The first tab, **Sensitivity Request**, is the collaborator screen of the
-presentation: point at `OTI_UMAT.obj` (its `Mapping.json` beside it), the
+The first tab, **Sensitivity Request**, is the collaborator screen: point at `OTI_UMAT.obj` (its `Mapping.json` beside it), the
 saved `Analysis.inp` and `Analysis.odb`, tick the parameters, choose the output
 and the region, and press **Solve** — it runs `resasm request` and shows the
 full-field result ([docs/GUI.md](docs/GUI.md), screenshots in
@@ -333,13 +354,10 @@ does not contain it, so run:
 That fetches only `sources/permissive/` (MIT / BSD-3). Copyleft and
 license-unknown submodules are marked `update = none` and are never fetched by
 setup. Without the bootstrap the tests that need it skip with a message naming
-the missing file and this command. The offline suite
-(`pytest -q -m "not abaqus and not arc and not network"`, with OTILib and the
-UMAT-OTI checkout beside this one) gave 499 passed, 19 skipped and 1 failed on
-2026-09-18 in the development environment; the failure is an installed-package
-test that found an editable install of an older UMAT-OTI checkout there. The
-clean-clone run is in
-[docs/evidence/final_clean_clone.md](docs/evidence/final_clean_clone.md). See
+the missing file and this command. The offline suite is
+`pytest -q -m "not abaqus and not arc and not network"`, with OTILib and the
+UMAT-OTI checkout beside this one; its result from clean clones of both
+repositories is in [docs/evidence/final_clean_clone.md](docs/evidence/final_clean_clone.md). See
 [sources/SUBMODULES.md](sources/SUBMODULES.md) for the tier policy, the pinned
 commits, and the clean-clone verification procedure.
 
@@ -357,6 +375,15 @@ name is an unrelated package. See
 The black-box path does not require OTILib on our side.
 
 ## Docs
+
+Start here:
+- [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — the user guide: installation, every command, the GUI, examples, troubleshooting
+- [docs/REQUEST_INTERFACE.md](docs/REQUEST_INTERFACE.md) — the four-input `resasm request` interface
+- [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md) — `resasm history`: the mathematics, tolerances and supported deck subset
+- [docs/GUI.md](docs/GUI.md) — each screen, with screenshots
+- [docs/VERIFICATION_RECORD.md](docs/VERIFICATION_RECORD.md) — every verified result, its command, reference and measured value
+- [docs/CONNECTED_WORKFLOW.md](docs/CONNECTED_WORKFLOW.md) — the provider-to-sensitivity pipeline in one command
+- [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) — the pinned UMAT-OTI version and the shared contract
 
 Assembly (Path A):
 - [docs/residual_assembly_recipe.md](docs/residual_assembly_recipe.md) — how R is assembled from ingredients
@@ -400,7 +427,7 @@ have been a failure), including the order-2 recovery-factor proof.
 ### Sensitivities of C3D8 models with a UMAT
 
 **The shipped route is the compiled OTI provider.** `resasm request` (bounded
-J2 presentation engine) and `resasm history` (any provider, prescribed
+single-material J2 engine) and `resasm history` (any provider, prescribed
 displacements, long histories, sparse assembly) replay an OTI-transformed UMAT
 built by UMAT-OTI and solve for full-field sensitivities; `resasm request`
 hands a model to the history engine when it is outside the bounded scope and

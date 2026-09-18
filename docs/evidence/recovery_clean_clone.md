@@ -8,7 +8,7 @@ The complete structured record is [recovery_clean_clone.json](recovery_clean_clo
 ## Exact Inputs And Isolation
 
 Both LOCAL recovery repositories were cloned with `--no-hardlinks --branch
-integration/imqcam-recovery-2026-09-18` into the new parent
+integration/recovery-2026-09-18` into the new parent
 `/tmp/imqc_clean_clone_20260918_RwJ8VT`:
 
 | Canonical clone | Full committed SHA |

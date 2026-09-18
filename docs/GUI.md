@@ -1,8 +1,7 @@
 # The Residual_Assembler GUI
 
 One Streamlit application over the `resasm` command line. It opens on
-**Sensitivity Request**, the collaborator's screen from the IMQCAM
-presentation (slides 18 and 42). The other tabs (**Start here**, **1. Model**
+**Sensitivity Request**, the collaborator's screen. The other tabs (**Start here**, **1. Model**
 to **6. Backends**, **Advanced Replay**) are the assembly console described
 in the README.
 
@@ -116,9 +115,9 @@ rounding as the uniaxial reference says:
 
 | Test | What it drives | Run |
 | --- | --- | --- |
-| `tests/gui/test_imqcam_solve_screen.py` | the screen through `streamlit.testing` (AppTest), with a freshly built OTI object and its Mapping.json. The ODB export is replaced by the genuine export of the same ODB (`tests/fixtures/presentation_j2/fields.json`). Checks the ticks, output, region and Solve for U on node set LOADED, S11 and SDV1 at every integration point, and RF1 on XZERO against the uniaxial references and against `resasm request`. Also checks that a supplied request file still wins and that there is nothing to tick without a mapping | the offline suite |
-| `tests/gui/test_imqcam_solve_screen_browser.py` | slide 17's hand-over consumed by slide 18 in headless Chromium, on the real ODB (licensed Abaqus Python): U1 on node set LOADED, then SDV1 on the whole mesh. Writes `docs/screenshots/resasm_solve.png` and `docs/screenshots/resasm_solve_sdv_all_points.png` | `python -m pytest -m gui tests/gui` (also marked `abaqus`) |
-| `tests/integration/test_presentation_request.py` | Copilot's request-file route, unchanged | the offline suite |
+| `tests/gui/test_solve_screen.py` | the screen through `streamlit.testing` (AppTest), with a freshly built OTI object and its Mapping.json. The ODB export is replaced by the genuine export of the same ODB (`tests/fixtures/presentation_j2/fields.json`). Checks the ticks, output, region and Solve for U on node set LOADED, S11 and SDV1 at every integration point, and RF1 on XZERO against the uniaxial references and against `resasm request`. Also checks that a supplied request file still wins and that there is nothing to tick without a mapping | the offline suite |
+| `tests/gui/test_solve_screen_browser.py` | slide 17's hand-over consumed by slide 18 in headless Chromium, on the real ODB (licensed Abaqus Python): U1 on node set LOADED, then SDV1 on the whole mesh. Writes `docs/screenshots/resasm_solve.png` and `docs/screenshots/resasm_solve_sdv_all_points.png` | `python -m pytest -m gui tests/gui` (also marked `abaqus`) |
+| `tests/integration/test_presentation_request.py` | the recovery line's request-file route, unchanged | the offline suite |
 
 `scripts/check_presentation_browser.py` is the request-file route in a
 browser, at desktop and phone widths. It passes with the button now named

@@ -17,7 +17,7 @@ make no network calls.
 For the recovered four-input presentation workflow, use the tested wheel
 installation and joint gate in
 [docs/evidence/recovery_install.md](docs/evidence/recovery_install.md), then
-[docs/PRESENTATION_INTERFACE.md](docs/PRESENTATION_INTERFACE.md). It uses
+[docs/REQUEST_INTERFACE.md](docs/REQUEST_INTERFACE.md). It uses
 `Analysis.inp`, `Analysis.odb`, `OTI_UMAT.obj`, and `sensitivity_request.json`
 with the generated mapping beside the object. The collaborator needs no
 private material source. The bounded J2 workflow requires licensed Abaqus ODB
@@ -46,7 +46,7 @@ that fetches it.
 
 [`STATUS.md`](STATUS.md) describes the baseline assembly features. The recovery
 branch additionally supports the bounded, fingerprint-pinned J2 C3D8 history
-sensitivity workflow in [docs/PRESENTATION_INTERFACE.md](docs/PRESENTATION_INTERFACE.md).
+sensitivity workflow in [docs/REQUEST_INTERFACE.md](docs/REQUEST_INTERFACE.md).
 Neither the wheel gate nor that workflow establishes generic UMAT, FCC, or
 full-size presentation support.
 

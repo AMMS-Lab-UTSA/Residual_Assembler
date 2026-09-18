@@ -3,7 +3,7 @@
 Date: 2026-09-18. Implementation only in `imq-ra-recovery`; test artifacts under
 `../imq_abaqus/recovery_presentation/imqrp_reference`. All pre-existing dirty
 changes preserved. No commits, staging, pushes, branches, nested agents or
-original Claude worktree edits. One invocation controlled terminal execution;
+original development worktree edits. One invocation controlled terminal execution;
 all commands synchronous. Browser harnesses owned/terminated only their exact
 server PIDs. No server is left running. No source was deleted.
 

@@ -1184,7 +1184,7 @@ def _tab_request() -> None:
 
 def _tab_replay() -> None:
     st.header("7. Connected J2 Replay")
-    record = st.text_input("Record or model JSON", str(REPO_ROOT / "examples/imqcam_j2_cantilever/model.json"), key="replay_record")
+    record = st.text_input("Record or model JSON", str(REPO_ROOT / "examples/bounded_j2_c3d8/model.json"), key="replay_record")
     material_object = st.text_input("Compiled provider object", key="replay_object")
     contract = st.text_input("Provider contract JSON", key="replay_contract")
     output = st.text_input("Replay output directory", str(DEFAULT_WORKDIR / "replay"), key="replay_output")

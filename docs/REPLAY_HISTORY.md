@@ -209,7 +209,7 @@ recovery branch; the lead merges.)
 
 One cProfile of the J2 replay: SuperLU factorisation 5.3 s (0.13 s per
 increment), provider 1.4 s (491,520 point evaluations), einsum kernels about
-1.5 s, B-bar operators 0.9 s. Details: `docs/evidence/claude_C.md`.
+1.5 s, B-bar operators 0.9 s. Details: `docs/evidence/history_replay_cantilevers.md`.
 
 ## Limitations
 

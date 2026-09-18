@@ -4,7 +4,7 @@ Date: 2026-09-18. Scope: W2 plus bounded W5, only `imq-ra-recovery` implementati
 changes. Read `../imq_BRIEF.md`, branch audit, W1 evidence, W3 provider docs and
 W3 recovery evidence before implementation. No subagents, commits, pushes,
 branch switches, detached commands, process kills, privilege prompts, corpus
-runs or Abaqus jobs. Old Claude worktrees were read only. Existing W1 kernels,
+runs or Abaqus jobs. Old development worktrees were read only. Existing W1 kernels,
 `resasm_user/__init__.py`, reporting edits and existing tests were preserved.
 Only one CLI registration line was added to the already modified CLI file.
 
@@ -83,7 +83,7 @@ env GIT_TERMINAL_PROMPT=0 bash scripts/init_permissive_sources.sh --required-onl
   tests/framework/test_interface_versions.py tests/framework/test_user_layer.py \
   --junitxml=.pytest_cache/recovery_integration_focused_final.xml
 
-"$PY" scripts/reproduce_imqcam_pipeline.py --skip-abaqus \
+"$PY" scripts/reproduce_connected_pipeline.py --skip-abaqus \
   --out .pytest_cache/recovery_integration_final
 
 "$PY" -c 'import os,sys,pytest,residual_core,umat_oti,pyoti; assert os.getcwd()=="/home/ammslab3/softwarex_work/imq-ra-recovery"; assert residual_core.__file__.startswith(os.getcwd()); assert umat_oti.__file__.startswith(os.environ["UMAT_OTI_REPO"]); print("RECOVERY IMPORTS",sys.executable,residual_core.__file__,umat_oti.__file__,pyoti.__file__,flush=True); sys.exit(pytest.main(["-q","-ra","-m","not abaqus and not arc and not network","--junitxml=.pytest_cache/recovery_integration_offline_final.xml"]))'
@@ -93,7 +93,7 @@ For another reproduction use a fresh output name; existing output directories
 are deliberately refused. No generated output listed here is a required input.
 The provider and both public CLI subprocess invocations, including absolute
 paths and exit codes, are recorded in `private/manifest.json` and command logs.
-The equivalent standalone commands are in `../IMQCAM_WORKFLOW.md`.
+The equivalent standalone commands are in `../CONNECTED_WORKFLOW.md`.
 
 Verified imports: recovery `residual_core`, recovery `umat_oti/src`, and
 `/home/ammslab3/otilib/build_py311/pyoti`. Python 3.11.7; NumPy 2.4.6;

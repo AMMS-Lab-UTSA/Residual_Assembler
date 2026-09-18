@@ -6,7 +6,7 @@ These wheel hashes still identify the earlier builds; they were not refreshed
 or promoted to a committed clean-clone gate by that repair.
 
 Date: 2026-09-18. Both recovery worktrees remained on
-`integration/imqcam-recovery-2026-09-18`. Existing changes were preserved.
+`integration/recovery-2026-09-18`. Existing changes were preserved.
 No commits, staging, pushes, branch changes, old-worktree edits, VS Code config
 edits, subagents, detached one-shot tests, or new Abaqus analysis jobs.
 

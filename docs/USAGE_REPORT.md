@@ -1,6 +1,6 @@
 # Residual Assembler: Current Usage
 
-Updated 2026-09-18 for `main` (the final integration of the IMQCAM directive),
+Updated 2026-09-18 for `main` (the final integration of both repositories),
 Linux, Python 3.11.7, gfortran 9.4.0, genuine compiled OTILib and Abaqus
 2021.HF5. The sections below say what was run and what it measured. The
 clean-install gate result for the published `main` commits is in
@@ -65,8 +65,8 @@ python "$RA/scripts/clean_install_gate.py" --umat-repo "$UMAT" --branch main \
 
 The presentation ODB is the Abaqus run of
 `examples/presentation_request/Analysis.inp`; the cantilever directory is what
-[examples/presentation_cantilevers](../examples/presentation_cantilevers/README.md)
-produces (`j2/claude_j2_nominal.inp` and `.odb`). The report records each
+[examples/cantilevers](../examples/cantilevers/README.md)
+produces (`j2/cantilever_j2_nominal.inp` and `.odb`). The report records each
 repository's branch, commit and origin head, every command with its exit code
 and log, and the wheel digests; `final_branch_clean_clone` is true only when
 both commits are the named branch's published head. The earlier
@@ -205,10 +205,10 @@ not equilibrium. GUI: Assemble, this model/fields, stress-driven mode.
 ### 4. Nonlinear J2 C3D8 Replay
 
 ```sh
-"$PY" scripts/reproduce_imqcam_pipeline.py --skip-abaqus --out "$OUT/j2"
+"$PY" scripts/reproduce_connected_pipeline.py --skip-abaqus --out "$OUT/j2"
 ```
 
-Inputs: [cyclic model](../examples/imqcam_j2_cantilever/model.json) and companion
+Inputs: [cyclic model](../examples/bounded_j2_c3d8/model.json) and companion
 m3_j2 contract. A fresh compiled provider, 7 increments, 8 IPs, four parameters
 E,nu,SIGY0,H. The retained manifest says `passed=true`; whole-history
 displacement/stress/state derivatives and FD plateau checks pass `2e-6` scaled
@@ -316,14 +316,14 @@ the exact public file list and the independent check. Reproduce with:
 
 This copies only the five existing genuine collaborator artifacts into new
 scratch space and calls `consume`, never `prepare`. The external ODB is required
-and is not shipped in the repository. See [exact interface](PRESENTATION_INTERFACE.md).
+and is not shipped in the repository. See [exact interface](REQUEST_INTERFACE.md).
 
 ## Full-Size Models: History Replay
 
 ```sh
-resasm request --model claude_j2_nominal.inp --odb claude_j2_nominal.odb \
+resasm request --model cantilever_j2_nominal.inp --odb cantilever_j2_nominal.odb \
   --material umat_m3_j2_oti.obj --request j2_request.json --out j2_results
-resasm history --model claude_j2_nominal.inp --fields j2_results/private/fields.npz \
+resasm history --model cantilever_j2_nominal.inp --fields j2_results/private/fields.npz \
   --material umat_m3_j2_oti.obj --request j2_request.json --out j2_polished --reequilibrate
 ```
 
@@ -335,9 +335,9 @@ first. Requests add `MISES`, volume-weighted `volume_mean`, element sets,
 names and any SDV component are accepted. The mathematics, tolerances and
 supported deck subset are in [REPLAY_HISTORY.md](REPLAY_HISTORY.md); the decks,
 Abaqus scripts and requests of both presentation cantilevers are in
-[examples/presentation_cantilevers](../examples/presentation_cantilevers/README.md).
+[examples/cantilevers](../examples/cantilevers/README.md).
 
-Measured on 2026-09-18 (evidence: [claude_C.md](evidence/claude_C.md)):
+Measured on 2026-09-18 (evidence: [history_replay_cantilevers.md](evidence/history_replay_cantilevers.md)):
 
 | | J2, slide 39 | FCC, slide 15 |
 | --- | --- | --- |
@@ -373,13 +373,10 @@ and pass its file path to Streamlit, as in the installation evidence.
 
 [GUI evidence](evidence/usage_gui.json): primary render without exception and
 actual HTTP-ready server, stopped by owned PID. No audit URL remains live.
-Existing real-browser evidence is available as local artifacts only:
-[report](../.pytest_cache/presentation_browser_cli_final/browser_report.json),
-[desktop](../.pytest_cache/presentation_browser_cli_final/desktop.png),
-[mobile](../.pytest_cache/presentation_browser_cli_final/mobile.png).
-Those local cache artifacts are not promised in a clean clone; no large image
-was copied into this report. The recorded browser run checked actual ODB
-execution and all three downloads, not just initial rendering.
+The browser tests (`pytest -m gui`) drive the same screen in headless
+Chromium on a real ODB and check the execution and all three downloads, not
+just the initial rendering; screenshots of each screen are in
+[screenshots/](screenshots/) and described in [GUI.md](GUI.md).
 
 Read verdicts separately: command executed; residual assembled; free equilibrium
 checked/passed; tangent available/independently verified; derivative calculated/

@@ -8,8 +8,11 @@ independently, connected by a versioned contract. Neither vendors the other.
 | Component | Version / commit |
 |---|---|
 | `residual-assembler` | 0.1.0 |
-| `umat-oti` | `5fb7b434fc12d0b2cc0ebb101b70cdd9754fbcce` (extra `bridge`) |
-| Contract schema | `resasm_umat_transform_v2` |
+| `umat-oti` | `4822108cb977160f5b66d46d50753bb9ad41e848` (extra `bridge`) |
+| Shared contract | version 3.0.0; `schemas/contract_lock.json` equals UMAT-OTI's byte for byte |
+| Transform generation | `da1f183708c19072` (`schemas/transform_generation.json`) |
+| Compiled provider ABI | `UMAT`, `UMAT_OTI_EVAL`, `UMAT_OTI_MARCH`, `UMAT_OTI_EVAL_TOTAL`, described by the completed contract (`Mapping.json`) |
+| Contract schema (driver path) | `resasm_umat_transform_v2` |
 | Material driver ABI | stdin property vector + strain path; stdout stress and state per increment |
 
 The `bridge` extra pins UMAT-OTI to a **commit**, not a branch. A branch pin
@@ -20,6 +23,10 @@ anything.
 ```bash
 pip install -e ".[yaml,bridge]"
 ```
+
+CI checks out UMAT-OTI at the same commit beside this repository and installs
+it from there, because the connected tests also read its source tree
+(contracts and UMAT sources).
 
 Without the extra, the bridge tests skip and say why. CI installs it, so the
 cross-repository contract is genuinely exercised on every push rather than

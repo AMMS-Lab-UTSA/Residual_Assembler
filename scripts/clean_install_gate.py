@@ -306,8 +306,8 @@ HOMOGENEITY_BOUND = 1e-10
 def check_cantilever(args, gate: Gate, built, repositories):
     """The full-size J2 cantilever of slide 39, from the installed wheels.
 
-    ``args.cantilever`` holds ``j2/claude_j2_nominal.inp`` and its ODB, as
-    ``examples/presentation_cantilevers/README.md`` produces them in Abaqus.
+    ``args.cantilever`` holds ``j2/cantilever_j2_nominal.inp`` and its ODB, as
+    ``examples/cantilevers/README.md`` produces them in Abaqus.
     The collaborator command runs on them (routed to the history engine),
     then the history engine re-equilibrates the recorded increments and every
     output must obey Euler's identity for the J2 model -- homogeneous of
@@ -317,11 +317,11 @@ def check_cantilever(args, gate: Gate, built, repositories):
     engine uses that identity.
     """
     source = args.cantilever.resolve() / "j2"
-    deck, odb = source / "claude_j2_nominal.inp", source / "claude_j2_nominal.odb"
+    deck, odb = source / "cantilever_j2_nominal.inp", source / "cantilever_j2_nominal.odb"
     for path in (deck, odb):
         if not path.is_file():
             raise ValueError(f"cantilever input missing: {path}")
-    request = repositories[0] / "examples/presentation_cantilevers/j2_request.json"
+    request = repositories[0] / "examples/cantilevers/j2_request.json"
     folder = gate.work / "cantilever"
     folder.mkdir()
     shutil.copy2(deck, folder / "Analysis.inp")
@@ -376,8 +376,8 @@ def main(argv=None):
     parser.add_argument("--branch", help="branch both repositories must be on; with it, the report says "
                                          "whether both commits are that branch's published head")
     parser.add_argument("--cantilever", type=Path,
-                        help="directory holding j2/claude_j2_nominal.inp and .odb "
-                             "(examples/presentation_cantilevers); adds the full-size J2 check")
+                        help="directory holding j2/cantilever_j2_nominal.inp and .odb "
+                             "(examples/cantilevers); adds the full-size J2 check")
     args = parser.parse_args(argv)
     repositories = [args.ra_repo, args.umat_repo]
     if args.work:

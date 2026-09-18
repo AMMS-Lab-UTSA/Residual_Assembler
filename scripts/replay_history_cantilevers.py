@@ -16,9 +16,9 @@ Large outputs (full fields) go to ``--work``; the small tables and figures go
 to ``--evidence`` (committed). Nothing here is used by the library.
 
     python scripts/replay_history_cantilevers.py \\
-        --abaqus-data /path/imq_abaqus/claude_cantilevers \\
-        --providers /path/imq_abaqus/claude_C/providers \\
-        --work /path/imq_abaqus/claude_C/cantilevers --evidence docs/evidence/claude_C
+        --abaqus-data /path/imq_abaqus/cantilevers \\
+        --providers /path/imq_abaqus/history_replay/providers \\
+        --work /path/imq_abaqus/history_replay/cantilevers --evidence docs/evidence/history_replay_cantilevers
 """
 import argparse
 import csv
@@ -38,11 +38,11 @@ from residual_core.ui.cmd_history import run_history_request  # noqa: E402
 
 EPS32 = float(np.finfo(np.float32).eps)
 MODELS = {
-    "j2": {"deck": "j2/claude_j2_nominal.inp", "fields": "j2/claude_j2_nominal_fields.npz",
+    "j2": {"deck": "j2/cantilever_j2_nominal.inp", "fields": "j2/cantilever_j2_nominal_fields.npz",
            "provider": "prov_j2/umat_m3_j2_oti.obj", "fd_dir": "j2",
            "props_order": ["E", "nu", "SIGY0", "H"],
            "labels": {"E": "E", "nu": "ν", "SIGY0": "σy0", "H": "H"}},
-    "fcc": {"deck": "fcc/claude_fcc_nominal.inp", "fields": "fcc/claude_fcc_nominal_fields.npz",
+    "fcc": {"deck": "fcc/cantilever_fcc_nominal.inp", "fields": "fcc/cantilever_fcc_nominal_fields.npz",
             "provider": "prov_fcc/umat_m6_fcc_oti.obj", "fd_dir": "fcc",
             "props_order": ["C11", "C12", "C44", "g0", "gsat", "h0", "a", "q", "gd0", "m"],
             "labels": {"g0": "g0", "h0": "h0", "q": "q", "gd0": "γ̇0", "m": "m", "gsat": "gsat",

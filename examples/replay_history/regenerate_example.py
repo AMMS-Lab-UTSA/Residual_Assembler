@@ -41,7 +41,7 @@ N, PUSH, STEPS = (12, 4, 2), 0.08, 10
 PROPS = [200000.0, 0.3, 250.0, 2000.0]
 NAMES = ["E", "nu", "SIGY0", "H"]
 STEPS_FD = (0.01, 0.005, 0.002, 0.001)
-PREFIX = "claudeC_beam_j2"
+PREFIX = "beam_j2"
 
 
 def run_job(work, job, text, umat, abaqus):

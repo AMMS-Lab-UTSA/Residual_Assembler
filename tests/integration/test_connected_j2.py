@@ -96,7 +96,7 @@ def test_equilibrated_history_against_original_whole_model(material):
     import copy
     from residual_core.replay.connected import solve_history
     from residual_core.replay.record import ReplayRecord
-    record = ReplayRecord.load(str(ROOT / "examples/imqcam_j2_cantilever/model.json"))
+    record = ReplayRecord.load(str(ROOT / "examples/bounded_j2_c3d8/model.json"))
     result = solve_history(record, material)
     repeated = solve_history(ReplayRecord(result["record"]), material, replay=True)
     actual = np.array([row["du_dp"] for row in result["increments"]])
@@ -127,7 +127,7 @@ def test_verification_including_state_and_real_abaqus(material):
     from residual_core.replay.connected import solve_history
     from residual_core.replay.record import ReplayRecord
     from residual_core.replay.verification import verify_connected, verify_abaqus_fixture
-    record = ReplayRecord.load(str(ROOT / "examples/imqcam_j2_cantilever/model.json"))
+    record = ReplayRecord.load(str(ROOT / "examples/bounded_j2_c3d8/model.json"))
     report = verify_connected(record, material, solve_history(record, material))
     assert report["passed"] and len(report["rows"]) == 12
     assert verify_abaqus_fixture(ROOT / "tests/abaqus_derivative_export")["passed"]
@@ -139,7 +139,7 @@ def test_public_cli_solve_replay_and_failure(material, tmp_path):
     contract_path = object_path.with_suffix(".json")
     common = ["--object", str(object_path), "--contract", str(contract_path)]
     output = tmp_path / "solved"
-    assert main(["replay", str(ROOT / "examples/imqcam_j2_cantilever/model.json"), *common,
+    assert main(["replay", str(ROOT / "examples/bounded_j2_c3d8/model.json"), *common,
                  "--out", str(output), "--solve", "--verify"]) == 0
     assert json.loads((output / "public/summary.json").read_text())["verified"]
     assert main(["replay", str(output / "private/record.json"), *common,
@@ -171,7 +171,7 @@ def test_gui_replay_uses_real_cli(material, tmp_path):
 def test_unsupported_physics_is_not_silently_ignored(material, mutation, message):
     from residual_core.replay.connected import solve_history
     from residual_core.replay.record import ReplayRecord
-    record = ReplayRecord.load(str(ROOT / "examples/imqcam_j2_cantilever/model.json"))
+    record = ReplayRecord.load(str(ROOT / "examples/bounded_j2_c3d8/model.json"))
     if mutation == "fingerprint":
         record.raw["provenance"]["regular_source_hash"] = "wrong"
     elif mutation == "pressure":
@@ -193,7 +193,7 @@ def test_unsupported_physics_is_not_silently_ignored(material, mutation, message
 def test_recorded_physical_state_is_checked(material):
     from residual_core.replay.connected import solve_history
     from residual_core.replay.record import ReplayRecord
-    record = ReplayRecord.load(str(ROOT / "examples/imqcam_j2_cantilever/model.json"))
+    record = ReplayRecord.load(str(ROOT / "examples/bounded_j2_c3d8/model.json"))
     result = solve_history(record, material)
     result["record"]["increments"][0]["state_ip"]["1"][0][0] += .01
     with pytest.raises(AssertionError):
@@ -215,7 +215,7 @@ def test_field_inputs_reject_live_oti():
 def test_reproducer_fresh_build_and_nonzero_failure(tmp_path):
     import subprocess
     import sys
-    script = ROOT / "scripts/reproduce_imqcam_pipeline.py"
+    script = ROOT / "scripts/reproduce_connected_pipeline.py"
     output = tmp_path / "reproduction"
     command = [sys.executable, str(script), "--skip-abaqus", "--provider-repo", str(PROVIDER), "--out", str(output)]
     completed = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True)
