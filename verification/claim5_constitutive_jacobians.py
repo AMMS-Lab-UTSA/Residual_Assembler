@@ -53,6 +53,7 @@ import argparse
 import dataclasses
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -313,7 +314,10 @@ def measure(model: str, source: Path, symbols: List[str], props: List[float], nt
         record["status"] = "oti_transform_failed"
         record["reason"] = f"{type(exc).__name__}: {exc}"[:400]
         return record
-    build = subprocess.run(["make"], cwd=ps_dir, capture_output=True, text=True)
+    # FC explicitly: GNU make predefines FC=f77, so the Makefile's "FC ?= gfortran"
+    # never applies, and f77 is not installed everywhere gfortran is.
+    build = subprocess.run(["make", "FC=" + (shutil.which("gfortran") or "gfortran")],
+                           cwd=ps_dir, capture_output=True, text=True)
     run = subprocess.run([str(ps_dir / "ps_driver")], cwd=ps_dir, capture_output=True, text=True) \
         if build.returncode == 0 else None
     if run is None or run.returncode != 0:
