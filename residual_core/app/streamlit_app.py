@@ -239,6 +239,16 @@ def _action(label: str, key: str, argv: Sequence[str], *, cwd=None,
     _render(key, next_hint=next_hint)
 
 
+def _reported_public_dir(result: CliResult | None) -> str | None:
+    """The public folder a successful ``resasm report`` named in its output."""
+    if result is None or result.code != 0:
+        return None
+    for line in result.stdout.splitlines():
+        if line.strip().startswith("public  outputs"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
 def _download(path: Path, label: str, key: str) -> None:
     """Offer a produced artefact for download, only once it actually exists."""
     if not path.is_file():
@@ -890,8 +900,8 @@ def _tab_job() -> None:
              "config is read from here, and the output lands inside it.")
     job = job.strip() or "my_job"
     config_path = f"{job}/resasm.yml"
-    report_dir = f"{job}/out"
-    st.caption(f"config: `{config_path}`   ·   output: `{report_dir}`   ·   "
+    st.caption(f"config: `{config_path}`   ·   output: where its `output: dir:` "
+               f"points (default `{job}/resasm_output`)   ·   "
                f"absolute: `{Path(workdir) / job}`")
 
     st.markdown("---")
@@ -989,13 +999,18 @@ def _tab_job() -> None:
 
     st.markdown("---")
     st.subheader("e. Read the report")
-    _action("Read report", "job_report", ["report", report_dir], cwd=workdir,
-            disabled=not (Path(workdir) / report_dir).is_dir(),
-            help=None if (Path(workdir) / report_dir).is_dir()
-            else f"No {report_dir} yet - run the job first.")
+    st.markdown(
+        "`report` is given the job's `resasm.yml` and reads the folder that job "
+        "writes to, so it follows an `output: dir:` in the file."
+    )
+    _action("Read report", "job_report", ["report", config_path], cwd=workdir,
+            disabled=not live_config.is_file(),
+            help=None if live_config.is_file()
+            else f"No {config_path} yet - copy a template in step (a) first.")
 
-    summary = Path(workdir) / report_dir / "public" / "summary.md"
-    if summary.is_file():
+    public = _reported_public_dir(_recall("job_report"))
+    summary = Path(workdir) / public / "summary.md" if public else None
+    if summary is not None and summary.is_file():
         with st.expander(f"public/summary.md ({summary})", expanded=True):
             st.markdown(summary.read_text(encoding="utf-8"))
         _download(summary, "public/summary.md", "job_summary")

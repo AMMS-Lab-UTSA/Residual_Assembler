@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .rhs_provider import SensitivityRHSProvider, _split_parameter
+from .rhs_provider import SensitivityRHSProvider, _split_parameter, require_seeded_parameters
 from .sensitivity_package import SensitivityRHSResult, AlgebraMetadata
 from ..algebra.otilib_adapter import (OtiContext, otilib_available, otilib_status,
                                       OtiUnavailableError)
@@ -45,9 +45,12 @@ class OtiLibRHSProvider(SensitivityRHSProvider):
             raise OtiUnavailableError(otilib_status()["error"])
         if tangent is None or getattr(tangent, "T", None) is None:
             raise RuntimeError("OtiLibRHSProvider needs a dense tangent T to run "
-                               "the order loop (T U^(p) = -R^(p)).")
+                               "the order loop (T U^(p) = -R^(p)); no tangent is "
+                               "available: %s" % (getattr(tangent, "note", None)
+                                                  or "none was assembled"))
 
         params = list(parameters)
+        require_seeded_parameters(problem.model, params, self.name)
         m = len(params)
         q = int(order)
         ndof = problem.dof_manager.ndof

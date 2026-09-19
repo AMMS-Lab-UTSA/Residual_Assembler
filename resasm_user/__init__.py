@@ -23,8 +23,21 @@ from .config import ConfigError, load_config           # noqa: F401
 from .checks import check_config, CheckReport          # noqa: F401
 from .runner import run_from_config, RunResult         # noqa: F401
 
-__all__ = ["run_from_config", "check_config", "read_report", "ConfigError",
-           "RunResult", "CheckReport"]
+__all__ = ["run_from_config", "check_config", "read_report", "job_output_dir",
+           "ConfigError", "RunResult", "CheckReport"]
+
+
+def job_output_dir(config_path: str) -> str:
+    """The folder the job of ``config_path`` writes to, resolved exactly as
+    :func:`run_from_config` resolves it: ``output: dir:`` (default
+    ``resasm_output``) relative to the folder of the resasm.yml."""
+    from .checks import _is_recipe
+    if _is_recipe(config_path):
+        from .recipe import load_recipe
+        recipe = load_recipe(config_path)
+        return recipe.path(recipe.output_dir)
+    cfg = load_config(config_path)
+    return cfg.path(cfg.output_dir)
 
 
 def read_report(output_dir: str) -> Dict[str, Any]:

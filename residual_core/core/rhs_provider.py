@@ -53,6 +53,51 @@ def _split_parameter(name: str):
     return None, name
 
 
+class UnseededParameterError(ValueError):
+    """A requested parameter cannot be seeded, so its derivative would be a
+    fabricated zero column of R^(1). Raised instead of returning that zero."""
+
+
+def unseeded_parameter_reason(model, name: str) -> Optional[str]:
+    """Why a section-seeding provider cannot seed ``name``, or None if it can.
+
+    The Dual1 and generic OTILib providers seed ``material.key`` only where the
+    material binding carries ``key`` in its ``section`` dict and at least one
+    element uses that material. Any other name would leave its column of R^(1)
+    at zero, which would then be reported as a derivative of zero.
+    """
+    matname, key = _split_parameter(name)
+    if matname is None:
+        return "parameters are named 'material.key'"
+    binding = model.materials.get(matname)
+    if binding is None:
+        return "no material named %r (materials: %s)" % (
+            matname, ", ".join(sorted(map(str, model.materials))) or "none")
+    sec = binding if isinstance(binding, dict) else getattr(binding, "section", None)
+    if not (isinstance(sec, dict) and key in sec):
+        law = getattr(binding, "material", None)
+        if key in (getattr(law, "parameters", None) or ()):
+            return ("%r is a constant of the material law %r, not a section "
+                    "entry; this backend seeds section entries only"
+                    % (key, getattr(law, "name", type(law).__name__)))
+        return "material %r has no section entry %r (entries: %s)" % (
+            matname, key, ", ".join(sorted(sec)) if isinstance(sec, dict) and sec else "none")
+    if matname not in set(model.element_material.values()):
+        return "no element uses material %r" % matname
+    return None
+
+
+def require_seeded_parameters(model, parameters, backend: str) -> None:
+    """Raise :class:`UnseededParameterError` naming every parameter that the
+    section-seeding ``backend`` cannot seed."""
+    problems = [(name, unseeded_parameter_reason(model, name)) for name in parameters]
+    problems = [(name, reason) for name, reason in problems if reason]
+    if problems:
+        raise UnseededParameterError(
+            "backend %r cannot differentiate with respect to %s"
+            % (backend, "; ".join("%r: %s" % item for item in problems)))
+
+
 class DualNumberRHSProvider(SensitivityRHSProvider):
     """First-order RHS via dual numbers (proves the hypercomplex pathway).
 
@@ -75,6 +120,7 @@ class DualNumberRHSProvider(SensitivityRHSProvider):
         model = problem.model
         forms = problem.forms
         params = list(parameters)
+        require_seeded_parameters(model, params, self.name)
         m = len(params)
         ndof = dm.ndof
         U = np.asarray(real_solution, float)

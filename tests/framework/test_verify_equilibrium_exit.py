@@ -49,6 +49,30 @@ def test_nonfinite_stress_never_passes(tmp_path):
     assert "equilibrium          = PASS" not in result.stdout
 
 
+@pytest.mark.parametrize("command", ["assemble", "verify"])
+@pytest.mark.parametrize("content, message", [
+    (None, "cannot read the field export"),
+    ("not json", "is not valid JSON"),
+    ("[1, 2, 3]", "holds no integration-point stress"),
+    ('{"schema": "resasm-neutral-model/1"}', "key 'schema' is not an element id"),
+    ('{"stress_ip": {"1": "S11"}}', "is not a numeric table"),
+])
+def test_an_unusable_field_export_is_a_one_line_error(tmp_path, command, content, message):
+    """Regression: a missing --fields file, or one in another layout, ended in
+    a Python traceback (exit 1)."""
+    fields = tmp_path / "fields.json"
+    if content is not None:
+        fields.write_text(content)
+    result = subprocess.run(
+        [sys.executable, "-m", "residual_core.ui.cli", command,
+         str(EXAMPLE / "model.json"), "--fields", str(fields)],
+        capture_output=True, text=True, check=False)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "Traceback" not in result.stderr
+    lines = result.stderr.strip().splitlines()
+    assert len(lines) == 1 and lines[0].startswith("ERROR:") and message in lines[0], lines
+
+
 def test_gui_propagates_failed_equilibrium():
     pytest.importorskip("streamlit")
     from residual_core.app.streamlit_app import _run
