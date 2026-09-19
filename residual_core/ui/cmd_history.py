@@ -97,7 +97,8 @@ def _report_skeleton(command):
         "tangent verified": "not run", "derivative calculated": "no", "derivative verified": "not run",
         "reference resolved": "not applicable (no reference was run)",
         "Abaqus comparison available": "no", "unsupported feature detected": "none",
-        "public and private outputs separated": "yes: public %s; private private/" % list(PUBLIC_FILES)},
+        # until write_outputs names what it wrote, only the report is public
+        "public and private outputs separated": "yes: public %s; private private/" % [PUBLIC_FILES[2]]},
         "details": {}, "scope": {}, "metadata": {}}
 
 
@@ -273,11 +274,15 @@ def run(args):
 # ----------------------------------------------------------------- routing
 def bounded_scope_reason(args):
     """None when the bounded presentation engine can run the request, else why not."""
-    from ..replay.presentation import mapping_for
+    from ..replay.presentation import NotThePinnedProvider, mapping_for
     from ..replay.presentation_inputs import read_model
     try:
         model = read_model(Path(args.model))
         mapping_for(Path(args.material), getattr(args, "mapping", None))
+    except NotThePinnedProvider as error:
+        # a readable deck and a valid mapping of another provider: the bounded
+        # engine would only refuse the material, the history engine takes any
+        return str(error)
     except (ValueError, OSError, KeyError):
         # Inputs the bounded engine cannot read are its to diagnose: it owns
         # the presentation interface's categorised, private-by-default error

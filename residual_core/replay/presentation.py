@@ -29,6 +29,13 @@ class RequestFailure(ValueError):
         super().__init__("Category: %s\nAction: %s\nPrivate diagnostics: private/error_report.txt" % (category, action))
 
 
+class NotThePinnedProvider(ValueError):
+    """The completed mapping is valid and belongs to the object, but the object
+    is another material than the pinned m3_j2 provider: the model is outside
+    this engine's scope, not broken (``resasm request`` routes it to the
+    history engine)."""
+
+
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -48,7 +55,10 @@ def mapping_for(material, mapping=None):
     if contract.get("object", {}).get("sha256_full") != digest(material):
         raise ValueError("mapping object.sha256_full is missing or does not match OTI_UMAT.obj")
     if contract.get("regular_source_hash") != J2_SOURCE_HASH:
-        raise ValueError("mapping regular_source_hash does not match the pinned m3_j2 source")
+        raise NotThePinnedProvider(
+            "mapping regular_source_hash does not match the pinned m3_j2 source: the material "
+            "is %s, not the fingerprint-pinned m3_j2 J2 provider"
+            % (contract.get("model_id") or "another provider"))
     if contract.get("layouts") != {
             "DSIGMA_DP": "fortran(NTENS,NPARAM)", "DSTATEV_DP": "fortran(NSTATV,NPARAM)",
             "DDSDDE": "fortran(NTENS,NTENS)", "voigt": ["11", "22", "33", "12", "13", "23"]}:

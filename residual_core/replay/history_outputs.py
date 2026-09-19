@@ -311,6 +311,7 @@ def write_outputs(out, *, fields: Fields, request, parameters, report: Dict, pri
         "scope": report["scope"], "metadata": report["metadata"], "results": public_rows,
     }
     shares = None
+    public = list(PUBLIC_FILES)
     if request.get("weighted_shares") is not None:
         spec = request["weighted_shares"]
         shares = weighted_shares(fields, result.parameter_values, spec.get("field", "MISES"),
@@ -332,6 +333,7 @@ def write_outputs(out, *, fields: Fields, request, parameters, report: Dict, pri
                 for j, name in enumerate(result.parameters):
                     writer.writerow([r["increment"], r["time"], name, r["field_share"][j],
                                      r["scalar_share"][j], r["field_weight"][j], r["volume_mean"]])
+        public.append("sensitivity_shares.csv")
     (out / PUBLIC_FILES[0]).write_text(json.dumps(summary, indent=1, allow_nan=False) + "\n")
     with (out / PUBLIC_FILES[1]).open("w", newline="") as stream:
         writer = csv.writer(stream)
@@ -350,6 +352,10 @@ def write_outputs(out, *, fields: Fields, request, parameters, report: Dict, pri
                             U=fields.U, dU=fields.dU, RF=fields.RF, dRF=fields.dRF, S=fields.S,
                             dS=fields.dS, SDV=fields.SDV, dSDV=fields.dSDV, MISES=fields.MISES[..., 0],
                             dMISES=fields.dMISES[..., 0, :], ip_volume=fields.engine.w)
+        public.append("fields.npz")
+    # name every public file this run actually wrote
+    report["report_fields"]["public and private outputs separated"] = (
+        "yes: public %s; private private/" % public)
     (out / PUBLIC_FILES[2]).write_text(render_report(report))
     private_dir = out / "private"
     private_dir.mkdir(exist_ok=True)
