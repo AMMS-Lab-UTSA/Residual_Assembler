@@ -238,6 +238,14 @@
   {
    "commit": "a288783",
    "reason": "Evidence re-freeze and pin bump; 'fix' names the local-Jacobian fix of UMAT_source_transformation (1996782), mapped there."
+  },
+  {
+   "commit": "7099a1a",
+   "reason": "Tooling (completion-ledger mapping and its update script); 'refuses' describes the script rejecting an incomplete run directory, not a corrected behaviour."
+  },
+  {
+   "commit": "fe85ab8",
+   "reason": "Tooling (the integrity audits themselves); 'exit 2' and 'stale' describe what the audit reports, not a corrected behaviour."
   }
  ],
  "changelog_fixed": {}
