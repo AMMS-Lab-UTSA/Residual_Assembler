@@ -29,23 +29,26 @@
    "bug": "The history engine's solve mode started each increment from a jump (the explicit FCC update overflowed) and accepted non-finite states; it now takes Abaqus's linear predictor and refuses non-finite states. The engine itself was added earlier in this work (9dd6a8c).",
    "tests": [
     "tests/replay_history/test_history_engine.py::test_fcc_whole_model_fd_of_original_umat",
-    "tests/replay_history/test_history_engine.py::test_j2_whole_model_fd_of_original_umat"
-   ],
-   "untested_parts": "No test forces a non-finite state to show it is refused."
+    "tests/replay_history/test_history_engine.py::test_j2_whole_model_fd_of_original_umat",
+    "tests/replay_history/test_the_history_engine_stops_where_it_cannot_go_on.py::test_a_umat_that_returns_non_finite_stresses_is_refused_by_name"
+   ]
   },
   {
    "commit": "15a5240",
    "bug": "Newton iterated for minutes on round-off when no step lowered the residual, and run_report's 'Command executed' line was rendered from sys.argv, which is wrong when resasm runs in-process.",
    "tests": [
-    "tests/replay_history/test_history_example.py::test_public_private_outputs_and_report"
-   ],
-   "untested_parts": "No test drives Newton into stagnation to show the 'stagnated at' error."
+    "tests/replay_history/test_history_example.py::test_public_private_outputs_and_report",
+    "tests/replay_history/test_the_history_engine_stops_where_it_cannot_go_on.py::test_newton_stops_when_no_step_lowers_the_residual"
+   ]
   },
   {
    "commit": "5e49cc9",
    "bug": "The clean-install gate refused every checkout not on one hard-coded branch name, so it could not run on main or on a fresh clone.",
-   "tests": [],
-   "no_test_reason": "tests/integration/test_clean_install_gate.py does not exercise --branch or the branch check; only the gate step of the clean-clone run (with --branch main) exercises it, outside the suite."
+   "tests": [
+    "tests/integration/test_the_clean_install_gate_takes_its_branch.py::test_the_named_branch_is_accepted",
+    "tests/integration/test_the_clean_install_gate_takes_its_branch.py::test_without_a_branch_a_checkout_on_main_is_accepted",
+    "tests/integration/test_the_clean_install_gate_takes_its_branch.py::test_a_checkout_on_another_branch_is_refused"
+   ]
   },
   {
    "commit": "e03ef60",
@@ -79,9 +82,10 @@
    "bug": "The real-store contract tests refused a umat_oti installed (not editable) from the companion checkout because its files were not under the checkout, and skipped with a reason CI rejects.",
    "tests": [
     "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_repositories_speak_the_same_version",
-    "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_readers_agree_about_every_gate_in_every_record"
-   ],
-   "untested_parts": "These tests run only where the private corpus store is present; in CI and in a clean clone they skip, so no test that runs there exercises the byte-identical-copy rule."
+    "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_readers_agree_about_every_gate_in_every_record",
+    "tests/contract/test_an_installed_copy_of_the_checkout_runs_its_code.py::test_a_byte_identical_installed_copy_runs_the_checkouts_code",
+    "tests/contract/test_an_installed_copy_of_the_checkout_runs_its_code.py::test_an_installed_copy_of_another_version_is_refused"
+   ]
   },
   {
    "commit": "a3916be",
@@ -119,15 +123,18 @@
    "commit": "4d34c74",
    "selected_by": "manual",
    "bug": "The ODB exporter's error message and usage text told users to run extract_abaqus_fields.py, a file that no longer exists under that name.",
-   "tests": [],
-   "no_test_reason": "No test checks the exporter's usage or error text; the commit changed text only."
+   "tests": [
+    "tests/framework/test_the_odb_exporter_names_a_file_that_exists.py::test_the_error_under_an_ordinary_python_names_the_exporter",
+    "tests/framework/test_the_odb_exporter_names_a_file_that_exists.py::test_every_command_in_the_usage_text_runs_the_exporter"
+   ]
   },
   {
    "commit": "718ac7c",
    "selected_by": "manual",
    "bug": "The cantilever central-difference reference script recorded its usage line as the reference's note instead of its method paragraph.",
-   "tests": [],
-   "no_test_reason": "tests/replay_history/test_cantilever_decks.py checks the decks, not the reference script's output; no test runs fd_reference.py."
+   "tests": [
+    "tests/replay_history/test_the_cantilever_reference_records_its_method.py::test_the_note_is_the_method_and_the_differences_are_exact"
+   ]
   },
   {
    "commit": "a392cd5",
