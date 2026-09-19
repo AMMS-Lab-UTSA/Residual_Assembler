@@ -29,6 +29,27 @@ class InputItem:
         return self.short_label or self.label
 
 
+#: Every mode assembles each element through a registered backend that
+#: supports the mode (and, for material replay, accepts the element's
+#: material). Without one the element contributes nothing, so a mode whose
+#: elements have none is not ready: it would assemble a residual with no
+#: element in it.
+_FORMULATION_BACKEND = InputItem(
+    "formulation_backend", "a formulation backend implementing the base interface",
+    "a registered Formulation subclass (implement and register one)",
+    short_label="formulation backend")
+
+#: The general assembly places one state on one set of loads and supports: a
+#: deck with several steps (loads and supports per step) or a geometrically
+#: nonlinear step assembled in the reference configuration is outside it.
+_DECK_SCOPE = InputItem(
+    "deck_scope", "a deck state the general assembly reproduces: one step, and "
+    "NLGEOM=YES only with a finite-strain backend",
+    "a one-step deck; a deck with several steps is replayed step by step by "
+    "resasm history, and NLGEOM=YES needs material-replay with a finite-strain "
+    "material",
+    short_label="one-step deck in scope")
+
 # Minimum inputs per mode (see docs/minimal_input_contract.md). The element field
 # that enters the weak form is mode-dependent and intentionally generic: for
 # solids it is integration-point stress, for beams/shells it is section
@@ -37,6 +58,7 @@ MODE_REQUIREMENTS: Dict[str, List[InputItem]] = {
     "stress-driven": [
         InputItem("mesh", "mesh / connectivity / coordinates",
                   short_label="mesh"),
+        _FORMULATION_BACKEND,
         InputItem("dof_field", "DOF solution field (e.g. displacement U, or "
                   "displacement+rotation for beams/shells, temperature for thermal)",
                   short_label="solution field (U / U+rotation / T)"),
@@ -44,10 +66,12 @@ MODE_REQUIREMENTS: Dict[str, List[InputItem]] = {
                   "integration-point stress field S, or an ODB/CSV export "
                   "(section resultants N/M/Q for beams/shells; heat flux for thermal)",
                   short_label="stress / resultant field"),
+        _DECK_SCOPE,
     ],
     "material-replay": [
         InputItem("mesh", "mesh / connectivity / coordinates",
                   short_label="mesh"),
+        _FORMULATION_BACKEND,
         InputItem("solution_history", "solution history (not just the final step)",
                   "the solution history (the increment sequence, not just the "
                   "final step; history-dependent materials need it)",
@@ -61,25 +85,26 @@ MODE_REQUIREMENTS: Dict[str, List[InputItem]] = {
                   short_label="previous state / STATEV"),
         InputItem("time_increments", "time increments (dtime per step)",
                   short_label="time increments"),
+        _DECK_SCOPE,
     ],
     "direct-residual": [
         InputItem("mesh", "mesh / connectivity / coordinates",
                   short_label="mesh"),
+        _FORMULATION_BACKEND,
         InputItem("element_dofs", "element DOF layout",
                   short_label="element DOF layout"),
         InputItem("uel_routine", "callable residual routine or UEL-like adapter",
                   "a routine returning (RHS, AMATRX, SVARS_new)",
                   short_label="callable UEL adapter"),
+        _DECK_SCOPE,
     ],
     "formulation": [
-        InputItem("formulation_backend", "a formulation backend implementing the "
-                  "base interface", "a registered Formulation subclass "
-                  "(implement and register one)",
-                  short_label="formulation backend"),
+        _FORMULATION_BACKEND,
         InputItem("section_properties", "section / constitutive properties for the "
                   "formulation (e.g. E, A, I for a beam)",
                   "section properties (e.g. E, A for a bar; E, A, I for a beam)",
                   short_label="section properties (E, A, I)"),
+        _DECK_SCOPE,
     ],
 }
 
@@ -103,6 +128,9 @@ class RequirementsReport:
     mode: str
     have: List[InputItem] = field(default_factory=list)
     missing: List[InputItem] = field(default_factory=list)
+    #: why an input counts as missing, when the model says more than yes/no
+    #: (e.g. which element types have no backend); keyed by InputItem.key
+    reasons: Dict[str, str] = field(default_factory=dict)
 
     @property
     def runnable(self) -> bool:
@@ -132,6 +160,8 @@ class RequirementsReport:
         L.append("")
         L.append("Minimum missing input:")
         L.append("  provide %s." % (nxt.recommendation or nxt.label))
+        if nxt.key in self.reasons:
+            L.append("  Why: %s." % self.reasons[nxt.key])
         return "\n".join(L)
 
 
@@ -139,13 +169,15 @@ def known_modes() -> List[str]:
     return sorted(MODE_REQUIREMENTS)
 
 
-def evaluate_requirements(mode: str, available: Dict[str, bool]) -> RequirementsReport:
+def evaluate_requirements(mode: str, available: Dict[str, bool],
+                          reasons: Optional[Dict[str, str]] = None) -> RequirementsReport:
     """Given a mode and a {requirement_key -> bool} availability map, split the
-    mode's minimum inputs into have / missing (missing keys default to absent)."""
+    mode's minimum inputs into have / missing (missing keys default to absent).
+    ``reasons`` optionally says why a missing input is missing."""
     m = canonical_mode(mode)
     if m not in MODE_REQUIREMENTS:
         raise KeyError("unknown mode %r; known: %s" % (mode, ", ".join(known_modes())))
-    report = RequirementsReport(mode=m)
+    report = RequirementsReport(mode=m, reasons=dict(reasons or {}))
     for item in MODE_REQUIREMENTS[m]:
         if bool(available.get(item.key, False)):
             report.have.append(item)

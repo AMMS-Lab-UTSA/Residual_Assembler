@@ -46,6 +46,9 @@ class SolidC3D8SmallStrain(Formulation):
                             "material_parameters")}
     optional_inputs_by_mode = {"material-replay": ("dofs_prev", "material_state")}
     material_interface_needed = True
+    #: the material kinematic input this element drives; with several C3D8
+    #: replay backends, the element's material chooses by it
+    accepted_kinematic_inputs = ("small_strain",)
     state_requirements = "material-defined (stateless for elastic)"
     tangent_support = "analytic"
     verification_status = "verified"

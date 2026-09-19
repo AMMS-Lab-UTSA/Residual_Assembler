@@ -179,7 +179,7 @@ sufficient** — it does not know shape functions or assembly
 | | |
 |---|---|
 | Source | `*Material` / `*User Material` / `*Depvar` in the `.inp`; or `MaterialBinding` in the API; or `section` dict in a neutral model |
-| Inferable | Partly. A non-user material is bound to `isotropic_elastic` automatically (`ui/wizard.py::_bind_materials_for_replay`, default `[E, nu] = [200000, 0.3]` if no constants). A `*User Material` is **not** inferable: it needs the UMAT. |
+| Inferable | Partly. A non-user material is bound to `isotropic_elastic` automatically with the model's own constants or section `E` and `nu` (`ui/wizard.py::_replay_bindings`); without them material replay is refused with the reason, never run with defaults. A `*User Material` is **not** inferable: it needs the UMAT. |
 | Registered | `isotropic_elastic` (runnable), `umat`, `crystal_plasticity` (`materials/registry.py`) |
 | If missing | `material-replay` mode reports `material_model` missing. In stress-driven mode the material is **not needed at all** — the stress field replaces it. |
 

@@ -118,16 +118,26 @@ _CUBE = os.path.join(_ROOT, "residual_core", "examples", "minimal_c3d8_stress_dr
                      "model.json")
 
 
-def test_a_missing_tangent_is_named_not_blamed_on_otilib(capsys):
+def test_a_missing_tangent_is_named_not_blamed_on_otilib(tmp_path, capsys):
     """Regression: with OTILib present, a model without a tangent exited 3 with
-    an 'Install OTILib' hint. It must exit 2 and name the missing tangent."""
+    an 'Install OTILib' hint. It must exit 2 and name the missing tangent.
+
+    The stress-driven cube, with its field attached through a config, is ready
+    to assemble, but its backend assembles no tangent dR/du."""
+    import json
     from residual_core.ui import cli
-    _require_otilib()
-    code = cli.main(["sensitivity", _CUBE])
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"odb": os.path.join(os.path.dirname(_CUBE), "fields.json")}))
+    code = cli.main(["--config", str(config), "sensitivity", _CUBE, "--mode", "stress-driven"])
     err = capsys.readouterr().err
     assert code == 2
-    assert "no tangent is available: this mode (formulation) provides no" in err
+    assert "ERROR: cannot solve R(u) = 0 in stress-driven mode: no element assembles a tangent" in err
     assert "Install OTILib" not in err
+    # the cube has no formulation-mode backend at all, and says so
+    code = cli.main(["sensitivity", _CUBE])
+    captured = capsys.readouterr()
+    assert code == 2 and "Cannot assemble in formulation mode." in captured.err
+    assert "why: no registered backend assembles C3D8 in formulation mode" in captured.err
 
 
 def test_missing_otilib_still_exits_3(monkeypatch, capsys):

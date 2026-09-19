@@ -137,7 +137,7 @@ Ingredients:
   parameters      : -- MISSING --
 
 Inferred for you (you did not have to type these):
-  constraints            4 *Boundary block(s) read from the mesh
+  constraints            4 *Boundary line(s) read from the mesh
   dof_map                built from the mesh (216 nodes)
   formulation.backend    auto-selected per element type: C3D8 -> solid_c3d8_finite_strain
   mesh.element_types     from Compression111.inp (C3D8 x125)

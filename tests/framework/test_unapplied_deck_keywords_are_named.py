@@ -129,3 +129,33 @@ def test_every_general_deck_command_prints_the_diagnostic(tmp_path, command):
         # the residual is still assembled, from the loads that ARE applied
         assert result.returncode == 0
         assert "assembled mode 'stress-driven': ndof=24" in result.stdout
+
+
+def test_verify_refuses_a_deck_whose_equilibrium_keywords_are_not_applied(tmp_path):
+    """Regression: verify printed the diagnostic and then an equilibrium verdict
+    computed without the dropped loads. It now refuses with exit 2, as it
+    already did for *Equation, naming every keyword it would have dropped."""
+    deck, fields = _deck_with_unapplied_keywords(tmp_path, equation=False)
+    result = _cli("verify", deck, "--fields", fields)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "equilibrium          =" not in result.stdout
+    refusal = [line for line in result.stderr.splitlines()
+               if line.startswith("Cannot verify equilibrium: ")]
+    assert len(refusal) == 1
+    for expected in EXPECTED:
+        if not expected.startswith("*Equation"):
+            assert expected in refusal[0]
+
+
+def test_verify_still_runs_when_only_a_material_keyword_is_unread(tmp_path):
+    """The stress-driven residual takes the stress from the field, so an unread
+    material keyword (*Elastic here) cannot change it: verify gives its verdict."""
+    deck = tmp_path / "Analysis.inp"
+    deck.write_text(CLEAN.read_text().replace("*Solid Section", "*Elastic\n210000., 0.3\n"
+                                              "*Solid Section", 1))
+    fields = tmp_path / "fields.json"
+    fields.write_text(json.dumps({"stress_ip": {"1": [[300.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8}}))
+    result = _cli("verify", deck, "--fields", fields)
+    assert "*Elastic: present but not read, so not applied" in result.stderr
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "equilibrium          = PASS" in result.stdout

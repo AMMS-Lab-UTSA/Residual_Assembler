@@ -47,6 +47,9 @@ class SolidC3D8FiniteStrain(Formulation):
                             "solution_history", "time_increments")}
     optional_inputs_by_mode = {"material-replay": ("dofs_prev",)}
     material_interface_needed = True
+    #: the material kinematic input this element drives; with several C3D8
+    #: replay backends, the element's material chooses by it
+    accepted_kinematic_inputs = ("deformation_gradient",)
     state_requirements = "stateless total hyperelasticity; F0/F1 explicit"
     tangent_support = "analytic, exact weak linearization for declared measures"
     verification_status = "bounded-hyperelastic"

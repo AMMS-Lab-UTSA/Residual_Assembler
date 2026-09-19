@@ -222,9 +222,12 @@ def test_inspect_model_of_the_deck_names_what_is_missing_and_exits_1(capsys):
     parsed = parse_inp(str(DECK))
     assert "  nodes/elements  : %d / %d" % (len(parsed.nodes), len(parsed.elements)) in out
     assert "  element types   : C3D8" in out
-    assert re.search(r"constraints +%d \*Boundary block\(s\) read from the mesh"
-                     % len(parsed.boundaries), out)
-    assert re.search(r"stimuli\.loads +%d \*Cload\(s\) read from the mesh"
+    # Regression: the count of *Boundary data lines (3) was printed as "3 *Boundary
+    # block(s)"; the deck has one *Boundary block of three lines
+    assert DECK.read_text().count("*Boundary") == 1 and len(parsed.boundaries) == 3
+    assert re.search(r"constraints +3 \*Boundary line\(s\) read from the mesh", out)
+    assert "block(s)" not in out
+    assert re.search(r"stimuli\.loads +%d \*Cload line\(s\) read from the mesh"
                      % len(parsed.cloads), out)
     assert "  OTI-differentiate R  : NO\n     blocked: C3D8 -> solid_c3d8_finite_strain" in out
     missing = [line.split("] ", 1)[1].split(":", 1)[0]
@@ -254,8 +257,9 @@ def test_inspect_model_with_every_ingredient_is_ready_and_exits_0(tmp_path, caps
 def test_requirements_names_the_one_missing_input_and_assemble_agrees(capsys):
     code, out, _ = run(capsys, "requirements", CUBE / "model.json", "--mode", "stress-driven")
     assert code == 0
-    assert out.splitlines()[:5] == ["Cannot assemble in stress-driven mode.", "Available:",
-                                    "  mesh: yes", "  solution field (U / U+rotation / T): yes",
+    assert out.splitlines()[:6] == ["Cannot assemble in stress-driven mode.", "Available:",
+                                    "  mesh: yes", "  formulation backend: yes",
+                                    "  solution field (U / U+rotation / T): yes",
                                     "  stress / resultant field: no"]
     assert out.count("provide ") == 1
     assert "Minimum missing input:\n  provide integration-point stress field S" in out
@@ -362,7 +366,11 @@ def test_doctor_prints_one_readiness_line_per_mode_from_the_requirements(tmp_pat
         assert line == ("ready" if report.runnable
                         else "needs: %s" % report.minimum_next.display()), mode
     assert readiness["stress-driven"] == "needs: stress / resultant field"
-    assert readiness["direct-residual"] == "needs: callable UEL adapter"
+    # C3D8 has no formulation-mode or UEL backend; its material replay binds the
+    # section's E and nu to the small-strain C3D8
+    assert readiness["formulation"] == "needs: formulation backend"
+    assert readiness["direct-residual"] == "needs: formulation backend"
+    assert readiness["material-replay"] == "ready"
     assert out.rstrip().endswith("config template written to %s" % template)
 
 
@@ -383,3 +391,72 @@ def test_doctor_writes_a_config_template_that_reads_back(tmp_path, capsys):
     yaml = pytest.importorskip("yaml")
     assert yaml.safe_load(text)["formulation_policy"] == {}
     assert run(capsys, "--config", written, "doctor", CUBE / "model.json")[0] == 0
+
+
+# --------------------------------------------------------------------------- #
+# readiness is what assembly does
+# --------------------------------------------------------------------------- #
+ELASTIC_DECK = ROOT / "tests" / "cp_c3d8_umat" / "stress_driven_residual" / "c3d8_elastic.inp"
+READINESS_MODELS = sorted(EXAMPLES.glob("*/model.json")) + [ELASTIC_DECK]
+
+
+def _problem(model):
+    from residual_core import ResidualProblem
+    if model.suffix == ".json":
+        return ResidualProblem.from_neutral(str(model))
+    with pytest.warns(Warning):     # the deck's unread *Elastic is named
+        return ResidualProblem.from_abaqus(str(model))
+
+
+@pytest.mark.parametrize("mode", requirements_engine.known_modes())
+@pytest.mark.parametrize("model", READINESS_MODELS, ids=lambda path: path.parent.name)
+def test_a_mode_called_ready_assembles_every_element(model, mode, capsys):
+    """Regression: doctor and requirements called formulation and material-replay
+    'ready' where no element has a backend for them; assemble then exited 0 with
+    ndof=0 ||R||=0 (spring, truss, beam, mixed, and the cube in formulation
+    mode), or exited 2 because C3D8 replay picked the finite-strain backend for
+    a small-strain material (the cube)."""
+    problem = _problem(model)
+    report = problem.requirements(mode)
+    code, out, err = run(capsys, "assemble", model, "--mode", mode)
+    if report.runnable:
+        assert code == 0, err
+        problem.assemble(mode)
+        assert problem.last_diagnostics["elements"] == len(problem.model.elements) > 0
+        assert problem.last_diagnostics["skipped_no_formulation"] == 0
+    else:
+        assert code == 2 and out == ""
+        assert err.startswith("Cannot assemble in %s mode.\n" % mode)
+        if report.minimum_next.key in report.reasons:
+            assert "  Why: %s." % report.reasons[report.minimum_next.key] in err
+
+
+def test_material_replay_binds_the_models_own_elastic_constants():
+    """Regression: the cube's section E = 210000, nu = 0.3 was replaced by a
+    default [200000, 0.3]; the replay now binds the model's own values to the
+    small-strain C3D8 its small-strain material needs."""
+    from residual_core.formulations.solid_c3d8_small_strain import SolidC3D8SmallStrain
+    from residual_core.materials.elastic_adapter import IsotropicElastic
+    problem = _problem(CUBE / "model.json")
+    displacement = 1e-3 * np.cos(np.arange(24.0))
+    residual = problem.assemble("material-replay", U=displacement)
+    assert problem.model.element_formulation == {1: "solid_c3d8_small_strain"}
+    assert problem.model.materials["solid"].constants == [210000.0, 0.3]
+    element = problem.model.elements[1]
+    dofs = problem.dof_manager.element_dofs(element.connectivity, ("UX", "UY", "UZ"))
+    direct = SolidC3D8SmallStrain().eval_element(
+        1, "C3D8", problem.model.coords_of(element.connectivity), displacement[dofs], {}, None,
+        MaterialBinding(IsotropicElastic(), [210000.0, 0.3]), (0.0, 0.0), 0.0, None,
+        {"compute_tangent": False})[0]
+    np.testing.assert_allclose(residual[dofs], direct, rtol=1e-14, atol=0)
+
+
+def test_material_replay_refuses_a_deck_whose_elastic_constants_are_not_read(capsys):
+    """The deck's *Elastic is not read, so the replay has no E and nu. It refuses
+    and says why, instead of binding a default."""
+    code, out, err = run(capsys, "assemble", ELASTIC_DECK, "--mode", "material-replay")
+    assert code == 2 and out == ""
+    assert ("  Why: material 'ELASTIC' has no E and nu for the built-in isotropic_elastic "
+            "law: the deck's *Elastic is not read") in err
+    code, out, _ = run(capsys, "doctor", ELASTIC_DECK)
+    assert _readiness(out)["material-replay"] == "needs: material parameters (PROPS)"

@@ -155,8 +155,10 @@ resasm requirements <model.inp> --mode stress-driven
 Cannot assemble in stress-driven mode.
 Available:
   mesh: yes
+  formulation backend: yes
   solution field (U / U+rotation / T): yes
   stress / resultant field: no
+  one-step deck in scope: yes
 
 Minimum missing input:
   provide integration-point stress field S, or an ODB/CSV export (section resultants N/M/Q for beams/shells; heat flux for thermal).
@@ -175,7 +177,7 @@ still missing, and — honestly — what it can and cannot do. Real output:
 
 ```
 Inferred for you (you did not have to type these):
-  constraints            4 *Boundary block(s) read from the mesh
+  constraints            4 *Boundary line(s) read from the mesh
   dof_map                built from the mesh (216 nodes)
   formulation.backend    auto-selected per element type: C3D8 -> solid_c3d8_finite_strain
   mesh.element_types     from Compression111.inp (C3D8 x125)
@@ -466,6 +468,21 @@ and therefore no parameter dependence to differentiate.
   (`residual_core/core/loads.py`). Body forces likewise.
 - **Constraints:** only Dirichlet / symmetry BCs are applied. `*Equation` / MPCs are
   **parsed but not applied** (`residual_core/core/constraints.py`).
+- **Deck keywords that are not applied are named.** `resasm inspect` and
+  `resasm doctor` list them under **Deck keywords present but NOT applied**
+  (`*Dsload`, `*Dload`, `*Equation`, `*Amplitude`, `AMPLITUDE=` references and any
+  keyword the reader leaves unread, such as `*Elastic`), and every command that
+  reads a deck prints them as a `DeckKeywordNotApplied` warning. `resasm verify`
+  refuses (exit 2) a deck whose loads or constraints are not all applied.
+- **One step at a time on the general deck path.** `inspect`, `requirements`,
+  `assemble` and `verify` apply every `*Cload` of a deck at once and every
+  `*Boundary` as one list, and integrate stress-driven and small-strain elements
+  over the reference configuration. A deck with several steps, or `NLGEOM=YES`
+  outside a finite-strain backend, is reported as out of scope and refused, with
+  the reason. `resasm history` replays a deck step by step.
+- **Material replay uses the model's own constants.** A deck's `*Elastic` is not
+  read, so material replay of such a deck is refused (`needs: material parameters
+  (PROPS)`, with the reason) rather than run with invented values.
 - **The real CP UMAT** does not compile under gfortran (Cray pointers + an ifort
   `trace()` kind mismatch). It needs **Intel ifort + Abaqus**.
 - **Abaqus comparisons** run where Abaqus 2021 is licensed: the replay engines
@@ -495,7 +512,8 @@ product, not because of licensing. See `sources/LICENSING.md`.
 `resasm verify MODEL --fields FIELDS --atol 1e-6` checks the Euclidean norm of
 all free residual entries against an absolute tolerance in the model's force
 units. It exits 0 only for finite residuals within tolerance, 1 for failed
-equilibrium, and 2 when verification cannot run. Choose `--atol` for the units
+equilibrium, and 2 when verification cannot run (including a deck whose loads
+or constraints the residual does not apply). Choose `--atol` for the units
 and precision of the exported analysis. Assembled reactions are printed, but
 are explicitly **not checked against a reference** by this command. The shipped
 minimal stress-driven cube has stress without balancing loads and therefore
