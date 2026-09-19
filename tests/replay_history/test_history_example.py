@@ -54,6 +54,32 @@ def test_public_private_outputs_and_report(replayed):
     assert results["scope"]["parameters"] == ["E", "nu", "SIGY0", "H"]
     private = json.loads((out / "private" / "run_details.json").read_text())
     assert len(private["increments"]) == 10
+    assert _listed_public_files(report) == {p.name for p in out.iterdir() if p.is_file()}
+
+
+def _listed_public_files(report):
+    """The public files named by the report's 'Public and private outputs' line."""
+    import ast
+    line = next(line for line in report.splitlines()
+                if line.startswith("Public and private outputs separated: yes: public "))
+    listed = line.split("public ", 1)[1].rsplit("; private private/", 1)[0]
+    return set(ast.literal_eval(listed))
+
+
+def test_the_report_lists_every_public_file_written(provider_factory, tmp_path):
+    """Regression: the line named only the three standard files, not
+    sensitivity_shares.csv or fields.npz when a request made them public."""
+    obj, _, _ = provider_factory("m3_j2")
+    request = json.loads((BEAM / "sensitivity_request.json").read_text())
+    request["full_field"] = True
+    (tmp_path / "request.json").write_text(json.dumps(request))
+    out = tmp_path / "results"
+    assert resasm(["history", "--model", str(BEAM / "Analysis.inp"), "--fields", str(BEAM / "fields.npz"),
+                   "--material", str(obj), "--request", str(tmp_path / "request.json"),
+                   "--out", str(out)]) == 0
+    written = {p.name for p in out.iterdir() if p.is_file()}
+    assert {"sensitivity_shares.csv", "fields.npz"} <= written
+    assert _listed_public_files((out / "run_report.txt").read_text()) == written
 
 
 def test_replayed_reaction_equals_the_odb(replayed):
@@ -201,6 +227,28 @@ def test_routing_keeps_bounded_models_and_sends_the_rest_to_the_history_engine(p
     # is out of the bounded scope is forwarded to the history engine.
     for key, value in (("model", "/nonexistent.inp"), ("material", "/nonexistent.obj")):
         assert bounded_scope_reason(Namespace(**{**vars(bounded), key: value})) is None
+
+
+def test_another_provider_on_a_bounded_deck_goes_to_the_history_engine(provider_factory, tmp_path):
+    """Regression: the one-element deck, which the bounded reader reads, with the
+    real FCC provider and its own valid mapping stayed with the bounded engine,
+    which then refused the material (Category: material_mapping, exit 2)
+    instead of handing the model to the history engine."""
+    from residual_core.ui.cmd_history import bounded_scope_reason
+    fcc, fcc_contract, _ = provider_factory("m6_fcc")
+    deck = RA_ROOT / "examples/presentation_request"
+    args = Namespace(model=deck / "Analysis.inp", material=fcc, mapping=None,
+                     request=deck / "sensitivity_request.json")
+    reason = bounded_scope_reason(args)
+    assert reason and "not the fingerprint-pinned m3_j2 J2 provider" in reason
+    assert fcc_contract["model_id"] in reason
+    # a damaged mapping of the pinned provider is still the bounded engine's to diagnose
+    j2, j2_contract, _ = provider_factory("m3_j2")
+    damaged = json.loads(json.dumps(j2_contract))
+    damaged["layouts"]["voigt"].reverse()
+    (tmp_path / "Mapping.json").write_text(json.dumps(damaged))
+    assert bounded_scope_reason(Namespace(**{**vars(args), "material": j2,
+                                             "mapping": tmp_path / "Mapping.json"})) is None
 
 
 def test_cross_check_with_the_bounded_j2_engine(provider_factory, tmp_path):
