@@ -78,6 +78,8 @@ class InspectionReport:
     materials: List[MaterialReport] = field(default_factory=list)
     required_inputs: List[str] = field(default_factory=list)
     modes: Dict[str, str] = field(default_factory=dict)   # mode -> availability text
+    #: deck keywords present but not applied (core.model.unapplied_deck_keywords)
+    unapplied_keywords: List[str] = field(default_factory=list)
 
     def render(self) -> str:
         L = ["Model inspection summary", "------------------------", "Elements:"]
@@ -96,6 +98,11 @@ class InspectionReport:
             L.append("  (none)")
         for m in self.materials:
             L.append("  - %s: %s" % (m.name, m.status))
+        if self.unapplied_keywords:
+            L.append("")
+            L.append("Deck keywords present but NOT applied (the residual omits them):")
+            for note in self.unapplied_keywords:
+                L.append("  - %s" % note)
         L.append("")
         L.append("Required user inputs:")
         if not self.required_inputs:
@@ -136,6 +143,7 @@ class InspectionReport:
                           for m in self.materials],
             "required_inputs": list(self.required_inputs),
             "modes": dict(self.modes),
+            "unapplied_keywords": list(self.unapplied_keywords),
         }
 
 
@@ -162,6 +170,7 @@ def inspect_model(model, formulation_registry, material_registry=None,
     ``attached_subroutine`` marks that a UMAT/UEL source has been provided.
     """
     rep = InspectionReport()
+    rep.unapplied_keywords = list(getattr(model, "unapplied_keywords", ()) or ())
 
     # ---- elements --------------------------------------------------------
     counts = Counter(_iter_elements(model))
