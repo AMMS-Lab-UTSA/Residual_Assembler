@@ -80,6 +80,9 @@ class Material(ABC):
     def spec(self):
         """Machine-readable capability descriptor (core.registry.BackendSpec)."""
         from ..core.registry import BackendSpec
+        measures = ("kind=%s; input=%s; stress=%s; tangent=%s"
+                    % (self.constitutive_kind, self.kinematic_input,
+                       self.stress_measure, self.tangent_measure))
         return BackendSpec(
             backend_name=self.name,
             kind="material",
@@ -88,9 +91,10 @@ class Material(ABC):
             optional_inputs=tuple(self.parameters),
             supported_modes=tuple(self.supported_formulations),
             limitations=tuple(self.limitations),
-            notes=self.notes or ("kind=%s; input=%s; stress=%s; tangent=%s"
-                                 % (self.constitutive_kind, self.kinematic_input,
-                                    self.stress_measure, self.tangent_measure)),
+            # the declared measures are part of the contract: a formulation
+            # accepts or refuses the material on them, so they are always shown
+            tangent_support=self.tangent_measure or "none",
+            notes="%s %s" % (self.notes, measures) if self.notes else measures,
         )
 
     @abstractmethod

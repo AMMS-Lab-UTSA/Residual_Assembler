@@ -139,6 +139,7 @@ class UmatAdapter(Material):
     stress_measure = "cauchy"
     tangent_measure = "ddsdde"
     kinematic_input = "deformation_gradient"
+    input_variables = ("F0", "F1")      # DFGRD0/DFGRD1; STRAN and DSTRAN are passed as zeros
 
     def __init__(self,
                  n_state_vars: int = 0,
