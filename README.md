@@ -33,19 +33,30 @@ resasm --help
 ```
 
 Linux with Python 3.10+ and `gfortran`. Abaqus (tested: 2021.HF5) is needed
-only to export an ODB; the sensitivity computation itself does not call it.
-[docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) is the full user guide: every
-command with real output, the GUI, the examples and troubleshooting.
+only to read an ODB; the sensitivity computation itself does not call it.
 
-## Examples
+**New here?** Install with [docs/INSTALL.md](docs/INSTALL.md), then work
+through the seven [worked examples](examples/README.md), from a one-line
+residual to full-size Abaqus models. The [command-line guide](docs/CLI_GUIDE.md)
+and the [GUI guide](docs/GUI_GUIDE.md) cover every entry point with real
+output; [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) summarises the program as
+it works now.
 
-| Example | What it shows |
-| --- | --- |
-| [examples/cantilevers](examples/cantilevers/README.md) | Two full-size models: a J2-plastic cantilever (1,536 C3D8, 7,497 DOF, 40 increments, 4 parameters) and an FCC crystal-plasticity cantilever (384 C3D8, 25 increments, 10 parameters), with the deck generator, the Abaqus scripts and the requests |
-| [examples/replay_history/j2_beam](examples/replay_history/) | A small committed Abaqus J2 beam that the test suite replays offline |
-| [examples/bounded_j2_c3d8](examples/bounded_j2_c3d8/README.md) | One element, cyclic loading, the complete provider-to-sensitivity pipeline in one command |
-| [examples/finite_strain_c3d8](examples/finite_strain_c3d8/README.md) | Finite-strain neo-Hookean assembly and sensitivities |
-| `resasm init --template python` | The smallest sensitivity calculation, on a residual you write yourself |
+## Worked examples
+
+Seven complete examples, each with a walkthrough: what it shows, the exact
+commands, the equivalent GUI steps, the measured output and how it is checked
+independently ([examples/README.md](examples/README.md)).
+
+| # | Example | What it shows | Abaqus? |
+| --- | --- | --- | --- |
+| 1 | [The smallest sensitivity](examples/user_config_minimal/WALKTHROUGH.md) | A residual you write yourself (a cubic spring); first and second derivatives against the closed form | No |
+| 2 | [Stress-driven C3D8 assembly](residual_core/examples/minimal_c3d8_stress_driven/WALKTHROUGH.md) | The residual of one element from a supplied stress field, against the analytic face tractions | No |
+| 3 | [The four-file request on one element](examples/presentation_request/WALKTHROUGH.md) | `Analysis.inp` + `Analysis.odb` + `OTI_UMAT.obj` + `sensitivity_request.json` to sensitivities; J2 plasticity against the uniaxial closed form | To read the ODB |
+| 4 | [History replay of a J2 beam, offline](examples/replay_history/WALKTHROUGH.md) | Ten plastic increments: ODB parity, Abaqus finite differences, the homogeneity identity, weighted shares, re-equilibration | No (export committed) |
+| 5 | [Full-size cantilevers](examples/cantilevers/WALKTHROUGH.md) | J2 (1,536 C3D8, 40 increments) and FCC crystal plasticity (384 C3D8, 25 increments, 10 parameters); full-field sensitivities | Once, to run the analyses |
+| 6 | [Provider-to-sensitivity pipeline](examples/bounded_j2_c3d8/WALKTHROUGH.md) | Builds the compiled J2 material, solves a cyclic one-element history, verifies every derivative against whole-model finite differences | No |
+| 7 | [Finite-strain neo-Hookean C3D8](examples/finite_strain_c3d8/WALKTHROUGH.md) | Finite-strain assembly with the exact tangent and parameter sensitivities, against nonlinear re-solves | No |
 
 Measured on the two cantilevers: the replayed stress, state and reactions match
 the ODB at every integration point; the J2 model runs in about 10 s (25 s when
@@ -377,10 +388,14 @@ The black-box path does not require OTILib on our side.
 ## Docs
 
 Start here:
-- [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — the user guide: installation, every command, the GUI, examples, troubleshooting
+- [docs/INSTALL.md](docs/INSTALL.md) — installation from an empty machine, the checks that prove it works, troubleshooting
+- [examples/README.md](examples/README.md) — seven worked examples
+- [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md) — every command, its options, real output and exit codes
+- [docs/GUI_GUIDE.md](docs/GUI_GUIDE.md) — a step-by-step walkthrough of every screen
+- [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — the program as it works now, in one place
 - [docs/REQUEST_INTERFACE.md](docs/REQUEST_INTERFACE.md) — the four-input `resasm request` interface
 - [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md) — `resasm history`: the mathematics, tolerances and supported deck subset
-- [docs/GUI.md](docs/GUI.md) — each screen, with screenshots
+- [docs/GUI.md](docs/GUI.md) — the GUI's design, with screenshots
 - [docs/VERIFICATION_RECORD.md](docs/VERIFICATION_RECORD.md) — every verified result, its command, reference and measured value
 - [docs/CONNECTED_WORKFLOW.md](docs/CONNECTED_WORKFLOW.md) — the provider-to-sensitivity pipeline in one command
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) — the pinned UMAT-OTI version and the shared contract
