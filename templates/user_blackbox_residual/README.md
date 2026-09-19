@@ -1,7 +1,10 @@
 # Black-box executable template
 
-For users who cannot share or link code. Your model stays inside `my_solver.py`
-(or any executable). The framework only exchanges files.
+This template is the starting point for a black-box residual (Path B) at
+order 1, for users who cannot share or link code. Your model stays inside
+`my_solver.py` (or any executable); the framework only exchanges files. Copy it
+with `resasm init --template blackbox --out my_case`; for order 2 and above use
+the `blackbox-order2` template.
 
 ## Edit
 - `my_solver.py` — replace `_residual` with your model. Read `request.json`,
@@ -23,5 +26,5 @@ resasm run   resasm.yml
 your executable must also consume `u_star_coefficients` from the request to
 rebuild `u*`.
 
-Request/response contract: see `docs/user_input_contract.md` and
-`docs/user_output_contract.md`.
+Request/response contract: `docs/user_input_contract.md` and
+`docs/residual_provider_contract.md` in the Residual_Assembler repository.

@@ -1,4 +1,8 @@
-# Template — black-box executable
+# Template: black-box executable
+
+This template is the starting point for a collaborator who will share nothing
+but an executable: the kit sends it a request file and reads back the residual
+coefficients.
 
 Ship an executable that speaks the kit's JSON contract; keep everything else
 private. The kit calls:

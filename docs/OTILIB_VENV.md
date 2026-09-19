@@ -1,9 +1,12 @@
-# Fresh OTILib With Python 3.11
+# Building OTILib for Python 3.11 without Conda
 
-This is a follow-up procedure, not part of RA milestone
-`5ea3da4bdd250fe6eea79677cec44e59e86de197`. The milestone's
-`scripts/setup_otilib.sh` requires Conda and fails when it is unavailable.
-The following no-Conda build was executed successfully during
+This page is the procedure for building a genuine OTILib (the hypercomplex
+engine behind the OTI sensitivity paths) into a plain virtual environment,
+without Conda. It is for users who need the OTILib-dependent workflows and
+tests (the direct Python residual path, the finite-strain example, and the
+tests run with `RUN_OTILIB_TESTS=1`) on a machine without Conda.
+`scripts/setup_otilib.sh` is the Conda-based alternative; it stops when Conda
+is unavailable. The procedure below was executed successfully during a
 [clean-clone verification](evidence/recovery_clean_clone.md).
 
 Prerequisites: Linux, Git, GCC/gfortran, GNU make, network access and a healthy
@@ -11,12 +14,13 @@ Python 3.11 with ctypes, ssl and venv. OTILib is an explicit external GPLv3
 dependency, not the unrelated PyPI `pyoti` package. Do not reuse another
 environment's extension modules or direction tables.
 
-Use a fresh external work directory. `PY` must name the new project wheel
-environment's Python; `WORK` must not contain either project checkout.
+Use a fresh external work directory. `PY` must name the Python of the virtual
+environment where Residual_Assembler is installed; `WORK` must not contain
+either project checkout.
 
 ```sh
-export WORK=/tmp/new_otilib_verification
-export PY=/tmp/new_wheel_environment/bin/python
+export WORK=/path/to/new/otilib_work      # a new directory outside both checkouts; the build stays here
+export PY=/path/to/venv/bin/python        # the environment Residual_Assembler is installed in
 mkdir "$WORK"
 mkdir "$WORK/home"
 export HOME="$WORK/home"
@@ -37,8 +41,11 @@ export OTILIB_ROOT="$WORK/build"
 ```
 
 Both selectors deliberately point to the **build directory**, not the source
-root. The installed RA adapter adds that explicitly declared external build
-to its import search path; no project-source PYTHONPATH is required. CMake's
+root. The installed Residual_Assembler adapter adds that explicitly declared
+external build to its import search path; no project-source `PYTHONPATH` is
+required. Keep `PYOTI_PATH` and `OTILIB_ROOT` set to this build directory in
+every shell that runs the OTILib workflows (the `HOME` override above is only
+for the isolated build). CMake's
 upstream `oticython` target uses the `python` executable on PATH and internally
 compiles multiple extensions concurrently. The commands above run sequentially.
 `BUILD_TESTING=OFF` disables OTILib's own upstream test suite; it does not skip

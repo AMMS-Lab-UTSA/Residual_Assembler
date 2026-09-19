@@ -1,4 +1,10 @@
-# Residual Provider Contract
+# Partner residual provider contract
+
+This page specifies the three provider levels a collaborator can implement for
+the partner kit (element residual, global residual, black-box executable) and
+the ways to supply a tangent. It is for collaborators writing a provider. The
+main package's `resasm.yml` provider contract is a separate document,
+[docs/residual_provider_contract.md](../../docs/residual_provider_contract.md).
 
 Implement **one** of three provider levels locally. All are scalar-generic: a
 parameter value may be a plain float or a hypercomplex seed (`Dual1`) — write the

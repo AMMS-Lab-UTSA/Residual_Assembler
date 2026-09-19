@@ -1,5 +1,12 @@
 # Input objects
 
+This page lists every input of a `resasm.yml` job for a supplied residual
+(Paths B and C): where each comes from, its shape, whether it is required, and
+the exact error when it is missing. It is for users writing a configuration by
+hand. The inputs of `resasm request` are in
+[REQUEST_INTERFACE.md](REQUEST_INTERFACE.md); those of an assembly recipe
+(Path A) in [residual_assembly_recipe.md](residual_assembly_recipe.md).
+
 Everything the toolkit needs to build the **residual-sensitivity execution
 contract** — the ingredients of
 
@@ -238,7 +245,7 @@ validation:
 | `validation.rhs_finite_difference_check` | Implemented, **Python/element path only** (`runner.py::rhs_finite_difference_check`). Central-differences `d(residual)/d(parameter)` at the **fixed** `u`, solves with the **same** tangent, compares to `U^(1)`. It validates the generated RHS and that solve. It does **not** re-solve the nonlinear problem and cannot detect an error in `T`. |
 | `validation.finite_difference` | Deprecated alias of the above, still accepted (`runner.py::_wants_rhs_fd`). Output always reports the accurate name. |
 | `validation.solution_finite_difference_solver` | **RESERVED — NOT IMPLEMENTED.** A real solution-level FD check would re-run your nonlinear solver at perturbed parameters. Setting it performs no such check; the run adds an explicit note saying so (`runner.py::_solution_fd_note`) and `public/validation_summary.json` keeps `solution_finite_difference_check: null`. |
-| `validation.fd_step` | Declared in the schema but **not read** by the current code. The FD step is hard-coded: `h = 1e-6 * max(1, |a_i|)`. |
+| `validation.fd_step` | Declared in the schema but **not read** by the current code. The FD step is hard-coded: `h = 1e-6 * max(1, \|a_i\|)`. |
 
 ### Output directory
 
@@ -256,7 +263,9 @@ output:
   seeded) exactly as written. If you need scaling, do it inside your residual.
 - **Sparse tangents.** `T` is loaded and inverted densely with
   `np.linalg.solve`.
-- **Mesh / element / material blocks.** Not read on any implemented path.
+- **Mesh / element / material blocks.** Not read by a `residual:` configuration;
+  a configuration that names a `mesh:` is an assembly recipe instead (Path A,
+  [residual_assembly_recipe.md](residual_assembly_recipe.md)).
 - **Multiple load steps / increments.** One `(time, dtime)` pair, one run.
 - **A `dual1` sensitivity backend.** Declared in the schema, absent from the code.
 
@@ -301,4 +310,4 @@ resasm run   resasm.yml     # writes resasm_output/private + resasm_output/publi
 ```
 
 Working, runnable versions of each path live in `templates/`
-(`resasm init --template python|blackbox|cpp|fortran --out my_job`).
+(`resasm init --template python|blackbox|blackbox-order2|cpp|fortran --out my_job`).

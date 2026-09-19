@@ -1,4 +1,8 @@
-# Privacy Model
+# Privacy model
+
+This page lists what the partner kit keeps private, what a collaborator may
+choose to share, and what can be inferred from the shared part. It is for
+collaborators deciding what to send back.
 
 The kit is designed so a collaborator can benefit **even if they share nothing
 back except final sensitivity results** — and can share nothing at all while

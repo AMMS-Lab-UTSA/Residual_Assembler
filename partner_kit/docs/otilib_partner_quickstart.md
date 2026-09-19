@@ -1,4 +1,9 @@
-# Partner Quickstart — OTILib (production sensitivity backend)
+# Partner quickstart: OTILib (production sensitivity backend)
+
+This page shows collaborators how to install OTILib and write a residual that
+runs with it for arbitrary-order, multi-parameter sensitivities, in C++,
+Fortran or behind a black-box executable. It is for partners who have outgrown
+the kit's first-order Dual1 smoke test.
 
 OTILib is the **production** hypercomplex backend for arbitrary-order,
 multi-parameter residual sensitivity. (The earlier Dual1 path was only a
@@ -16,9 +21,10 @@ OTILib (genuine `pyoti` OTI numbers) builds from source:
   triggers GPLv3 obligations.
 - **Build**: `conda env create -f environment.yml && conda activate pyoti`, then
   `mkdir build && cd build && cmake .. && make && make gendata`, then
-  `conda develop .`. **Windows: WSL only.**
+  `conda develop .`. **Windows: WSL only.** A build without Conda is described
+  in [docs/OTILIB_VENV.md](../../docs/OTILIB_VENV.md).
 
-**Do not** `pip install pyoti` — that PyPI name is squatted by an unrelated
+**Do not** `pip install pyoti`: that PyPI name belongs to an unrelated
 library. Confirm `import pyoti.sparse as oti` works (Python partners) or that the
 C/Fortran headers under `include/oti` are available (C++/Fortran partners).
 

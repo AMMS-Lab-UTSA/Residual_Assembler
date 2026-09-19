@@ -1,4 +1,7 @@
-# Template — Fortran UEL/UMAT residual wrapper
+# Template: Fortran UEL/UMAT residual wrapper
+
+This template lists the ways to expose `dR/dp` from an existing Fortran UEL or
+UMAT to the partner kit without sharing the source.
 
 Fortran has no native operator overloading across a legacy codebase, so pick the
 integration path that fits your code. All keep your source private; the kit only

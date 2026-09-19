@@ -1,4 +1,7 @@
-# Template — Fortran OTILib residual
+# Template: Fortran OTILib residual
+
+This template lists the ways to get arbitrary-order sensitivities from a Fortran
+residual with OTILib, and the conventions each must follow.
 
 Compute arbitrary-order residual sensitivities from a Fortran residual using
 OTILib. Choose the integration path that fits your codebase; your source stays

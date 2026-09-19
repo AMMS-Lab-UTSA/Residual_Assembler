@@ -1,5 +1,12 @@
 # Residual provider contract
 
+This page specifies the residual provider for a supplied residual: the Python
+signature, the black-box request/response files, and the compiled C++/Fortran
+variant, with the rules each must follow. It is for users writing a provider.
+(Sensitivities of an Abaqus analysis need no residual provider: the material
+arrives as a compiled OTI provider; see
+[REQUEST_INTERFACE.md](REQUEST_INTERFACE.md).)
+
 The residual provider is the one thing you must write. It is the object that
 makes the whole run possible: something that can evaluate
 
@@ -13,21 +20,22 @@ toolkit does — seeding `a_i* = a_i + e_i`, extracting `R^(p)`, solving
 
 There are three ways to satisfy it.
 
-| Path | `residual.type` | You provide | Who runs the hypercomplex algebra |
-|---|---|---|---|
-| **A — Python** | `python` | a Python callable | the framework (OTILib), in-process |
-| **B — Executable** | `executable` | a command + request/response files | **you** (inside your program) |
-| **C — Compiled C++/Fortran** | `executable` | a compiled binary speaking the same request/response contract | **you** (inside your binary) |
+| Provider kind | Path | `residual.type` | You provide | Who runs the hypercomplex algebra |
+|---|---|---|---|---|
+| **Python** | C (direct residual) | `python` | a Python callable | the framework (OTILib), in-process |
+| **Executable** | B (black-box) | `executable` | a command + request/response files | **you** (inside your program) |
+| **Compiled C++/Fortran** | B (black-box) | `executable` | a compiled binary speaking the same request/response contract | **you** (inside your binary) |
 
-Paths B and C are the same contract; C is just the compiled instance of it, with
-one extra file-format concession documented below.
+The executable and compiled providers are the same contract; the compiled one
+is just an instance of it, with one extra file-format concession documented
+below.
 
 Not sure which one? See
 [`which_path_should_i_use.md`](which_path_should_i_use.md).
 
 ---
 
-## Path A — Python provider
+## Python provider
 
 ### Signature
 
@@ -147,11 +155,13 @@ arity of `time`; if you need it, handle both, or carry the value in `state`.
 
 Accepted by the config, but in the current code `runner.py` builds the same
 `PythonResidual` for it — module + function, exactly like `python`. There is no
-mesh/element assembly in the run path.
+mesh/element assembly in this run path; element-by-element assembly is the
+assembly recipe (a `resasm.yml` that names a `mesh:`; see
+[residual_assembly_recipe.md](residual_assembly_recipe.md)).
 
 ---
 
-## Path B — Executable (black-box) provider
+## Executable (black-box) provider
 
 Your program stays entirely yours. The framework only exchanges two files.
 
@@ -326,7 +336,7 @@ needs nothing from the framework, not even OTILib.
 
 ---
 
-## Path C — Compiled C++ / Fortran provider
+## Compiled C++ / Fortran provider
 
 Same `residual.type: executable` contract, same `request.json`. You write your
 model once, generic in the scalar type, and (optionally) instantiate it with an
@@ -373,8 +383,8 @@ implemented in the reader.
 2. **otherwise strip the trailing `.npz` and open `<that>.json`** —
    `resp_json = resp_npz[:-4] + ".json"`.
 
-So a binary handed `--response /tmp/xyz/response.npz` may simply write
-`/tmp/xyz/response.json`, and the framework will find it. No NumPy archive
+So a binary handed `--response <dir>/response.npz` may simply write
+`<dir>/response.json`, and the framework will find it. No NumPy archive
 writer is needed in C++ or Fortran.
 
 Both templates do exactly this:

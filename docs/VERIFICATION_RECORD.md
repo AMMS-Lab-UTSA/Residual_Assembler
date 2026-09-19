@@ -42,7 +42,7 @@ compiler), Abaqus 2021 with ifort (claims 3 and 4 with `--abaqus`), and, for cla
 | 13 | 18/20 models, 76 parameter directions, DSIGMA_DP and dσ_vM/dp within 1.6e-7 of FD, both < 1e-5 | `verification/claim1_sensitivity_sweep.py` | centred FD of the ORIGINAL UMAT re-marched over the whole path (step ladder, plateau) | **20/20 models, 84 directions**, worst 1.56e-7 (m6_fcc DSIGMA_DP; inside its FD plateau uncertainty 3.2e-7); strict max-over-path metric also < 1e-5 for all 20 | reproduced, differs (more models pass than the slide shows) |
 | 26–27 | OTI vs hand-coded flow-rule Jacobian: max rel. error ~1e-15; FD error ~1e7× larger; FD ~9× slower | `verification/claim2_flowrule_jacobian.py` | the hand-coded analytical derivatives; centred/forward FD of the analytical routine | OTI vs analytical **7.1e-15**; FD/OTI error ratio **4.5e5** (centred, best step) … **2.9e6** (centred, plateau step) … **1.7e8** (forward, best step); FD time **6.0×** OTI (ifort -O2, known step), **41.9×** with the step search | first statement reproduced; FD ratios depend on the unrecorded FD protocol: reproduced, differs |
 | 28–32 | single C3D8 shear, six σ_vM sensitivities in one OTI run; regimes; OTI vs analytic chain rule NRMSE < 1e-8; same on a larger mesh; plain vs HYPAD vs FD cost | `verification/claim3_cp_residual_c3d8.py [--abaqus]` | hand-derived chain rule (implicit-function theorem) of the same update; centred FD of the ORIGINAL with the C3D8 re-solved; Abaqus | NRMSE **2.9e-16**; 4×4×4 vs 1 element **1.0e-14**; Abaqus σ_vM path vs this solver **1.1e-15**, FD of Abaqus vs OTI **≤ 6.2e-11**; HYPAD **9.2–10.0×** a plain UMAT pass (compiled kernel; 2.5× in the whole Python analysis) vs **13×** for central FD; regime statements: 3 of 5 hold, "H small" and "τ0, ΔG, q dominate" do not | reproduced for the surrogate model m5_cpflow; the slide's own 12-slip model is not in the repositories |
-| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `verification/claim4_benchmark_ddsdde.py --abaqus --variants` | the original UMAT's own DDSDDE in a paired Abaqus run (verify_ jobs) | committed contracts: **18 of 18 run, 17 pass (12 exact, 5 within tolerance)**; NKH fails because its source reads DTHTA unset; with NKH's labelled variant row (PROPS(1) = 0 and an initial temperature) **18/18 verified, 12 exact, 6 within tolerance**; absolute differences 0.7234 (NKH), 0.2370 (VPDCL), 0.3716 (VPDCO), 0.03125, 0.015625 as on the slide; spin_elas_def 868.3 (slide 740) | reproduced (NKH through a labelled source-defect variant); four transformer/contract gaps fixed on the way |
+| 8 | 18/18 benchmark DDSDDE verified in Abaqus, 12 exact, 6 differ (notching/rounding/error in original, spin_elas_def 740 / 2.6e-3) | `verification/claim4_benchmark_ddsdde.py --abaqus --variants` | the original UMAT's own DDSDDE in a paired Abaqus run (verify_ jobs) | committed contracts: **18 of 18 run, 17 pass (12 exact, 5 within tolerance)**; NKH fails because its source reads DTHTA unset; with NKH's labelled variant row (PROPS(1) = 0 and an initial temperature) **18/18 verified, 12 exact, 6 within tolerance**; absolute differences 0.7234 (NKH), 0.2370 (VPDCL), 0.3716 (VPDCO), 0.03125, 0.015625 as on the slide; spin_elas_def 868.3 (slide 740); the seven contracts whose transformed source changed with UMAT `5b97c2f` (HIN, PCL, PCLI, PCLI_R, PCLK, PCO, VPDCL_R) re-run 2026-09-18 with the same verdicts (the six slide cases 0 / 0), counts unchanged | reproduced (NKH through a labelled source-defect variant); four transformer/contract gaps fixed on the way |
 | 25 | 19 internal Jacobian entries, 14 exact, 5 within 1e-5 | `verification/claim5_constitutive_jacobians.py` | centred FD of the ORIGINAL at the converged local solve; the hand-coded value | all **21** (UMAT, symbol) pairs present in the sources measured; OTI agrees with FD in every one (≤ 2e-9); hand-coded vs OTI: **5 exact, 10 within 1e-5 (8 of them ≤ 1e-12), 6 differ** — NKH ANP1P/BNP1P 1.9e-4, VPDCO and VPDCL_R FJAC 2.6e-3 and GDIA 6.7e-5, the hand-coded value being the wrong one (FD) | reproduced, differs (hand-coded Jacobians of NKH, VPDCO, VPDCL_R are wrong where the slide says Exact/Pass) |
 
 The other slides are listed in [All slides](#all-slides).
@@ -295,17 +295,38 @@ the missing helper closure (PCO refused). Before the first two fixes the same ru
 gave 10 passes of 16 compared slide cases
 (`imq_abaqus/verification/claim4_before_transformer_fix.json`).
 
+**Re-run after UMAT `5b97c2f` (2026-09-18).** That commit keeps INTEGER
+variables out of the promotion and lets the rewrite read the implicit types of
+the lifted helper routines' dummies. It changed the transformed sources of seven
+benchmark contracts: UMAT_HIN, PCL, PCLI, PCLI_R, PCLK, PCO and VPDCL_R
+(re-transforming the other twelve gives byte-identical files, so their rows
+stand). The seven, and the VPDCL_R plane-strain variant, were run again in the
+paired Abaqus 2021.HF5 validation (UMAT `5b97c2f`, this repository `1bc2009`);
+the rows marked *re-run* below are those measurements. Every job of the six
+slide cases completed (completion mark in the `.sta`), and HIN, PCL, PCLI,
+PCLI_R, PCLK and PCO again reproduce the original DDSDDE exactly (0 / 0 over 4
+compared increments; HIN's deck has 1), with identical stress and state
+variables. VPDCL_R's 3-D contract fails again in both builds (the original's
+local plasticity iteration does not converge in increment 2 and the job aborts at
+the UMAT's own diagnostic WRITE; the transformed build stops with a segmentation
+fault in increment 1); its plane-strain variant gives 0.3673 / 3.2e-04 again.
+Before `5b97c2f`, UMAT_HIN's transformed build passed wrongly typed arguments to
+its helper routines (the OTI copies of the INTEGER flags ISTEP, ICYCLE and IFLAG
+to INTEGER dummies, plain REAL values such as RSTE and CTIME to OTI dummies); its
+single-increment deck did not reveal that, so the earlier HIN row is superseded
+by the re-run, not confirmed by it. The claim-4 counts are unchanged.
+
 | UMAT | Committed contract: DDSDDE max abs / rel, verdict | Labelled variant (source defect) | Slide (abs / rel, explanation) |
 |---|---|---|---|
 | UMAT_ECL_TEMP | 0 / 0 pass | – | 0 / 0, Exact |
 | UMAT_ECO | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_HIN | 0 / 0 pass | – | 0 / 0, Exact |
+| UMAT_HIN | 0 / 0 pass (*re-run*; supersedes the pre-`5b97c2f` row) | – | 0 / 0, Exact |
 | UMAT_NKH_1.02 | 2657 / 8.9e-01 FAIL (uninitialised DTHTA) | **0.7234** / 7.5e-04 pass | 0.72 / 2.1e-3, notching |
-| UMAT_PCL | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_PCLI | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_PCLI_R | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_PCLK | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_PCO | 0 / 0 pass (resolved helper closure) | – | 0 / 0, Exact |
+| UMAT_PCL | 0 / 0 pass (*re-run*) | – | 0 / 0, Exact |
+| UMAT_PCLI | 0 / 0 pass (*re-run*) | – | 0 / 0, Exact |
+| UMAT_PCLI_R | 0 / 0 pass (*re-run*) | – | 0 / 0, Exact |
+| UMAT_PCLK | 0 / 0 pass (*re-run*) | – | 0 / 0, Exact |
+| UMAT_PCO | 0 / 0 pass (resolved helper closure; *re-run*) | – | 0 / 0, Exact |
 | UMAT_VPDCL | **0.2370** / 2.5e-04 pass | – | 0.24 / 1.2e-3, notching |
 | UMAT_VPDCO | **0.3716** / 3.6e-04 pass | – | 0.37 / 1.1e-3, notching |
 | code_exp | **0.03125** / 1.1e-07 pass | – | 0.031 / 1.6e-7, rounding |
@@ -315,7 +336,7 @@ gave 10 passes of 16 compared slide cases
 | spin_elastic | 0 / 0 pass | – | 0 / 0, Exact |
 | visco_beam | 0 / 0 pass | – | 0 / 0, Exact |
 | visco_imp | 0 / 0 pass | – | 0 / 0, Exact |
-| UMAT_VPDCL_R (not on the slide) | both jobs fail (3-D deck; source in bounds only for NTENS = 4) | 0.3673 / 3.2e-04 pass (plane-strain deck) | – |
+| UMAT_VPDCL_R (not on the slide) | both jobs fail (3-D deck; source in bounds only for NTENS = 4; *re-run*) | 0.3673 / 3.2e-04 pass (plane-strain deck; *re-run*) | – |
 
 **Measured vs slide.** Committed contracts: all 18 slide cases run, **17 pass
 (12 exact, 5 differ within tolerance)**; NKH fails on its uninitialised DTHTA.
@@ -410,8 +431,9 @@ supported (OTI = FD everywhere).
 
 ## Changes to existing files
 
-See `docs/evidence/verification_record_run.md`. In the UMAT repository four defects found by
-claim 4 were fixed, each with a regression test that fails without the fix:
+See `docs/evidence/verification_record_run.md`. In the UMAT repository six
+transformer defects found by these reproductions and by the corpus rerun were
+fixed, each with a regression test that fails without the fix:
 
 | Commit | File | Defect |
 |---|---|---|
@@ -419,10 +441,13 @@ claim 4 were fixed, each with a regression test that fails without the fix:
 | `7c4975c` | `src/umat_oti/fortran/regions.py` | inputs of a DDSDDE used as the predictor stiffness were skipped (VPDCL, NKH wrong stress) |
 | `b124e39` | `src/umat_oti/transform/source_transform.py` | a DATA constant listed under promote refused the file (HIN) |
 | `24143f8` | `src/umat_oti/services/transformation.py`, `benchmarks/UMAT_PCO.json`, `tools/run_completed_json_batch.py` | a contract could not name the published helper sources its UMAT calls (PCO) |
+| `f11806f` | `src/umat_oti/transform/source_transform.py` | a continued assignment to a real variable from a promoted value was rewritten from its first line only (one corpus source stopped compiling) |
+| `5b97c2f` | `src/umat_oti/transform/source_transform.py` | integer flags on the stress path were promoted and real actuals reached hypercomplex dummies of lifted helpers (HIN: argument type mismatches that gfortran 10+ refuses; stress 63 % off on an offline path, now within 1.1e-9) |
 
 Tests: `tests/test_benchmark_transforms_keep_labels_and_predictor_inputs.py`,
 `tests/test_a_data_constant_in_the_promote_list_stays_real.py`,
-`tests/test_a_contract_resolves_its_helper_closure.py`. The transformer edits move
-the transform fingerprint, so
-`tests/test_contract_fixtures.py::test_the_recorded_generation_is_this_worktrees_actual_transform`
-fails until the lead re-freezes `transform_generation.json` (reserved to the lead).
+`tests/test_a_contract_resolves_its_helper_closure.py`,
+`tests/test_continued_assignment_from_promoted_value.py`,
+`tests/test_lifted_helper_arguments_match_their_dummies.py`. After the last fix the
+whole corpus was rerun and the transform generation re-frozen
+(`docs/evidence/final_refreeze.md`).

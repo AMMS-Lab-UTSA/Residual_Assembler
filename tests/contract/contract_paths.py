@@ -55,6 +55,49 @@ def umat_repo():
     return None
 
 
+def same_package(imported_init, source_package: Path) -> bool:
+    """True when an imported package is a byte-identical copy of a checkout's.
+
+    A package installed from a checkout (``pip install <checkout>``, not
+    editable) lives in site-packages, not under the checkout, yet runs the same
+    code. Every Python file on either side must exist on the other with the
+    same bytes; anything else is a different version and is refused. Data files
+    are not compared: an install may legitimately carry package data the source
+    tree keeps elsewhere.
+    """
+    if not imported_init:
+        return False
+    installed = Path(imported_init).resolve().parent
+    source_package = Path(source_package)
+    if not source_package.is_dir():
+        return False
+
+    def python_files(root: Path) -> dict:
+        return {path.relative_to(root): path for path in root.rglob("*.py")
+                if "__pycache__" not in path.relative_to(root).parts}
+
+    ours, theirs = python_files(source_package), python_files(installed)
+    return bool(ours) and ours.keys() == theirs.keys() and all(
+        ours[name].read_bytes() == theirs[name].read_bytes() for name in ours)
+
+
+def runs_the_checkouts_code(imported_init, repo: Path) -> bool:
+    """True when ``umat_oti`` imported from ``imported_init`` IS checkout ``repo``.
+
+    Either it was imported from the checkout's own ``src/umat_oti`` (a source
+    path or an editable install of that checkout), or it is an installed copy
+    whose Python files are byte-identical to it. Being somewhere under the
+    checkout is not enough: a stale ``build/lib`` copy or a nested worktree is
+    under it too and may be another version.
+    """
+    if not imported_init:
+        return False
+    source_package = Path(repo) / "src" / "umat_oti"
+    if Path(imported_init).resolve().parent == source_package.resolve():
+        return True
+    return same_package(imported_init, source_package)
+
+
 def load_schema(name: str) -> dict:
     """One shared schema document by stem, e.g. ``umat_contract_v1``."""
     return json.loads((SCHEMAS / f"{name}.schema.json").read_text())

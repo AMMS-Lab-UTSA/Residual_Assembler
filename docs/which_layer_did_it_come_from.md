@@ -1,5 +1,10 @@
 # Which layer did it come from
 
+This page explains `residual_core.diagnose`, the tool that attributes a wrong
+residual to the layer it came from, from the original UMAT to the global DOF
+mapping. It is for developers and reviewers investigating a disagreement
+between an assembled residual and its reference.
+
 A residual assembled from a converted UMAT passes through nine places where it
 can go wrong, and they need nine different fixes. "The residual is wrong by
 12%" tells nobody which of nine people to ask, so this repository answers the
@@ -11,7 +16,7 @@ question directly: `residual_core.diagnose(fixture, ...)` returns a
 from residual_core import diagnose
 from residual_core.materials.verified_fixture import load
 
-found = diagnose(load("tests/fixtures/verified/neohookean_umat--10759f1ffd.json"),
+found = diagnose(load("tests/fixtures/verified/j2_props--2feae9f158.json"),
                  assemble=my_assembly, reference=an_independent_one)
 print(found.blame)        # None, or one of the nine layer names
 print(found.report())     # every verdict, with its measurement
@@ -67,8 +72,10 @@ Abaqus's finite-strain material Jacobian is the tangent of the Jaumann rate of
 
 and a small-strain routine's tangent is just `D : Deps`. **Which one a UMAT
 returns is a property of the routine, not of the step's `NLGEOM` flag.**
-Measured on the committed fixtures, at the mid-point of each increment so that
-a chord across a nonlinear increment is not mistaken for a wrong tangent:
+Measured on fixtures of an earlier transform generation (the ten fixtures of
+that kind are kept, read-only, under `tests/fixtures/historical/`), at the
+mid-point of each increment so that a chord across a nonlinear increment is not
+mistaken for a wrong tangent:
 
 | fixture | NLGEOM | plain reading | Jaumann reading | verdict |
 |---|---|---|---|---|
@@ -86,11 +93,16 @@ isochoric cannot separate the two and reports so rather than choosing.
 ## Provenance comes before the layers
 
 A fixture is evidence about the transformation that produced it. `load()`
-refuses one whose `transform_fingerprint` is not the current store's
-(`b0d27ee53c630500`, read from `corpus_run/pass11/results/store_verification.jsonl`,
-237 entries) — because verifying today's assembler against a fixture frozen
-under an older transformation is verifying it against somebody else's run.
-Reading one anyway is possible and deliberate: `load(path, fingerprint=None)`.
+refuses one whose `transform_fingerprint` differs from the generation recorded
+in `schemas/transform_generation.json`, the file both repositories read
+(currently `da1f183708c19072`). Verifying today's assembler against a fixture
+frozen under an older transformation is verifying it against somebody else's
+run. The two current fixtures in `tests/fixtures/verified/` (isotropic
+elasticity and J2) were regenerated in Abaqus at that generation; the re-freeze
+is recorded in [evidence/final_refreeze.md](evidence/final_refreeze.md).
+Fixtures of earlier generations are refused as regression baselines and are
+read only as history. Reading one anyway is possible and deliberate:
+`load(path, fingerprint=None)`.
 
 ## What the frozen set can and cannot decide
 
@@ -101,7 +113,12 @@ settled separately, against the deck's second step, whose affine motion has a
 strain known in closed form — see
 `tests/framework/test_a_verified_deck_drives_the_global_assembly.py`.
 
-The integration-point ORDERING is internally consistent and is not verified
-against Abaqus's export index: every offline check uses a uniform field, which
-is provably blind to it. Filed as
-`abaqus_queue/requests/A3_integration_point_ordering.json`.
+The integration-point ORDERING is settled inside this repository with a
+stress that varies in space
+(`test_a_stress_that_varies_in_space_pairs_with_the_point_it_came_from`), but
+a fixture window cannot decide the match to the index under which Abaqus
+exports its integration points. The replay engines settle it for their own
+path: they use the same `ABAQUS_C3D8_GAUSS` order and compare the replayed
+stress with the ODB at every integration point, on a genuine non-uniform
+elastic C3D8 export (`tests/abaqus_derivative_export/`) and on the full-size
+cantilevers ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)).

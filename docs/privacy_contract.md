@@ -1,7 +1,19 @@
 # Privacy contract
 
-Every run writes one output directory (`output.dir`, default `resasm_output/`)
-split in two:
+This page states what a `resasm.yml` run (`resasm run`, Paths B and C) writes
+and where, what may be shared, and how to audit the shareable part before
+sending it. It is for users who must keep their model private. A
+`resasm request` or `resasm history` run uses different files: its results are
+the files at the top of its output directory (`sensitivity_results.json`,
+`sensitivity_tables.csv`, `run_report.txt`, and from the history engine
+optionally `sensitivity_shares.csv` and a requested full-field `fields.npz`),
+while the provider library, the ODB export and the detailed run record stay in
+`private/` ([REQUEST_INTERFACE.md](REQUEST_INTERFACE.md),
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md)). A requested `fields.npz` holds complete
+fields and their derivatives: share it only deliberately.
+
+Every `resasm.yml` run writes one output directory (`output.dir`, default
+`resasm_output/`) split in two:
 
 ```
 resasm_output/
@@ -10,7 +22,8 @@ resasm_output/
 ```
 
 `resasm_user` performs **no network I/O**: nothing is uploaded, and there is no
-telemetry. "Private" therefore means *never written into `public/`* — the directory
+telemetry. The same holds for assembly and sensitivity computation throughout
+the package. "Private" therefore means *never written into `public/`* — the directory
 you are expected to hand to a collaborator. Everything else stays on your disk
 under your control.
 
@@ -26,7 +39,7 @@ None of these are written to `public/`:
 | The full residual vector `R(u, a)` | `private/residual_real.npz` (key `residual`) — written **only when the residual was actually available**; on the black-box path it is omitted and replaced by `private/residual_real_UNAVAILABLE.json` rather than a fake zero vector |
 | The tangent matrix `T` | `private/tangent.npz` (key `tangent`) — written only if a tangent was obtained |
 | The OTI residual coefficients `R^(p)` and RHS `-R^(p)` | `private/rhs_order<p>.npz` (keys `residual` = `R^(p)`, `rhs` = `-R^(p)`) |
-| The solution sensitivities `U^(p)` | `private/solution_sensitivities_order<p>.npz` (key `U`) |
+| The solution sensitivities `U^(p)` | `private/solution_sensitivities_order<p>.npz` (`U_coefficients`, `U_derivatives`, legacy key `U`) |
 | State / history variables | only in your `state.file` / `state.values` — never written to any output file |
 | DOF partition (free / prescribed indices) | `private/dof_map.json` |
 | Parameter → basis index map | `private/parameter_map.json` |

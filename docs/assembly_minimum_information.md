@@ -1,7 +1,11 @@
-# Assembly — the minimum information
+# Assembly: the minimum information
 
-What each term of the residual costs you, in inputs. Nothing here is a support
-claim beyond what the code does.
+This page lists, term by term, what the residual assembly (Path A) needs from
+you, what it infers, and what happens when an ingredient is missing. It is for
+users preparing an assembly recipe and for reviewers checking what the
+assembler actually uses. Nothing here is a support claim beyond what the code
+does. Sensitivities of a finished Abaqus analysis take a different route,
+`resasm request` ([REQUEST_INTERFACE.md](REQUEST_INTERFACE.md)).
 
 ```
     R(u, a)  =  F_internal(u, a, q)  -  F_external(a, t)  +  F_constraints(u, t)
@@ -19,7 +23,7 @@ claim beyond what the code does.
 | tangent | material tangent, **or** assembled tangent, **or** solver-exported tangent |
 | **OTI RHS** | **an OTI-safe material/formulation, or a black-box coefficient provider** |
 
-The last row is where the current gap lives. Read it twice.
+The last row is where the recipe path stops for solid models. Read it twice.
 
 ---
 
@@ -70,7 +74,7 @@ reproduce the solver's residual. The tool will not warn you.
 
 | ingredient | concrete key | if missing |
 |---|---|---|
-| Dirichlet BCs | `*Boundary` (numeric DOF ranges, and `XSYMM`/`YSYMM`/`ZSYMM`/`XASYMM`/`YASYMM`/`ZASYMM`/`ENCASTRE`/`PINNED`) | every DOF is free; `||R_free||` then wrongly includes reaction DOFs, and no reaction is reported |
+| Dirichlet BCs | `*Boundary` (numeric DOF ranges, and `XSYMM`/`YSYMM`/`ZSYMM`/`XASYMM`/`YASYMM`/`ZASYMM`/`ENCASTRE`/`PINNED`) | every DOF is free; `\|\|R_free\|\|` then wrongly includes reaction DOFs, and no reaction is reported |
 
 Constraints enter as a **partition**, not as an assembled force
 (`core/constraints.py::partition` → `free_mask`, `prescribed_idx`). The residual
@@ -109,12 +113,12 @@ If no element contributed a tangent, `ResidualProblem.result()` does not
 fabricate one: it returns `TangentSource.UNAVAILABLE` with the reason attached
 (`diag['tangent_contributions'] == 0`).
 
-### 6. OTI RHS — the gap
+### 6. OTI RHS: where the recipe path stops
 
-This is the row that does not currently close for a real Abaqus solid model.
+This is the row the recipe path does not close for a real Abaqus solid model.
 
 To produce `R^(p)` (the order-`p` hypercomplex residual coefficients) through
-Path A, the residual must be **evaluated with OTI numbers**:
+the recipe (Path A), the residual must be **evaluated with OTI numbers**:
 `core/oti_rhs_provider.py` seeds every parameter simultaneously, calls the same
 `Formulation.eval_element`, and reads the coefficients off the returned residual.
 That only works if the element kernel is written in **generic arithmetic**.
@@ -124,12 +128,17 @@ That only works if the element kernel is written in **generic arithmetic**.
 
 ## Verified capability matrix
 
+The last column is OTI differentiation through the generic recipe path
+(`Formulation.oti_differentiable`). The bounded finite-strain neo-Hookean
+model has its own first-order right-hand side, listed under
+[the routes that do give sensitivities](#the-routes-that-do-give-sensitivities).
+
 | backend | assemble `R`? | OTI-differentiate `R`? |
 |---|---|---|
 | `solid_c3d8_small_strain` / `solid_c3d8_finite_strain` | ✅ verified offline to machine precision (divergence-theorem + linear-stress patch tests) | ❌ **NO** |
 | `stress_driven_c3d8` (`R` from exported IP stress + `U`) | ✅ verified | ❌ NO (σ is a fixed exported field; `∂R/∂a = 0` by construction) |
 | `truss2`, `beam2` | ✅ verified (`EA/L`, `PL³/3EI`) | ❌ NO |
-| `nonlinear_spring1`, `nonlinear_bar1` | ✅ | ✅ **YES** — proven in WSL (`tests/framework/test_otilib_fe_sensitivity.py`) |
+| `nonlinear_spring1`, `nonlinear_bar1` | ✅ | ✅ **YES**, with a genuine OTILib build (`tests/framework/test_otilib_fe_sensitivity.py`) |
 | `uel_direct` | adapter exists, needs a UEL routine | ❌ NO |
 | `shell_placeholder` | contract only, NOT runnable | — |
 
@@ -151,24 +160,25 @@ A float array cannot hold a hypercomplex number. Handed one, it either **raises*
 documented on `Formulation.oti_differentiable`) or **silently truncates** it to
 its real part. Both destroy the imaginary directions, which are the derivative.
 
-So, today:
+So, through the recipe:
 
 - you **can** assemble `R` for a C3D8 model;
-- you **cannot** yet OTI-overload the parameters through it.
+- you **cannot** OTI-overload the parameters through it.
 
 Making the solid kernels generic-arithmetic / OTI-safe is a concrete, tractable
 engineering task. It has not been done.
 
-### The two routes that do work today
+### The routes that do give sensitivities
 
 | route | how | what you get |
 |---|---|---|
 | **Path B — black-box** | your solver returns the order-`p` residual **coefficients** in a response file; the framework only solves `T U^(p) = -R^(p)` | full sensitivities, model stays private. Contract: [blackbox_order2_contract.md](blackbox_order2_contract.md). **Return coefficients, not derivatives** — at order ≥ 2 the difference is a factor of `κ!`. |
-| **OTI-transformed UMAT** | source-transform the UMAT so it computes in OTI arithmetic (the companion UMAT source-transformation project), then assemble through this framework | **OTI-transformed UMAT + this assembler = an OTI-differentiable assembled residual.** This is the intended integration. It is the **next step, not a shipped feature** — no such UMAT is wired in this tree. |
+| **OTI-transformed UMAT (analysis replay)** | UMAT-OTI source-transforms the UMAT to OTI arithmetic and compiles it; `resasm request` / `resasm history` link the compiled provider and replay it against the Abaqus ODB | **OTI-transformed UMAT + this assembler = an OTI-differentiable assembled residual.** Shipped: total-history first-order sensitivities of small-strain C3D8 analyses ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)). The replay carries the derivative arrays alongside the real ones, so the float kernels never hold an OTI number. |
+| **Bounded finite-strain neo-Hookean** | `resasm sensitivity` with the configuration in [examples/finite_strain_c3d8](../examples/finite_strain_c3d8/README.md) | first-order material-parameter sensitivities through a dedicated OTILib right-hand side (`formulations/finite_strain_sensitivity.py`) |
 
-Note that the OTI-transformed-UMAT route also requires making the *formulation*
-kernel OTI-safe (the material returns a hypercomplex σ, which then has to survive
-`sigma_ip`, `Bᵀσ`, and the assembler's scatter). Both halves are the same fix.
+Opening the recipe path itself to an OTI-transformed material would still
+require the *formulation* kernel to be OTI-safe (a hypercomplex σ would have to
+survive `sigma_ip`, `Bᵀσ` and the assembler's scatter).
 
 ---
 
@@ -189,7 +199,7 @@ kernel OTI-safe (the material returns a hypercomplex σ, which then has to survi
 | state / `STATEV` | ⚠ zeros | — | wrong for any history-dependent material |
 | time / `dtime` | ⚠ `(0,0)`, `0.0` | — | wrong for any rate-dependent material |
 | tangent | ✅ when the backend has one | element `k_e` | `UNAVAILABLE` in stress-driven mode — not an error, a fact |
-| OTI-safety | ❌ | — | `oti_differentiable = False` → no Path-A sensitivities |
+| OTI-safety | ❌ | — | `oti_differentiable = False` → no sensitivities through the recipe |
 
 ---
 
@@ -235,8 +245,11 @@ resasm sensitivity model.json --param mat.k --order 2 --backend otilib
 ```
 
 Needs an `oti_differentiable` formulation (`nonlinear_spring1`,
-`nonlinear_bar1`) **and** OTILib (Linux/WSL only — `scripts/run_otilib_tests_wsl.sh`).
-For anything else, use Path B (black-box) via `resasm.yml`:
+`nonlinear_bar1`) **and** OTILib (Linux, or WSL on Windows:
+`scripts/run_otilib_tests_wsl.sh`). The bounded finite-strain neo-Hookean model
+is the one C3D8 exception (first order; see its example). For a C3D8 analysis
+with a UMAT use `resasm request`; for a private solver use Path B (black-box)
+via `resasm.yml`:
 
 ```yaml
 residual:
@@ -257,4 +270,5 @@ sensitivity: {order: 2, backend: otilib}
 - [residual_assembly_recipe.md](residual_assembly_recipe.md) — the full ingredient list.
 - [abaqus_user_path.md](abaqus_user_path.md) — the Abaqus route, and what it cannot reconstruct.
 - [blackbox_order2_contract.md](blackbox_order2_contract.md) — coefficients, not derivatives.
-- `residual_core/docs/limitations.md` · `STATUS.md`
+- [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md) · [REPLAY_HISTORY.md](REPLAY_HISTORY.md) — sensitivities of Abaqus analyses.
+- `residual_core/docs/limitations.md` · [STATUS.md](../STATUS.md)

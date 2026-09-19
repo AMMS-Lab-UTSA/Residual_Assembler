@@ -1,4 +1,12 @@
-# Template — Abaqus UMAT single-element replay (history-aware)
+# Template: Abaqus UMAT single-element replay (history-aware)
+
+This template sketches how a collaborator replays a UMAT-driven element over
+its whole increment history inside the partner kit. For a complete Abaqus
+analysis there is a ready-made route: the main package's `resasm history`
+replays every increment of a small-strain C3D8 analysis with a UMAT compiled by
+UMAT-OTI ([docs/REPLAY_HISTORY.md](../../../docs/REPLAY_HISTORY.md)). Use this
+template when your material cannot go through UMAT-OTI or your residual lives
+outside Abaqus.
 
 For a UMAT-driven material the residual is history-dependent, so parameter
 sensitivities require replaying the **whole increment sequence** with the

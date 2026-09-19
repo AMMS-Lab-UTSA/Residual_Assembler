@@ -1,9 +1,54 @@
 # Glossary
 
-Terms as this repository actually uses them, with the concrete config key or
-output artifact each one maps to.
+Terms as this repository actually uses them, with the concrete configuration
+key or output file each one maps to. It is for any reader who meets an
+unfamiliar term in the other pages. The first section covers the analysis
+replay (`resasm request`, `resasm history`); the rest covers the `resasm.yml`
+paths and the OTI algebra they share.
 
-## The problem
+## The analysis replay
+
+**OTI provider** — The material routine compiled by the companion UMAT-OTI
+(`umat-oti-provider build`) into an object file, `OTI_UMAT.obj`. It bundles the
+ORIGINAL routine and its OTI-transformed version in binary form, so the replay
+needs no material source. The history engine calls its `UMAT_OTI_EVAL_TOTAL`
+entry point; older objects without it are refused with a rebuild message.
+
+**`Mapping.json`** — The completed contract that the provider build generates
+beside the object (also found as `<object-stem>.json`): dimensions, symbols,
+PROPS indices, OTI directions, derivative and Voigt layouts, the source
+fingerprint and the object's SHA-256. It is checked automatically; use it
+unchanged.
+
+**sensitivity request** — `sensitivity_request.json`: the `outputs` (field,
+component, reduction, domain), the `parameters`, the `domain` and the
+`increments` to report. See [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md).
+
+**history replay** — Marching the recorded increments of an analysis with the
+provider, carrying the parameter derivatives of stress and state from one
+increment to the next, and solving `K_ff du_f/dp = -dR_f/dp` at each increment
+(`resasm history`). See [REPLAY_HISTORY.md](REPLAY_HISTORY.md).
+
+**bounded engine** — The dense engine `resasm request` uses for one pinned J2
+model; every other readable model goes to the history engine.
+
+**re-equilibration** — `resasm history --reequilibrate`: Newton-polishing every
+recorded increment, from the recorded state, to double-precision equilibrium
+before the sensitivities are taken. It removes the effect of a loosely
+converged or single-precision ODB on the equilibrium, not the recorded state's
+own tolerance.
+
+**homogeneity identity** — Euler's identity for a model homogeneous of degree
+one in some parameters (J2 with linear hardening in E, the initial yield stress
+and H at fixed nu): under prescribed displacements, `sum_p p dQ/dp = Q` for
+reactions and stresses and `0` for displacements and plastic strain, at every
+increment. The engine does not use it, so it is an independent check.
+
+**ORIGINAL** — The untransformed material routine, compiled into the same
+provider object. Finite-difference references (`--verify fd`, `--validate`)
+re-run it at perturbed parameters.
+
+## The problem (`resasm.yml` paths)
 
 **residual** — The vector-valued function `R(u, a)` whose root is your converged
 solution: `R = 0` at equilibrium. You supply it, and it is the *only* thing you

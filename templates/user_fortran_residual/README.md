@@ -1,4 +1,8 @@
-# Fortran residual template (Path B — local compiled code)
+# Fortran residual template (Path B: local compiled code)
+
+This template is the starting point for a residual written in Fortran and run
+as a black-box executable (Path B). Copy it with
+`resasm init --template fortran --out my_case`.
 
 A complete, runnable job: `residual.f90` builds to a single binary that is both a
 self-test and the black-box responder `resasm run` calls. The model is a 1-DOF

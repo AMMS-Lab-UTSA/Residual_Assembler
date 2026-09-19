@@ -1,4 +1,7 @@
-# Example — private bar (element provider)
+# Example: private bar (element provider)
+
+This example shows the partner kit assembling a model from element residuals it
+never has to understand, with two design parameters.
 
 A two-element nonlinear axial bar chain (nodes 0-1-2), node 0 fixed and node 2
 given a prescribed displacement. Each element has its own stiffness parameter
@@ -8,9 +11,14 @@ understand, and seeds `k1`/`k2` independently to build `R^(1)`.
 
 ## Run
 
+From this directory, with the repository root on `PYTHONPATH` (see
+[the partner quickstart](../../docs/partner_quickstart.md)):
+
 ```bash
 python -m partner_kit.python.partner_cli --config config.json
 ```
+
+The run writes its output under `out/` in the current directory.
 
 ## Expected output
 

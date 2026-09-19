@@ -1,15 +1,19 @@
-# External source submodules — policy and setup
+# External source submodules: policy and setup
+
+This page explains how the external Abaqus sources under `sources/` are
+obtained, which of them ordinary setup fetches, and how to check a checkout.
+It is for anyone setting up the test suite or auditing licences.
 
 External Abaqus UMAT/UEL sources are **pinned git submodules**, never vendored
 copies. Provenance stays exact -- every external file is identified by an
 upstream repository plus a commit SHA recorded in our tree -- and no third-party
 code is redistributed from here at all.
 
-This framework is licensed **GPL-3.0-only** (see `../LICENSE`). That was decided
+This framework is licensed **GPL-3.0-only** (see [LICENSE](../LICENSE)). That was decided
 after the tier scheme below was written, and it changes why the tiers exist
 rather than whether they do. They are no longer a firewall protecting a
 non-copyleft core; they are a distribution and obligation boundary. See
-`LICENSING.md` for what each tier now means.
+[LICENSING.md](LICENSING.md) for what each tier now means.
 
 ## The three tiers
 
@@ -62,10 +66,14 @@ Exactly one external source:
 `ExampleInputFiles/HCPnoTwin/Compression111.inp` is the real C3D8
 crystal-plasticity mesh used by the assembler, recipe and neutral-IO tests.
 
-Without it, `pytest -q` reports **60 passed, 17 skipped**; the eight affected
-tests skip with a message naming the file, the owning submodule, its tier and
-the command that fetches it. With it, the suite reports **68 passed, 9 skipped**
-(the 9 remaining skips are OTILib-dependent and unrelated).
+Eight tests read that mesh (in `tests/framework/test_assembler.py`,
+`test_assembly_recipe.py` and `test_neutral_io.py`). Without it they skip with
+a message naming the file, the owning submodule, its tier and the command that
+fetches it; with `REQUIRE_EXTERNAL_TEST_SOURCES=1` they fail instead, which is
+how CI runs. Skips that remain once the source is present name other external
+dependencies (OTILib, for example), never this one. The current suite result
+from clean clones is in
+[../docs/evidence/final_clean_clone.md](../docs/evidence/final_clean_clone.md).
 
 No test depends on a copyleft or license-unknown submodule, so the restricted
 tiers can stay permanently empty.
@@ -86,7 +94,7 @@ pinned commit with its license file intact.
 `git submodule update --init` skips the restricted tiers, bootstraps the
 permissive dependency, runs the suite, and checks the parent worktree is clean.
 
-## History
+## How the current setup came about
 
 Before this was fixed, six gitlinks existed with **no committed `.gitmodules`**.
 `git submodule status` failed outright, a fresh clone could not obtain any

@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from contract_paths import umat_repo
+from contract_paths import runs_the_checkouts_code, umat_repo
 from contract_reader import (GATES, SEVENTH, ContractError, gates_of,
                              identity_of, owner_of, primal_settled,
                              require_compatible, usable_for_assembly)
@@ -33,18 +33,24 @@ STORE_RELATIVE = Path("corpus_run") / "pass11" / "results" / \
 def _producer():
     """The producing checkout, or a skip that says why it was not compared.
 
-    The import trap: ``umat_oti`` is installed editable and that install points
-    at the MAIN checkout, not at whichever worktree is under test. Inserting a
-    worktree's ``src`` at the front of ``sys.path`` wins only if nothing has
-    imported the package yet -- and other tests in this repository's suite do
-    import it, from the main checkout, before this module is collected.
+    The import trap: whichever ``umat_oti`` is imported first is the one every
+    later import gets, and other tests in this repository's suite import it
+    before this module's tests run. That copy may be an editable install of
+    ANOTHER checkout (the main one, not the worktree under test), or an
+    install of another version altogether.
 
-    So this refuses to compare against a producer it did not choose. It skips
-    rather than fails, because "another test bound the package first" is a
-    fact about the run and not about the contract; and the skip says NOT
-    COMPARED rather than passing quietly, which is the same rule this contract
-    applies to every gate it carries. Run this module on its own, or set
-    ``UMAT_OTI_REPO``, to make the comparison actually happen.
+    So this refuses to compare against a producer it did not choose -- but
+    "chose" means the CODE, not the directory it was imported from. A copy
+    installed from this very checkout (``pip install <checkout>``, as CI and
+    users install it) lives in site-packages and runs exactly the checkout's
+    code; when every Python file is byte-identical to the checkout's
+    ``src/umat_oti`` the comparison runs. Anything else is a different
+    version, and the module skips rather than fails, because "another test
+    bound another package first" is a fact about the run and not about the
+    contract; and the skip says NOT COMPARED rather than passing quietly,
+    which is the same rule this contract applies to every gate it carries.
+    Run this module on its own, or set ``UMAT_OTI_REPO`` to the checkout the
+    imported package came from, to make the comparison actually happen.
     """
     repo = umat_repo()
     if repo is None:
@@ -52,23 +58,29 @@ def _producer():
             "no UMAT_source_transformation checkout beside this one, so the "
             "two readers were NOT COMPARED. That is not the same as their "
             "agreeing; set UMAT_OTI_REPO to compare them.")
+    checkout = repo / "src" / "umat_oti"
     already = sys.modules.get("umat_oti")
-    if already is not None and \
-            not Path(already.__file__).resolve().is_relative_to(repo):
-        pytest.skip(
-            f"umat_oti was already imported from "
-            f"{Path(already.__file__).resolve().parents[2]} before this module "
-            f"was collected, so the two readers were NOT COMPARED against "
-            f"{repo}. Run this module on its own, or set UMAT_OTI_REPO.")
+    if already is not None:
+        imported = getattr(already, "__file__", None)
+        if not runs_the_checkouts_code(imported, repo):
+            where = Path(imported).resolve().parent if imported else "a namespace package"
+            pytest.skip(
+                f"umat_oti was already imported from {where} before this "
+                f"module's tests ran, and its Python files are not "
+                f"byte-identical to {checkout}, so the two readers were NOT "
+                f"COMPARED against {repo}. Run this module on its own, or set "
+                f"UMAT_OTI_REPO to the checkout that package was installed from.")
+        return repo
     source = repo / "src"
     if str(source) not in sys.path:
         sys.path.insert(0, str(source))
     import umat_oti                                      # noqa: F401
-    installed = Path(umat_oti.__file__).resolve()
-    if not installed.is_relative_to(repo):
+    imported = getattr(umat_oti, "__file__", None)
+    if not runs_the_checkouts_code(imported, repo):
         pytest.skip(
-            f"umat_oti resolved to {installed}, not to {repo}: the editable "
-            f"install won. The two readers were NOT COMPARED.")
+            f"umat_oti resolved to {imported}, which is neither {checkout} nor "
+            f"a byte-identical copy of it: an install of another checkout won. "
+            f"The two readers were NOT COMPARED.")
     return repo
 
 

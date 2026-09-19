@@ -1,5 +1,10 @@
 # The Abaqus user path
 
+This page is for Abaqus users. It explains what Residual_Assembler can do with
+an Abaqus model: compute sensitivities of a finished analysis, assemble the
+residual from the fields Abaqus exports, and which model features cannot be
+reconstructed. For a first run see [QUICKSTART_USER.md](../QUICKSTART_USER.md).
+
 ## The premise
 
 **Abaqus does not expose the global residual.** There is no output request, no
@@ -24,6 +29,30 @@ not be trusted to reproduce Abaqus' reactions.
 
 ---
 
+## Sensitivities of a finished analysis
+
+If what you want is the parameter sensitivities of an analysis you have already
+run, you do not need the rest of this page. Build the material once with the
+companion UMAT-OTI (`umat-oti-provider build`), then:
+
+```bash
+resasm request --model Analysis.inp --odb Analysis.odb \
+    --material OTI_UMAT.obj --request sensitivity_request.json --out results
+```
+
+The command exports every ODB increment with Abaqus Python, replays the
+compiled material at every integration point and increment, checks the replayed
+stress, state and reactions against the ODB, assembles `K` and `dR/dp`, and
+solves for the requested sensitivities. It handles small-strain C3D8 analyses
+with one static step, one user material, ramped boundaries (including nonzero
+prescribed displacements) and concentrated loads; models outside its bounded
+single-material engine go to `resasm history`, which says so. See
+[REQUEST_INTERFACE.md](REQUEST_INTERFACE.md),
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md) and the full-size cantilevers in
+[examples/cantilevers](../examples/cantilevers/README.md).
+
+The rest of this page is about assembling the residual itself.
+
 ## Minimum you must supply
 
 | ingredient | where it comes from | required for |
@@ -39,7 +68,7 @@ Two ways to get σ, and they are not equivalent:
 | σ from | mode | needs a UMAT? | gives a tangent? | gives sensitivities? |
 |---|---|---|---|---|
 | Abaqus' exported IP stress | `stress-driven` | no | **no** | **no** |
-| a material update from `u` | `material-replay` | yes (compiled) | yes | not through Path A (see the OTI gap) |
+| a material update from `u` | `material-replay` | yes (compiled) | yes | not through the recipe (see [below](#sensitivities-which-route)) |
 
 ---
 
@@ -103,8 +132,10 @@ consumer:
 | `scripts/extract_odb_fields.py` | flat `stress_ip` / `reactions` / `displacements` / `statev` | `resasm assemble --fields`, `ResidualProblem.attach_results`, `scripts/compare_residuals.py` |
 | `residual_core/io/abaqus_odb_export.py` | CONTRACT §5, per-frame `U`/`RF`/`S`/`SDV` | `residual_core/stress_driven_residual.py --fields` |
 
-Both are Abaqus-Python (`odbAccess`) scripts. Neither has ever been run against a
-real ODB in this repository — Abaqus is not installed here (`STATUS.md`).
+Both are Abaqus-Python (`odbAccess`) scripts. `residual_core/io/abaqus_odb_export.py`
+is the exporter `resasm request` runs on real ODBs (tested with Abaqus
+2021.HF5); the history engine uses its own `.npz` exporter,
+`residual_core/replay/odb_export_npz.py`.
 
 ### 3. Assemble the residual offline
 
@@ -160,9 +191,14 @@ For a `*User Material`, `ResidualProblem` refuses to fabricate a stress:
 
 The Grilli CP UMAT **does not compile under gfortran** (Cray-pointer/`target` twin
 arrays + an ifort `trace()` kind mismatch). It needs **Intel ifort + Abaqus (MKL)**.
-Until that toolchain exists, only a *mock* elastic UMAT runs — so the replay path
-has proven its *plumbing* (5-increment `STATEV` history, `/UMPS/` common block
+With gfortran only a *mock* elastic UMAT runs through this path, so it has
+proven its *plumbing* (5-increment `STATEV` history, `/UMPS/` common block
 persisted across increments), not crystal plasticity.
+
+A UMAT that UMAT-OTI has transformed and compiled takes the other route: the
+analysis replay links the compiled provider and replays it against the ODB at
+every integration point and increment (see
+[Sensitivities of a finished analysis](#sensitivities-of-a-finished-analysis)).
 
 ---
 
@@ -184,10 +220,12 @@ a residual that is missing a term.
 | **user elements (UEL)** | `uel_direct` adapter exists but is registered *unconfigured*; you must supply the Python callable | not assembled until wired |
 | **any state Abaqus does not export** | — | a history-dependent replay cannot be reproduced |
 | **non-identity `*Instance` transform** | parser raises `NotImplementedError` | refuses to parse rather than silently mis-place the mesh |
-| **integration-point ordering** | `ABAQUS_C3D8_GAUSS` uses lexicographic (ξ₁-fastest) order. The internal `sigma_ip[k] ↔ points[k]` pairing is verified; the match to **Abaqus' export index** is *not offline-testable* | must be confirmed against a first real ODB with a **spatially varying** stress before trusting a non-uniform state |
+| **integration-point ordering** | `ABAQUS_C3D8_GAUSS` uses lexicographic (ξ₁-fastest) order. The internal `sigma_ip[k] ↔ points[k]` pairing is verified offline; the match to **Abaqus' export index** is checked by the replay engines, which compare replayed stress with the ODB at every integration point of non-uniform fields | the stress-driven scripts have no ODB check of their own; compare a spatially varying stress before trusting a non-uniform state through them |
 
 Supported today, end to end: a **single-instance, no-transform, C3D8-only model
 with `*Boundary` (Dirichlet/symmetry) and `*Cload`**. That is the honest envelope.
+The analysis replay has its own, similar envelope, and refuses anything outside
+it by name ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)).
 
 ---
 
@@ -215,71 +253,78 @@ exported field*: it does not depend on the material parameters `a`, so
 | the assembly math (`∫Bᵀσ dΩ`) is correct | ✅ verified **offline to machine precision**: divergence-theorem patch test 5e-16; linear-stress patch + body-load test 1e-13; finite-strain force frame-objective to 5e-16 and reducing exactly to small-strain at `u = 0` |
 | the small-strain element tangent `∫BᵀDB` | ✅ FD-verified, relative error 1.6e-16 |
 | the `.inp` parse of a real CP job | ✅ verified (216 nodes / 125 C3D8 / 11 constants / 125 SDV, incl. the part/assembly `Set-1` name collision) |
-| **the assembled `R` vs Abaqus' reaction forces** | ⏳ **BUILT BUT NEVER EXECUTED.** Abaqus is not installed in this environment. `compare_residuals.py` and `stress_driven_residual.py --fields` are ready to run the moment an ODB exists. See `STATUS.md` criteria 3–6. |
+| **the assembled `R` vs Abaqus' reaction forces** | ✅ for the replay engines, which assemble reactions from the replayed stress and compare them with the ODB's `RF` at every increment. `compare_residuals.py` and `stress_driven_residual.py --fields` make the same comparison from exported stress; no run of them against a real ODB is recorded here. See `STATUS.md`. |
 | the finite-strain `DDSDDE → AMATRX` mapping | ⏳ open; the finite-strain element tangent is approximate pending the Abaqus comparison |
 | the real CP UMAT | ⏳ needs Intel ifort + Abaqus; does not build with gfortran |
 
 Do not read "the math is verified" as "it matches Abaqus". Those are different
-statements, and only the first one is true today.
+statements. The second has been measured for the replay engines, not for the
+stress-driven scripts.
 
 ---
 
-## The OTI gap, and the way out
+## Sensitivities: which route
 
-**You cannot get OTI parameter sensitivities for a real C3D8 + UMAT model through
-Path A today.**
+**The assembly recipe (Path A) does not OTI-differentiate a real C3D8 + UMAT
+model.**
 
-Why: the sensitivity engine (`core/oti_rhs_provider.py`) produces `R^(p)` by
-evaluating the element residual with hypercomplex (OTI) numbers and reading the
-coefficients off. That requires the element and material kernels to be written in
-generic arithmetic. The C3D8 kernels are numpy **float** kernels
+Why: the recipe's sensitivity engine (`core/oti_rhs_provider.py`) produces
+`R^(p)` by evaluating the element residual with hypercomplex (OTI) numbers and
+reading the coefficients off. That requires the element and material kernels to
+be written in generic arithmetic. The C3D8 kernels are NumPy **float** kernels
 (`np.zeros((6,6), dtype=float)` in `core/voigt.py::isotropic_D`, `np.zeros((8,6))`
 for the IP stress slab, `np.asarray(dofs, dtype=float)` at every element entry
 point, `np.asarray(r_e, float)` in the assembler's scatter). A float array cannot
 carry an OTI number: it either raises or truncates to the real part, destroying
-the derivative. `Formulation.oti_differentiable` records this — it is `True` for
+the derivative. `Formulation.oti_differentiable` records this: it is `True` for
 exactly two proof backends (`nonlinear_spring1`, `nonlinear_bar1`) and `False`
 for every solid.
 
-This is a **fixable engineering gap, not a physics limitation.**
+The routes that do give sensitivities:
 
-Two routes exist today:
-
-1. **Path B — black-box.** Your solver (or your own driver around it) returns the
-   order-`p` residual **coefficients**; the framework only solves
-   `T U^(p) = −R^(p)`. Your model never leaves your machine. Contract:
-   [blackbox_order2_contract.md](blackbox_order2_contract.md) — and note the rule:
-   return *Taylor coefficients*, not derivatives (at order ≥ 2 they differ by
-   `κ!`).
-
-2. **An OTI-transformed UMAT.** Source-transform the UMAT so it computes in OTI
-   arithmetic — which is exactly what the companion UMAT source-transformation
-   project produces — and drive it through this assembler:
+1. **The analysis replay (`resasm request`, `resasm history`).** UMAT-OTI
+   source-transforms the UMAT to OTI arithmetic and compiles it; the replay
+   engines link the compiled provider and carry the derivative arrays alongside
+   the real ones, so the float kernels never have to hold an OTI number:
 
    > **OTI-transformed UMAT + this assembler = an OTI-differentiable assembled
    > residual.**
 
-   That is the intended integration. It is the **next step, not a shipped
-   feature**. It also requires the formulation kernel to be made OTI-safe (a
-   hypercomplex σ coming out of the material must survive `sigma_ip`, `Bᵀσ` and
-   the global scatter) — the same fix, on the other side of the material
-   interface.
+   This is the shipped route for Abaqus analyses; see
+   [Sensitivities of a finished analysis](#sensitivities-of-a-finished-analysis).
+
+2. **Bounded finite-strain neo-Hookean** (`resasm sensitivity` with the example
+   configuration in [examples/finite_strain_c3d8](../examples/finite_strain_c3d8/README.md)):
+   first-order material-parameter sensitivities through a dedicated OTILib
+   right-hand side.
+
+3. **Path B, black-box.** Your solver (or your own driver around it) returns the
+   order-`p` residual **coefficients**; the framework only solves
+   `T U^(p) = −R^(p)`. Your model never leaves your machine. Contract:
+   [blackbox_order2_contract.md](blackbox_order2_contract.md), and note the rule:
+   return *Taylor coefficients*, not derivatives (at order ≥ 2 they differ by
+   `κ!`).
+
+Making the solid kernels themselves OTI-safe would open the recipe path to
+C3D8 sensitivities too. It is an engineering task, not a physics limitation,
+and has not been done.
 
 ---
 
-## Order of operations, when an Abaqus licence is available
+## Remaining Abaqus comparisons for the assembly framework
 
-From `STATUS.md` and `residual_core/docs/abaqus_validation_roadmap.md`:
+Abaqus 2021.HF5 has been used for the replay engines. For the assembly
+framework's own scripts, `STATUS.md` and
+`residual_core/docs/abaqus_validation_roadmap.md` list what remains:
 
-1. Run the job; export `fields.json` (`--frames all`).
-2. Confirm the **C3D8 integration-point ordering** with a single-element,
-   spatially-varying-stress job. Nothing downstream is trustworthy on a
-   non-uniform state until this is done.
-3. Stress-driven check at converged frames → expect `||R_free|| ≈ 0` and
-   internal force at prescribed DOFs `= ±RF`.
-4. Build the real UMAT (ifort + Abaqus), replay increment by increment, compare
-   `STRESS ↔ S` and `STATEV ↔ SDV`, then close the loop by feeding the replayed
-   stress back through the (already verified) assembler.
+1. Run a job and export `fields.json` (`--frames all`).
+2. Stress-driven check at converged frames with `compare_residuals.py` or
+   `stress_driven_residual.py --fields`: expect `||R_free|| ≈ 0` and internal
+   force at prescribed DOFs `= ±RF`.
+3. Build the Oxford CP UMAT (ifort + Abaqus), replay it increment by increment
+   through `material-replay`, compare `STRESS ↔ S` and `STATEV ↔ SDV`, then
+   close the loop by feeding the replayed stress back through the (already
+   verified) assembler.
 
 ---
 

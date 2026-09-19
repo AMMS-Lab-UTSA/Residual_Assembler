@@ -1,4 +1,7 @@
-# Template — C++ OTILib residual (compile once, run real + OTI)
+# Template: C++ OTILib residual (compile once, run real + OTI)
+
+This template is for arbitrary-order sensitivities of a C++ residual with
+OTILib: one templated source, instantiated for real and for OTI scalars.
 
 Write your residual as a `template<class Scalar>`; instantiate with `double`
 (real solve) and with an OTILib scalar (arbitrary-order sensitivity). Nothing is
@@ -33,8 +36,8 @@ evaluation, then extract order-`p` coefficients and solve `T U^(p) = -R^(p)`.
 ## Install OTILib
 
 Genuine OTILib builds from source: <https://github.com/mauriaristi/otilib.git>
-(branch `master`, **GPLv3**, Windows = WSL only). **Not** the squatted PyPI
-`pyoti`. See [../../docs/otilib_partner_quickstart.md](../../docs/otilib_partner_quickstart.md).
+(branch `master`, **GPLv3**, Windows = WSL only). **Not** the unrelated PyPI
+package `pyoti`. See [../../docs/otilib_partner_quickstart.md](../../docs/otilib_partner_quickstart.md).
 
 ## Build
 
