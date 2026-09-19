@@ -1,7 +1,9 @@
-# History replay: the collaborator workflow for any provider
+# History replay: sensitivities of a finished analysis for any provider
 
-`resasm history` is the slide-12 collaborator program for models outside the
-bounded presentation scope: it turns
+`resasm history` computes the parameter sensitivities of a finished Abaqus
+analysis for any material provider built by UMAT-OTI, including every model
+outside the scope of the bounded single-material engine of `resasm request`.
+It turns
 
     OTI_UMAT.obj (+ its completed contract) + Analysis.inp + Analysis.odb + sensitivity_request.json
 
@@ -105,8 +107,9 @@ accepted. The worst error/limit ratios are printed in `run_report.txt`.
 `--reequilibrate` Newton-polishes every recorded increment (starting from the
 recorded state, provider tangent) to max|R_free| <= 1e-11 of the reaction
 scale; the stress/state limits then widen by the size of the correction. This
-matters when the ODB was converged loosely: on the FCC slide-15 cantilever
-(Abaqus with the UMAT's elastic DDSDDE, default tolerances) the recorded-state
+matters when the ODB was converged loosely: on the FCC crystal-plasticity
+cantilever of `examples/cantilevers` (Abaqus with the UMAT's elastic DDSDDE,
+default tolerances) the recorded-state
 sensitivities differ from the re-equilibrated ones by 0.1-4.5 % (dsigma_vM/dm
 largest); on the J2 cantilever by <= 6.6e-5. The re-equilibrated result is the
 exact derivative of the discrete problem that Abaqus approximates.
@@ -138,14 +141,13 @@ min, L2. A max/min attained at several locations (mirror points of a symmetric
 mesh) is accepted only when their derivatives agree; otherwise it is refused
 as non-differentiable.
 
-## Weighted sensitivity shares (slide 33)
+## Weighted sensitivity shares
 
-The slide's "weighted sensitivity, so parameters with different units can be
-compared" is the definition of `results/cp_residual_sensitivities.py` and
-`results/fcc_crystal_results.py` (branch `cross-platform-hardening`):
-W_j = |p_j dq/dp_j|, share_j = 100 W_j / sum_k W_k at every increment. For a
-field q_i (von Mises stress at integration point i) the weights are aggregated
-with the integration-point volumes V_i:
+A weighted sensitivity makes parameters with different units comparable. For
+a scalar output q and parameter p_j it is W_j = |p_j dq/dp_j|, and the share
+is share_j = 100 W_j / sum_k W_k at every increment. For a field q_i (the von
+Mises stress at integration point i) the weights are aggregated with the
+integration-point volumes V_i:
 
     W_j(n) = sum_i V_i |p_j dq_i(n)/dp_j| / sum_i V_i,      field_share_j = W_j / sum_k W_k.
 
@@ -175,37 +177,55 @@ compared with the adjacent pair of steps that forms the plateau. It costs
 2 x (number of steps) x NPARAM solves - minutes for the reduced meshes,
 longer at cantilever size.
 
-## `resasm request` routing (one edit in `cmd_request.py`)
+## How `resasm request` chooses this engine
 
-`residual_core/ui/cmd_history.py:route_request` keeps requests inside the
-bounded presentation scope (pinned m3_j2 mapping, zero-valued boundaries,
-concentrated loads, the four-key request with U/RF/S/SDV and
-component/sum/mean/L2/max) on `presentation.run_request` and sends everything
-else to this engine (`--validate` maps to `--verify fd`). To make
-`resasm request` use it, replace in `residual_core/ui/cmd_request.py`, function
-`register`:
+`resasm request` is registered with `route_request`
+(`residual_core/ui/cmd_request.py`, function `register`; the dispatcher and
+its rule, `bounded_scope_reason`, are in `residual_core/ui/cmd_history.py`).
+For every request it decides which engine runs:
 
-```python
-    parser.set_defaults(func=run)
-```
-
-with
-
-```python
-    from .cmd_history import route_request
-    parser.set_defaults(func=route_request)
-```
-
-`route_request` calls `cmd_request.run` itself for bounded models, so nothing
-else changes for them. (Not applied here: `cmd_request.py` belongs to the
-recovery branch; the lead merges.)
+- The **bounded engine** (`run_request` in `residual_core/replay/presentation.py`)
+  keeps a request when it can read the deck and accepts the mapping (the
+  pinned m3_j2 provider), every boundary is zero-valued, the deck has
+  concentrated loads, and the request uses only the four core keys with
+  fields U/RF/S/SDV, reductions component/sum/mean/L2/max and node or element
+  id domains. `route_request` then calls `cmd_request.run`, and the output is
+  that engine's.
+- **This engine** takes the request when the bounded engine cannot: nonzero
+  prescribed displacements, a history driven by displacements alone, a deck
+  keyword the bounded reader does not accept (for the full-size cantilevers,
+  the `direct` option of `*Static`), a provider other than the pinned m3_j2
+  (its mapping is valid and belongs to the object, but names another source
+  fingerprint), sets or integration points in a domain, or `MISES`,
+  `volume_mean`, `min`, `weighted_shares` or `full_field` in the request.
+  The command's first line of output names the reason, and `--validate`
+  becomes `--verify fd`. If this engine cannot take the model either, its
+  refusal names the real reason. Measured on 2026-09-18 with the FCC provider
+  on the one-element deck of Example 3: the first line reads `resasm request:
+  outside the bounded presentation scope (mapping regular_source_hash does
+  not match the pinned m3_j2 source: the material is umat_m6_fcc_oti, not the
+  fingerprint-pinned m3_j2 J2 provider); using the history replay engine`,
+  and the run stops (exit 2) with `request failed: parameters must be ALL or
+  a unique nonempty list drawn from ['g0', 'h0', 'q', 'gd0', 'm', 'gsat',
+  'C11', 'C12', 'C44', 'a']` for the J2 request, or with `request failed:
+  the deck has 4 USER MATERIAL constants; the provider contract declares
+  NPROPS=10` for `"parameters": "ALL"`.
+- A deck or mapping the bounded engine cannot read, with no scope reason
+  from the deck itself (for example no mapping beside the object, or a
+  mapping of another object), stays with the bounded engine, whose failure
+  report names the category and the action.
 
 ## Performance (measured, Python 3.11, 24-core workstation)
 
 | model | increments x points x parameters | replay (recorded) | re-equilibrated |
 | --- | --- | --- | --- |
-| J2 cantilever (slide 39) | 40 x 12,288 x 4 | 9.9 s engine, 11.1 s wall | 25.2 s engine, 26.3 s wall |
-| FCC cantilever (slide 15) | 25 x 3,072 x 10 | 18.8 s engine, 19.4 s wall | 71.5 s engine, 72.1 s wall |
+| J2 cantilever (`examples/cantilevers`, 1,536 C3D8) | 40 x 12,288 x 4 | 9.9 s engine, 11.1 s wall | 25.2 s engine, 26.3 s wall |
+| FCC cantilever (`examples/cantilevers`, 384 C3D8) | 25 x 3,072 x 10 | 18.8 s engine, 19.4 s wall | 71.5 s engine, 72.1 s wall |
+
+These are the times of the recorded evidence run. On 2026-09-18, with other
+jobs running on the same machine, the same replays took 12.6 s (J2) and
+19.5 s (FCC) of engine time, and 27.0 to 28.5 s and 66.1 to 74.0 s
+re-equilibrated ([Example 5](../examples/cantilevers/WALKTHROUGH.md#run-time)).
 
 One cProfile of the J2 replay: SuperLU factorisation 5.3 s (0.13 s per
 increment), provider 1.4 s (491,520 point evaluations), einsum kernels about

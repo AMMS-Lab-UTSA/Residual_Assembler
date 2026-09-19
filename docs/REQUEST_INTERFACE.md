@@ -26,9 +26,8 @@ From source checkouts (the Residual_Assembler root, with
 UMAT_source_transformation beside it):
 
 ```sh
-export PY=/path/to/venv/bin/python
 export PYTHONPATH="$PWD:../UMAT_source_transformation/src"
-"$PY" -m residual_core.ui.cli request \
+python -m residual_core.ui.cli request \
   --model /path/to/Analysis.inp --odb /path/to/Analysis.odb \
   --material /path/to/OTI_UMAT.obj \
   --request /path/to/sensitivity_request.json --out /path/to/new_results
@@ -36,11 +35,12 @@ export PYTHONPATH="$PWD:../UMAT_source_transformation/src"
 
 The output directory must be empty or new. No production solve, synthetic
 solution, source transformation or hand-made replay record is involved.
-Licensed `abaqus python` is invoked only to extract the ODB; if it is missing
-the command stops with `Abaqus executable '<name>' not found on PATH; licensed
-Abaqus Python with odbAccess is required to read Analysis.odb`. `--abaqus PATH`
-selects another executable, and a failed extraction reports the command, exit
-code and diagnostic. A binary-compatible linker and compiler are required
+Licensed `abaqus python` is invoked only to extract the ODB. If it is
+missing, the command stops with `request failed: Category: odb_export`, and
+`private/error_report.txt` says `Abaqus executable '<name>' not found on PATH;
+licensed Abaqus Python with odbAccess is required to read Analysis.odb`.
+`--abaqus PATH` selects another executable, and a failed extraction reports
+the command, exit code and diagnostic. A binary-compatible linker and compiler are required
 (gfortran on the verified Linux platform), but **the material source is not**.
 
 ## Which engine runs
@@ -52,13 +52,15 @@ code and diagnostic. A binary-compatible linker and compiler are required
   pinned `m3_j2` J2 model with zero-valued boundaries, concentrated loads and
   the four-key request below (fields U/RF/S/SDV; reductions component, sum,
   mean, L2, max). Its scope and precision are described on this page.
-- **History engine** (`resasm history`): every other readable model, for
-  example nonzero prescribed displacements, many increments, `*Controls`, node
-  and element sets, von Mises outputs, any other provider, and the full-size
-  cantilevers of [examples/cantilevers](../examples/cantilevers/README.md). The
-  report names the reason for the hand-over, and `--validate` becomes
-  `--verify fd`. Its scope, mathematics and tolerances are in
-  [REPLAY_HISTORY.md](REPLAY_HISTORY.md).
+- **History engine** (`resasm history`): models outside that scope, for
+  example nonzero prescribed displacements, many increments, `*Controls`,
+  a provider other than the pinned `m3_j2`, node and element sets, von Mises
+  outputs and the other request extensions, and the full-size cantilevers of
+  [examples/cantilevers](../examples/cantilevers/README.md). The first line of
+  output names the reason for the hand-over, and `--validate` becomes
+  `--verify fd`. The exact rule is in
+  [REPLAY_HISTORY.md](REPLAY_HISTORY.md#how-resasm-request-chooses-this-engine),
+  with the engine's scope, mathematics and tolerances.
 
 Features neither engine supports (pressure and body loads, contact,
 amplitudes, several steps, materials or instances, initial state, finite
@@ -152,8 +154,10 @@ supported.
 
 Ordinary execution never runs finite differences and reports
 `verified=false`. `--validate` requests an independent whole-history finite
-difference of the ORIGINAL routine; its strict double-precision gate may
-reject float32 ODB data. It launches no Abaqus production job.
+difference of the ORIGINAL routine and launches no Abaqus production job. How
+it behaves on single-precision ODB data, and the alternative check with the
+history engine, are described in
+[Example 3](../examples/presentation_request/WALKTHROUGH.md#common-problems).
 
 ## Bounded engine: physics and precision
 
@@ -185,7 +189,7 @@ bound the accuracy; inputs outside the gates fail without convergence repair.
 
 ## GUI
 
-`"$PY" -m streamlit run scripts/app.py` in the same environment opens the GUI.
+`streamlit run scripts/app.py` in the same environment opens the GUI.
 **Sensitivity Request** is the first screen: the four file inputs (upload or
 local path), parameter ticks read from `Mapping.json`, an output and a region
 (written to `sensitivity_request.json` when no request file is given), an
@@ -205,8 +209,8 @@ case of `examples/presentation_request/Analysis.inp` in two steps:
   Intel compiler environment first) and a new work directory in the scratch
   location the script checks (a directory elsewhere is refused, and the error
   names the expected location). Never run it for ordinary use.
-- `consume --work DIR --out NEW` runs the collaborator side on the five shared
-  files and denies reads of the material source in that process. Only the
+- `consume --work DIR --out NEW` runs the analysis owner's side on the five
+  shared files and denies reads of the material source in that process. Only the
   generated ABI shim is exempt. This audit guard is not an operating-system
   sandbox, and no source is deleted.
 

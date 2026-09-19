@@ -1,428 +1,388 @@
-# Residual Assembler: Current Usage
+# Residual_Assembler: usage report
 
-Updated 2026-09-18 for `main` (the final integration of both repositories),
-Linux, Python 3.11.7, gfortran 9.4.0, genuine compiled OTILib and Abaqus
-2021.HF5. The sections below say what was run and what it measured. The
-clean-install gate result for the published `main` commits is in
-[evidence/final_clean_clone.md](evidence/final_clean_clone.md).
+This page describes what Residual_Assembler does, how to install and use it,
+and how its results are checked. It is the page to read first as a new user
+or as a reviewer. The other guides give the details:
+[INSTALL.md](INSTALL.md), [CLI_GUIDE.md](CLI_GUIDE.md),
+[GUI_GUIDE.md](GUI_GUIDE.md) and the seven [worked examples](../examples/README.md).
 
-## What Works Now
+Every number below was measured on 2026-09-18 on Linux (Ubuntu 20.04), Python
+3.11.7, GNU Fortran 9.4.0, with Abaqus 2021.HF5 used only to read output
+databases. Every command runs from the root of the Residual_Assembler
+checkout, with the companion repository beside it and the environment of
+[INSTALL.md](INSTALL.md) active. Outputs go to a folder outside the
+repository:
 
-Use the direct residual templates for scalar-generic order-two sensitivities;
-the C3D8 stress-driven path for supplied integration-point stresses; the pinned
-J2 replay for first-order total-history material sensitivities; the history
-replay engine (`resasm history`, and `resasm request` for any model outside the
-bounded presentation scope) for full-size small-strain C3D8 analyses with any
-UMAT-OTI provider, prescribed displacements and many increments; and the bounded
-neo-Hookean path for finite-strain assembly and first-order parameter sensitivity.
-These are different supported paths, not a generic arbitrary-material FE engine.
+```bash
+export WORK="$HOME/resasm_work"; mkdir -p "$WORK"
+```
 
-The latest retained full offline suite is **419 passed, 11 existing skips, zero
-failures/errors** ([fixture evidence](evidence/recovery_fixtures.md)). Historical
-fixture arithmetic is not current material verification: only elasticity and
-bundled J2 have current regenerated fixtures. Older finite-strain evidence's
-suite failures were subsequently repaired without relabelling archived data.
+Contents:
 
-## Installation
+1. [What it does](#1-what-it-does)
+2. [What works now, and the known limits](#2-what-works-now-and-the-known-limits)
+3. [Installation](#3-installation)
+4. [The command line](#4-the-command-line)
+5. [Worked examples](#5-worked-examples)
+6. [The GUI](#6-the-gui)
+7. [The connected workflow with UMAT-OTI](#7-the-connected-workflow-with-umat-oti)
+8. [Full-size models: history replay](#8-full-size-models-history-replay)
+9. [How results are verified](#9-how-results-are-verified)
+10. [The current transform generation](#10-the-current-transform-generation)
+11. [The clean-install gate](#11-the-clean-install-gate)
+12. [Status and evidence](#12-status-and-evidence)
 
-For the connected workflow use healthy Python >=3.10 with ctypes, ssl and venv.
-RA alone declares Python >=3.9, but its UMAT companion requires >=3.10.
-Linux/gfortran is the verified platform; Windows/macOS binary-provider support
-is not established. RA requires NumPy; select `gui`, `yaml`, `test` extras for
-these workflows. The companion's `paper` extra supplies plotting for the joint
-reproducer. Do not select RA's historical `bridge` pin for this recovery pair.
+## 1. What it does
 
-From two fresh clones:
+Residual_Assembler computes **parameter sensitivities of a converged
+finite-element analysis without re-running it**. A commercial solver such as
+Abaqus reports displacements and stresses, but not its global residual `R`.
+Residual_Assembler rebuilds `R` from the saved analysis, the material and the
+loads, and solves the sensitivity equation
 
-```sh
+    K du/dp = -dR/dp
+
+at every increment, where `K` is the tangent and `p` the material
+parameters. The material enters as a compiled *provider*: the ORIGINAL UMAT
+and its OTI (order-truncated imaginary) version in one object, built by the
+companion package [UMAT-OTI](https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation).
+OTI arithmetic carries exact derivatives through the unchanged material
+logic, so no derivative is written by hand. The material's source code is
+not needed by the person computing the sensitivities.
+
+The same package also assembles residuals from their ingredients (mesh,
+stress or material, loads and constraints), and computes sensitivities of
+residuals you supply yourself, in Python or through your own executable.
+
+## 2. What works now, and the known limits
+
+| Route | Commands | What it does | Verified by |
+| --- | --- | --- | --- |
+| Sensitivities of a finished Abaqus analysis | `resasm request`, `resasm history` | total-history first derivatives of displacements, reactions, stresses, state variables and von Mises stress with respect to the material parameters, for small-strain C3D8 analyses and any provider built by UMAT-OTI; prescribed displacements or concentrated loads; many increments; full fields and weighted shares | closed forms, replay against the ODB, whole-model finite differences of the ORIGINAL UMAT, Abaqus finite differences, a homogeneity identity (Examples 3 to 6) |
+| Residual assembly from a stress field | `resasm assemble --mode stress-driven`, `resasm verify` | the global residual of a C3D8 model from supplied integration-point stresses | analytic face tractions (Example 2); patch tests in the offline suite |
+| Finite-strain assembly and sensitivities | `resasm assemble --mode material-replay`, `resasm sensitivity` | compressible neo-Hookean C3D8 with the exact tangent; first-order material sensitivities with OTILib | independent quadrature, tangent and solution finite differences (Example 7) |
+| Your own residual | `resasm init`, `check`, `run`, `report` | derivatives of any order of a residual written in Python (OTILib) or returned by your own executable | closed forms (Example 1) |
+
+**Known limits.** Features outside these limits are refused with a named
+reason rather than approximated.
+
+- **Material replay.** Small strain (NLGEOM=NO), C3D8 with Abaqus's default
+  selective-reduced integration, one `*Static` step, one user material on
+  every element, a virgin initial state.
+- **Loads and boundaries.** Concentrated loads and prescribed displacements,
+  ramped over the step. Distributed and body loads, amplitudes, contact,
+  several steps, materials or instances, and nonzero initial state are
+  refused.
+- **Derivatives.** First derivatives with respect to material parameters in
+  the replay. There are no load, boundary-condition or shape sensitivities.
+- **Precision.** An ODB stores single-precision fields. The replay checks
+  itself against those limits, and `resasm history --reequilibrate` removes
+  the equilibrium part of the rounding
+  ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)).
+- **Assembly recipe.** The `resasm.yml` assembly recipe for C3D8 reports
+  `OTI-differentiate R: NO`. Sensitivities of C3D8 models with a UMAT go
+  through the compiled provider (`request`, `history`).
+- **Other elements.** Only C3D8 is supported among Abaqus solids. The truss,
+  beam and spring backends are small reference elements.
+- **Platform.** Verified on Linux only; on Windows use WSL
+  ([INSTALL.md](INSTALL.md#9-windows-use-wsl)).
+- **External tools.** Abaqus is needed only to run analyses and to read
+  `.odb` files. OTILib is needed only for the direct-residual routes.
+
+## 3. Installation
+
+On Linux with Python 3.10 or newer and `gfortran`, clone both repositories
+side by side and install them into one virtual environment:
+
+```bash
 git clone https://github.com/AMMS-Lab-UTSA/Residual_Assembler.git
 git clone https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git
-RA="$PWD/Residual_Assembler"
-UMAT="$PWD/UMAT_source_transformation"
-BASE_PYTHON=python3.11          # any healthy Python >= 3.10 with venv, ctypes, ssl
-ENV=$(mktemp -d /tmp/resasm-env-XXXXXX)
-"$BASE_PYTHON" -m venv "$ENV"
-"$ENV/bin/python" -m pip install "$RA[gui,yaml,test]" "$UMAT[test,paper]"
-"$ENV/bin/python" -m pip check
-"$ENV/bin/resasm" --help
+python3 -m venv .venv && . .venv/bin/activate
+pip install -e "./Residual_Assembler[gui,yaml,test]" -e "./UMAT_source_transformation[test]"
+pip check
 ```
 
-The clean-install gate builds both wheels from the two clean trees, installs
-them in a new venv with a scratch HOME and no inherited Python path, and runs
-the workflows from the installed commands only: the provider build, the
-collaborator request on a genuine ODB with an analytic check, the same request
-with every read of a Fortran source denied, both GUIs up to HTTP readiness, and
-with `--cantilever` the full-size J2 cantilever of slide 39 (collaborator
-command on its Abaqus ODB, then a re-equilibrated replay that must satisfy the
-J2 homogeneity identity at every increment):
+Measured in a new environment: the installation took 40 s and `pip check`
+found no broken requirements. `resasm` and `umat-oti-provider` are then on
+`PATH`. OTILib, needed only for the direct-residual routes, is built from
+source; its build took about 9 minutes. [INSTALL.md](INSTALL.md) covers:
 
-```sh
-python "$RA/scripts/clean_install_gate.py" --umat-repo "$UMAT" --branch main \
-  --python "$BASE_PYTHON" --abaqus abaqus \
-  --odb /path/to/presentation/Analysis.odb \
-  --cantilever /path/to/cantilever/work --work /new/directory/outside/both/clones
-```
+- requirements;
+- the OTILib build (never `pip install pyoti`, an unrelated package);
+- the permissive test sources (`./scripts/init_permissive_sources.sh`);
+- how to verify an installation;
+- the clean-install gate;
+- troubleshooting and WSL.
 
-The presentation ODB is the Abaqus run of
-`examples/presentation_request/Analysis.inp`; the cantilever directory is what
-[examples/cantilevers](../examples/cantilevers/README.md)
-produces (`j2/cantilever_j2_nominal.inp` and `.odb`). The report records each
-repository's branch, commit and origin head, every command with its exit code
-and log, and the wheel digests; `final_branch_clean_clone` is true only when
-both commits are the named branch's published head. The earlier
-[working-tree gate](evidence/recovery_install.md) is historical.
-Examples/templates and some source discovery need the checkout, not just a wheel.
+## 4. The command line
 
-The shared verification environment already exists. Use these exact selectors
-for the remaining source-tree commands; the globally installed editable console
-scripts can otherwise resolve to the original checkouts:
+All workflows are subcommands of `resasm`:
 
-```sh
-WORKSPACE="$HOME/softwarex_work"        # where the two clones and the venv live
-RA="$WORKSPACE/Residual_Assembler"
-UMAT="$WORKSPACE/UMAT_source_transformation"
-PY="$WORKSPACE/.venv/bin/python"
-BASE_PYTHON="$HOME/anaconda3/bin/python3.11"
-export PATH="$WORKSPACE/.venv/bin:$PATH"
-export PYTHONPATH="$RA:$UMAT/src:$HOME/otilib/build_py311"
-export UMAT_OTI_REPO="$UMAT"
-export PYOTI_PATH="$HOME/otilib/build_py311"
-export OTILIB_ROOT="$HOME/otilib/build_py311"
-export RUN_OTILIB_TESTS=1
-cd "$RA"
-resasm() { "$PY" -m residual_core.ui.cli "$@"; }
-"$PY" -c 'import residual_core,umat_oti,pyoti.sparse; print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.sparse.__file__)'
-```
-
-Both OTILib variables must name the healthy build, not its old source package.
-Never install the unrelated PyPI `pyoti`. The existing external build is reused,
-not redistributed or rebuilt here. Source-backed Oxford inspection examples
-additionally need `bash scripts/init_permissive_sources.sh --required-only`;
-the five examples below do not require that download. Missing compiler, OTILib,
-source or ODB dependencies must be resolved or recorded as unavailable, not skipped
-and counted as a successful scientific check.
-
-## CLI Reference
-
-[Captured help](evidence/usage_help.json) contains the actual stdout/stderr,
-argv, cwd and exit code for the root and the 17 public subcommands that existed when it was captured (`history` came later; its help is in [REPLAY_HISTORY.md](REPLAY_HISTORY.md)), plus
-example/gate scripts and Streamlit. Every listed help invocation exited zero.
-Help proves argument availability, not successful physics for arbitrary inputs.
-`--config FILE` is a global option and goes before the subcommand.
-
-| Command syntax after `resasm` | Meaning / important limit |
+| Group | Subcommands |
 | --- | --- |
-| `backends` | Registry declarations and limits, not universal readiness |
-| `modes` | Lists assembly modes |
-| `inspect MODEL --detail` | Mesh and backend selection |
-| `inspect-model MODEL --solution U.npy --material FILE --param NAME` | User-input inspection; optional arguments depend on the mode |
-| `requirements MODEL --mode MODE --fields FIELDS` | Minimum missing inputs |
-| `assemble MODEL --mode stress-driven --fields FIELDS --out R.npy` | Assembles residual; `--tangent` only when available |
-| `verify MODEL --fields FIELDS` | Residual/reaction checks, not constitutive derivative certification |
-| `sensitivity MODEL --params PARAMS --out PREFIX` | Parameter package; also `--param`, `--mode`, `--order`, `--backend`; order is backend-limited |
-| `init --template python --out DIR` | Templates: python, blackbox, blackbox-order2, cpp, fortran; omit flags for wizard |
-| `init-assembly --model MODEL --solution U.npy --material FILE --param NAME --out CONFIG` | Creates an assembly configuration, not a solve |
-| `check CONFIG` | Configuration readiness |
-| `run CONFIG` | Configured sensitivity workflow |
-| `report OUTPUT_DIR` | Summarizes an existing run |
-| `doctor MODEL --write-config-template CONFIG` | Diagnostic/template generation |
-| `template --formulation NAME` | Declared contract; alternatively `--material NAME` |
-| `replay RECORD --object OBJ --contract MAPPING --out DIR` | Pinned connected J2 replay; `--solve` creates a synthetic equilibrated record; `--verify` adds independent ORIGINAL FD |
-| `request --model INP --odb ODB --material OBJ --request JSON --out DIR` | Actual ODB collaborator interface below; a model outside the bounded presentation scope is handed to `history`, which the report says |
-| `history --model INP (--odb ODB / --fields NPZ) --material OBJ --request JSON --out DIR` | Full-size history replay for any provider with `UMAT_OTI_EVAL_TOTAL`; `--reequilibrate`, `--verify tangent/fd` ([REPLAY_HISTORY.md](REPLAY_HISTORY.md)) |
+| Sensitivities of a finished analysis | `request` (the four-file interface), `history` (the history engine), `replay` (the bounded J2 replay) |
+| Inspection | `inspect`, `inspect-model`, `requirements`, `doctor`, `modes`, `backends`, `template` |
+| Assembly | `assemble`, `verify`, `sensitivity` |
+| Jobs (`resasm.yml`) | `init`, `init-assembly`, `check`, `run`, `report` |
 
-`--odb` on legacy assemble/requirements/verify is an alias for exported
-`--fields` JSON, **not** direct binary ODB extraction. Use `request` for the
-actual ODB interface. `--no-fd` does not establish independent verification.
-Do not use `init --force` on evidence you need to retain.
+The companion command `umat-oti-provider build` compiles a material provider.
+The exit codes follow one pattern:
 
-## Five Reproduced Examples
+- `0`: success;
+- `1`: the command ran and the answer is negative;
+- `2`: the command could not run with these inputs;
+- `3`: OTILib was requested and is missing.
 
-For a complete repeat with automatic numerical assertions and raw capture:
+Every subcommand, with options, a worked invocation, its real output and the
+`sensitivity_request.json` format, is in [CLI_GUIDE.md](CLI_GUIDE.md).
 
-```sh
-"$PY" scripts/audit_recovery_usage.py --umat "$UMAT" --phase examples
+## 5. Worked examples
+
+Seven examples, each with a walkthrough of the commands, the GUI steps, the
+files written, the measured output and an independent check
+([examples/README.md](../examples/README.md)):
+
+| # | Example | Needs Abaqus? | Measured headline result |
+| --- | --- | --- | --- |
+| 1 | [The smallest sensitivity](../examples/user_config_minimal/WALKTHROUGH.md): a cubic spring written in Python | No (OTILib) | `du/dk = -1/3`, `du/df = 1/24` and all three second derivatives equal the closed form to 2.8e-17 or better |
+| 2 | [Stress-driven C3D8 assembly](../residual_core/examples/minimal_c3d8_stress_driven/WALKTHROUGH.md) | No | `||R|| = 70.71067811865474`; the difference from the analytic face tractions is 3.6e-15 |
+| 3 | [The four-file request on one element](../examples/presentation_request/WALKTHROUGH.md) | Yes (the ODB) | `dU1/dE`, `dU1/dSIGY0` and `dU1/dH` match the uniaxial J2 closed form to 1.7e-7, 8.7e-16 and 8.8e-9, relative; to about 1e-14 after re-equilibration |
+| 4 | [History replay of a J2 beam, offline](../examples/replay_history/WALKTHROUGH.md) | No | all 160 Abaqus finite-difference comparisons within their uncertainty; homogeneity identity 9.4e-15; whole-model finite differences 1.5e-7 |
+| 5 | [Full-size cantilevers, J2 and FCC](../examples/cantilevers/WALKTHROUGH.md) | Yes, once | homogeneity identity 1.4e-12 (J2) and 1.2e-13 (FCC) at every increment; full-size finite differences for `SIGY0` 7.9e-9 or better where resolved |
+| 6 | [Provider-to-sensitivity pipeline](../examples/bounded_j2_c3d8/WALKTHROUGH.md) | No | every derivative within 9.7e-7 of whole-model finite differences (tolerance 2e-6), in about 10 s |
+| 7 | [Finite-strain neo-Hookean C3D8](../examples/finite_strain_c3d8/WALKTHROUGH.md) | No (OTILib) | residual 5.7e-16 from an independent quadrature; sensitivities 1.0e-10 from nonlinear re-solves |
+
+Examples 2, 4 and 6 need neither Abaqus nor OTILib. Example 6 checks both
+packages together:
+
+```bash
+python scripts/reproduce_connected_pipeline.py --skip-abaqus --out "$WORK/pipeline"
 ```
 
-This runs both repositories' five workflows sequentially in new scratch space.
-[Raw results](evidence/usage_examples.json) embed numerical proof and actual
-commands; temporary compiler products are not portable inputs. Individual RA
-commands below use a new `OUT=$(mktemp -d /tmp/resasm-examples-XXXXXX)`.
+Expected: `verified bounded J2 pipeline: .../manifest.json`, with
+`"passed": true` in that file (measured 9.9 s in a new environment).
 
-### 1. Direct Python Residual
+## 6. The GUI
 
-```sh
-OUT=$(mktemp -d /tmp/resasm-examples-XXXXXX)
-resasm init --template python --out "$OUT/direct"
-resasm check "$OUT/direct/resasm.yml"
-resasm run "$OUT/direct/resasm.yml"
+```bash
+streamlit run scripts/app.py
 ```
 
-Inputs: [template](../templates/user_python_residual/resasm.yml), cubic spring
-R=k*u^3-f, k=2, f=16, u=2. Genuine OTILib order two. Recovered derivatives
-du/dk=-1/3, du/df=1/24, d2u/dk2=2/9, d2u/dkdf=-1/144,
-d2u/df2=-1/576 all agree with the closed form within `1e-8` absolute.
-Raw coefficients are not derivatives: the k-squared coefficient is 1/9.
-The captured command used the public `init` on this same template. Missing
-OTILib is an error, not a substitute algebra.
+A Streamlit web application opens on **Sensitivity Request**, the GUI form of
+`resasm request`. On that screen you:
 
-### 2. Order-Two Black-Box Residual
+1. give the object, the deck and the ODB (path or upload);
+2. tick the parameters, which are read from `Mapping.json`;
+3. choose an output, a region, a summary and the increments, or give a request
+   file;
+4. press **Solve**;
+5. download the three public files and look at the results in the chosen
+   region ([what appears after Solve](GUI_GUIDE.md#5-what-appears-after-solve)).
 
-```sh
-resasm init --template blackbox-order2 --out "$OUT/blackbox"
-resasm check "$OUT/blackbox/resasm.yml"
-resasm run "$OUT/blackbox/resasm.yml"
+The other tabs (**Start here**, **1. Model** to **6. Backends**, **Advanced
+Replay**) are the assembly console. Every button runs the real `resasm`
+command in the same process and shows its exit code and output, so the GUI
+cannot show a number the command line would not produce.
+
+Each Solve needs a new or empty output folder. A second Solve into the same
+folder is refused (`Category: output_directory`) so that results of two runs
+are never mixed. Measured Solve times: 1.0 s on the one-element analysis and
+24.5 s on the full-size J2 cantilever. Screen by screen, with screenshots:
+[GUI_GUIDE.md](GUI_GUIDE.md).
+
+## 7. The connected workflow with UMAT-OTI
+
+The two packages divide the work between the owner of a material and the
+person who ran the analysis:
+
+1. **Material owner.** Builds the provider from the UMAT and its contract with
+   `umat-oti-provider build`, which writes the object and its completed
+   mapping. The owner hands over only those two files (renaming them
+   `OTI_UMAT.obj` and `Mapping.json` is allowed). The mapping records the parameter names,
+   their PROPS positions, the layouts and the object's SHA-256, which the
+   request checks.
+2. **Analysis owner.** Runs `resasm request` with the deck, the ODB, the
+   object and a request. The material source is never read. The three public
+   files `sensitivity_results.json`, `sensitivity_tables.csv` and
+   `run_report.txt` are written at the top of the output folder. Full fields,
+   the ODB export and the link library stay in `private/`.
+
+From the repository root, with the one-element example (Example 3):
+
+```bash
+umat-oti-provider build ../UMAT_source_transformation/parameter_sensitivity/models/m3_j2/contract_v2.json \
+    --out "$WORK/provider_j2"
+resasm request --model examples/presentation_request/Analysis.inp --odb /path/to/Analysis.odb \
+    --material "$WORK/provider_j2/umat_m3_j2_oti.obj" \
+    --request examples/presentation_request/sensitivity_request.json --out "$WORK/one_element_results"
 ```
 
-Inputs: [template](../templates/user_blackbox_order2_residual/resasm.yml), real
-executable evaluating R=k^2*u^3-f, k=2, f=32, u=2. The framework receives Taylor
-coefficients, solves and applies factorial recovery. Checked analytically:
-du/dk=-2/3, du/df=1/48, d2u/dk2=5/9, d2u/dkdf=-1/144,
-d2u/df2=-1/2304, absolute tolerance `1e-8`. This executable is a mathematical
-example, not a mocked FE solver or proof of another private solver's derivatives.
+The ODB is not shipped. It is the Abaqus result of
+`examples/presentation_request/Analysis.inp`, and reading it needs Abaqus
+Python (`abaqus` on `PATH`, or `--abaqus`). Measured: the build took 5.5 s;
+the request, on an Abaqus 2021.HF5 ODB of this deck, took 1.1 s including
+the export and printed `request executed: 4 scalar results; verified=False`.
+`verified=False` means that no independent check was requested; the checks
+are in
+[section 9](#9-how-results-are-verified).
 
-Both template runs write public summaries/norm CSVs and private direction-map
-JSON, RHS and sensitivity NPZ arrays below their `resasm_output` directory.
-Private arrays include coefficients, recovered derivatives and recovery factors.
-The analytic audit is separate from any pending black-box local FD checks.
-GUI equivalent: Run with the copied configuration, through the same CLI bridge;
-these two workflows were not independently clicked through in this audit.
+`resasm request` solves models like this one with its bounded
+single-material engine. It hands models outside that engine's scope to the
+history engine (`resasm history`), and its first line of output names the
+reason: prescribed displacements, deck options the bounded reader does not
+accept, a provider other than the pinned m3_j2, sets, von Mises outputs and
+the other request extensions. The exact rule is in
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md#how-resasm-request-chooses-this-engine).
+The request format is specified in
+[CLI_GUIDE.md](CLI_GUIDE.md#the-request-file). The interface is described in
+detail in [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md).
 
-### 3. Stress-Driven C3D8
+## 8. Full-size models: history replay
 
-```sh
-MODEL=residual_core/examples/minimal_c3d8_stress_driven
-resasm assemble "$MODEL/model.json" --mode stress-driven \
-  --fields "$MODEL/fields.json" --out "$OUT/stress.npy"
+`resasm history` replays the whole recorded history of an analysis with any
+provider built by UMAT-OTI. It assembles the residual sparsely and factorises
+the tangent once per increment for all parameters. It accepts the ODB, or an
+export of it, which then needs no Abaqus. The committed example runs anywhere:
+
+```bash
+resasm history --model examples/replay_history/j2_beam/Analysis.inp \
+    --fields examples/replay_history/j2_beam/fields.npz \
+    --material "$WORK/provider_j2/umat_m3_j2_oti.obj" \
+    --request examples/replay_history/j2_beam/sensitivity_request.json --out "$WORK/beam"
 ```
 
-One unit cube, eight IPs, supplied S11=100. Measured 24 DOFs,
-norm(R)=70.71067811865474 and max(abs(R)) approximately 25, agreeing with analytic face
-tractions to `1e-10`. No material tangent or parameter derivative is inferred
-from supplied stress. This unloaded example's nonzero residual is expected,
-not equilibrium. GUI: Assemble, this model/fields, stress-driven mode.
+Measured (1.0 s):
 
-### 4. Nonlinear J2 C3D8 Replay
-
-```sh
-"$PY" scripts/reproduce_connected_pipeline.py --skip-abaqus --out "$OUT/j2"
+```text
+history replay: 10 increments, 768 integration points, 4 parameters; yes: max|R_free| = 1.288e-03 N at increment 10 (limit 1.609e-01 N there)
 ```
 
-Inputs: [cyclic model](../examples/bounded_j2_c3d8/model.json) and companion
-m3_j2 contract. A fresh compiled provider, 7 increments, 8 IPs, four parameters
-E,nu,SIGY0,H. The retained manifest says `passed=true`; whole-history
-displacement/stress/state derivatives and FD plateau checks pass `2e-6` scaled
-error against independently compiled ORIGINAL material and re-equilibrated FE
-paths. The record is `synthetic_converged_fe`, not an Abaqus J2 cantilever.
-Public plot/CSV and private manifest, provider, record and field arrays remain
-under the output. Missing inputs or failed checks exit nonzero. GUI: Advanced
-Replay with the generated model/object/contract, Solve and Verify. Existing GUI
-integration tests exercise that route; the audit's GUI launch is not a fresh
-interactive execution of every example.
+Two full-size cantilevers, from the ODBs of the decks written by
+`examples/cantilevers/gen_cantilever.py`
+([Example 5](../examples/cantilevers/WALKTHROUGH.md)):
 
-### 5. Bounded Finite-Strain C3D8
-
-```sh
-"$PY" examples/finite_strain_c3d8/benchmark.py --out "$OUT/finite"
-resasm --config "$OUT/finite/config.json" assemble "$OUT/finite/model.json" \
-  --mode material-replay --tangent
-resasm --config "$OUT/finite/config.json" sensitivity "$OUT/finite/model.json" \
-  --params "$OUT/finite/params.json"
-```
-
-The benchmark creates two distorted shared-node elements, 36 DOFs, with
-mu=2.3, lambda=4.1, manufactured fixed loads and a large rotation. Its current
-report passed independent first-Piola force (`1e-12`), complete nodal tangent
-FD (`2e-8` at three steps), and genuine OTILib du/dp versus nonlinear re-solves
-(`2e-5` at three steps). GUI: Assemble/Sensitivity using the generated config.
-The standalone benchmark and both public assembly/sensitivity commands were
-executed here and exited zero, in addition to their regression coverage.
-Only stateless isotropic total neo-Hookean response is supported. Rotating
-plastic history, follower loads, geometric OTI and higher-order finite FE are
-not supported. See [full example](../examples/finite_strain_c3d8/README.md).
-
-## Connected Presentation Interface
-
-Developer: build the provider in the companion repository using its existing
-`umat-oti-provider build CONTRACT --out NEW_DIR`. Share the compiled object and
-completed generated sidecar, not the original source or input transformation
-contract. The collaborator supplies exactly these four explicit inputs:
-
-```sh
-resasm request --model Analysis.inp --odb Analysis.odb \
-  --material OTI_UMAT.obj --request sensitivity_request.json --out new_results
-```
-
-Keep the unchanged generated `Mapping.json` beside the object. Discovery uses
-the object-stem JSON or Mapping.json; conflicting sidecars require explicit
-`--mapping PATH`. Object SHA-256, source fingerprint, dimensions, ABI,
-PROPS/direction ordering and derivative/Voigt layout are checked automatically.
-The object bundles ORIGINAL and OTI binary routines. Source is not required;
-the generated link shim is not the private constitutive source. Trust the binary
-supplier: source-denial audit hooks are not an OS sandbox or binary certification.
-
-Exactly three public files are written at the output root:
-
-| File | Meaning |
-| --- | --- |
-| `sensitivity_results.json` | Requested scalar values and derivatives, resolved scope and execution metadata |
-| `sensitivity_tables.csv` | One row per output/increment/parameter; four outputs x four parameters gives 16 rows here |
-| `run_report.txt` | Execution checks, tolerances, verification status and limitations |
-
-Full fields, K/R/derivatives, generated replay record, exporter log and linked
-library stay in `private/`. Do not publish that directory as a scalar report.
-No transform, source read or production solve occurs during consumption.
-`--abaqus PATH` selects licensed odbAccess extraction; missing executable or
-failed export is an explicit error.
-
-Request keys are `outputs`, `parameters`, `domain`, `increments`. For example:
-
-```json
-{"outputs":[{"name":"loaded_U1","field":"U","component":1,"reduction":"mean"}],"parameters":["E","SIGY0","H"],"domain":{"nodes":[2,3,6,7]},"increments":"LAST"}
-```
-
-Fields U/RF use nodes; S/SDV use elements and all eight IPs. Components are
-one-based or ALL; stress order is 11,22,33,12,13,23; SDV1 is equivalent plastic
-strain. Parameters are a unique subset of E,nu,SIGY0,H. Increments are ALL,
-LAST or a unique one-based list; all preceding history is replayed first.
-Reductions: component (one location), unweighted sum/mean, Euclidean L2, signed
-max. Zero-norm L2 and tied maxima fail. Mean is not volume weighted, sum is not
-a volume integral, and L2 is not von Mises. Unknown fields/ids/options fail.
-
-Bounded engine scope: one homogeneous pinned J2 C3D8/B-bar static NLGEOM=NO
-step, one untransformed instance, virgin state, zero fixed BCs, ramped nodal
-loads. Every frame including frame zero must contain U/RF/CF/S/SDV1 and matching
-mesh/history. No interpolation of missing frames. A readable model outside that
-scope (nonzero prescribed displacements, many increments, `*Controls`, sets,
-von Mises outputs, any other provider, the full-size cantilevers) is handed to
-the history engine below; pressure, body loads, contact, amplitudes, multiple
-steps/materials/instances, initial state and finite strain are refused by both
-and named in `run_report.txt`.
-
-ODB acceptance: scaled free residual <`1e-5`; stress/RF relative tolerance
-`2e-5` with field-scaled absolute floor; state `rtol=2e-5, atol=1e-8`; zero BC
-residues below `1e-12*mesh_extent` only. Float32 ODB precision limits accuracy.
-Ordinary execution reports `verified=false`; `--validate` explicitly invokes
-independent ORIGINAL FD and may fail its stricter double-precision gate.
-
-Fresh source-denied consumption passed the separate uniaxial J2 analytic check
-(`2e-5` relative for nonzero derivatives; `1e-8` absolute for zero nu derivative).
-[Raw connected evidence](evidence/usage_presentation.json) embeds input hashes,
-the exact public file list and the independent check. Reproduce with:
-
-```sh
-"$PY" scripts/audit_recovery_usage.py --umat "$UMAT" --phase presentation
-```
-
-This copies only the five existing genuine collaborator artifacts into new
-scratch space and calls `consume`, never `prepare`. The external ODB is required
-and is not shipped in the repository. See [exact interface](REQUEST_INTERFACE.md).
-
-## Full-Size Models: History Replay
-
-```sh
-resasm request --model cantilever_j2_nominal.inp --odb cantilever_j2_nominal.odb \
-  --material umat_m3_j2_oti.obj --request j2_request.json --out j2_results
-resasm history --model cantilever_j2_nominal.inp --fields j2_results/private/fields.npz \
-  --material umat_m3_j2_oti.obj --request j2_request.json --out j2_polished --reequilibrate
-```
-
-The same four inputs as above; the first command routes the cantilever to the
-history engine (the report names the reason), the second reuses its ODB export
-and Newton-polishes every recorded increment to double-precision equilibrium
-first. Requests add `MISES`, volume-weighted `volume_mean`, element sets,
-`weighted_shares` and `full_field` to the keys above; any provider parameter
-names and any SDV component are accepted. The mathematics, tolerances and
-supported deck subset are in [REPLAY_HISTORY.md](REPLAY_HISTORY.md); the decks,
-Abaqus scripts and requests of both presentation cantilevers are in
-[examples/cantilevers](../examples/cantilevers/README.md).
-
-Measured on 2026-09-18 (evidence: [history_replay_cantilevers.md](evidence/history_replay_cantilevers.md)):
-
-| | J2, slide 39 | FCC, slide 15 |
+| | J2 cantilever | FCC crystal-plasticity cantilever |
 | --- | --- | --- |
-| mesh, DOF, integration points, increments, parameters | 1,536 C3D8, 7,497, 12,288, 40, 4 | 384 C3D8, 2,025, 3,072, 25, 10 |
-| engine time, recorded state / re-equilibrated | 9.9 s / 25.2 s | 18.8 s / 71.5 s |
-| OTI vs whole-model FD of the ORIGINAL UMAT (worst, resolved increments) | E 6.6e-8, nu 5.8e-8, SIGY0 7.9e-9, H 5.4e-6 | all 10 parameters <= 6.7e-7 |
-| homogeneity identity, re-equilibrated (every increment) | 1.0e-12 | 1.2e-13 |
+| mesh, DOF, integration points | 1,536 C3D8, 7,497, 12,288 | 384 C3D8, 2,025, 3,072 |
+| increments, parameters | 40, 4 | 25, 10 |
+| `resasm request` from the ODB (includes the export) | 22 to 27 s | 24 to 25 s |
+| `resasm history --reequilibrate` from the export | 33 to 40 s | 71 to 79 s |
+| replayed stress, state and reactions against the ODB, worst error/limit | 0.010, 0.002, 0.006 | 0.006, 0.002, 0.006 |
+| homogeneity identity at every increment, re-equilibrated | 1.4e-12 | 1.2e-13 |
 
-The homogeneity identity: J2 with linear hardening is homogeneous of degree
-one in (E, SIGY0, H) at fixed nu, the FCC crystal in (C11, C12, C44, g0, gsat,
-h0); under prescribed displacements sum p dQ/dp therefore equals Q for
-reactions, stresses and von Mises and 0 for displacements and plastic strain,
-at every increment. The engine does not use it, so it is an independent check;
-`tests/replay_history/test_history_example.py` applies it to the committed
-Abaqus beam (9.4e-15) and the clean-install gate to the J2 cantilever.
-Where the whole-model FD has no step-size plateau (points on the yield surface
-between the +h and -h runs) the FD, not the OTI result, is unresolved; the
-evidence lists those increments. The slide-33 shares are reported as measured:
-the elastic E share is 98.2 % (slide ~96 %), and the SIGY0 71 % / E 24 % pair
-occurs at step 16, not at yield onset (step 7).
+The times were measured on a 24-core workstation while other jobs were
+running on it. They include writing the full-field `fields.npz`, which is
+110 to 135 MB. The J2 weighted shares of the von Mises field change as
+plasticity spreads: `E` holds 98.21 % while the beam is elastic (increments 1
+to 6), and `SIGY0` holds 89.05 % at increment 40. The mathematics, the
+supported deck subset and the tolerances are in
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md).
 
-## GUI And Report Interpretation
+## 9. How results are verified
 
-```sh
-"$PY" -m streamlit run scripts/app.py --server.address=127.0.0.1 --server.port=8501
+An ordinary run computes derivatives but does not claim to have verified
+them. `run_report.txt` states each verdict separately:
+
+- command executed;
+- residual assembled;
+- equilibrium checked and passed;
+- tangent available and verified;
+- derivative calculated and verified;
+- reference resolved;
+- Abaqus comparison available;
+- unsupported feature detected;
+- public and private outputs separated.
+
+Only an independent reference turns *calculated* into *verified*. The
+references used across the examples:
+
+| Reference | What it checks | Where |
+| --- | --- | --- |
+| Closed forms | the whole chain on problems with a known answer | Examples 1, 2, 3 |
+| Replay against the ODB | at every integration point and increment, the replayed stress, state and reactions are compared with the recorded values; any excess over the single-precision limits stops the run | every `request`/`history` run |
+| Whole-model finite differences of the ORIGINAL UMAT | `resasm history --verify fd` re-solves the model with the unmodified routine at `p (1 +/- h)` over a ladder of steps | Examples 3, 4, 5, 6 |
+| Abaqus finite differences | perturbed Abaqus reruns | Examples 4, 5 |
+| Homogeneity identity | J2 with linear hardening, and the FCC crystal, are homogeneous of degree one in their stress-dimensioned parameters, so `sum_p p dQ/dp` equals `Q` for stresses and reactions and zero for displacements, at every increment; the engine does not use this | Examples 4, 5 |
+
+For example, adding the finite-difference check to the committed beam
+(measured 11.1 s):
+
+```bash
+resasm history --model examples/replay_history/j2_beam/Analysis.inp \
+    --fields examples/replay_history/j2_beam/fields.npz \
+    --material "$WORK/provider_j2/umat_m3_j2_oti.obj" \
+    --request examples/replay_history/j2_beam/sensitivity_request.json \
+    --out "$WORK/beam_checked" --reequilibrate --verify fd
 ```
 
-Choose a free port and open the printed URL. Sensitivity Request is the primary
-screen with the four input paths/uploads, optional advanced mapping and three
-downloads. Legacy workflows remain available through the other screens. For an
-installed wheel, locate `residual_core.app.streamlit_app` with importlib.util
-and pass its file path to Streamlit, as in the installation evidence.
+Its `run_report.txt` then reads `Tangent verified: yes: max relative error
+1.88e-10 ...` and `Derivative verified: yes: whole-model central FD of the
+ORIGINAL UMAT re-equilibrated in Python; worst nonzero-derivative error
+1.46e-07 ...`.
 
-[GUI evidence](evidence/usage_gui.json): primary render without exception and
-actual HTTP-ready server, stopped by owned PID. No audit URL remains live.
-The browser tests (`pytest -m gui`) drive the same screen in headless
-Chromium on a real ODB and check the execution and all three downloads, not
-just the initial rendering; screenshots of each screen are in
-[screenshots/](screenshots/) and described in [GUI.md](GUI.md).
+[VERIFICATION_RECORD.md](VERIFICATION_RECORD.md) lists every quantitative
+claim with the command that reproduces it, its independent reference and the
+measured value.
 
-Read verdicts separately: command executed; residual assembled; free equilibrium
-checked/passed; tangent available/independently verified; derivative calculated/
-independently verified; reference resolved; Abaqus comparison available. A full
-residual includes reactions and need not be zero. An available tangent, finite
-output or successful sensitivity linear solve is not independent verification.
-Historical fixture checks can say held, failed or not established; exact zeros
-and unresolved comparisons are not automatically independent agreements.
+## 10. The current transform generation
 
-## Requirement Coverage
+Evidence about a transformed material belongs to the transform code that
+produced it. The current transform generation is **`16c9f305df378089`**.
+It is recorded once, in `schemas/transform_generation.json`, a file that is
+identical in both repositories. The two regression fixtures in
+`tests/fixtures/verified/` (isotropic elasticity and J2) were regenerated in
+Abaqus at this generation. Their tangents agree over a step-size plateau to
+1.1e-14 and 8.3e-11. Older fixtures, under `tests/fixtures/historical/`, are
+kept as history and refused as regression baselines. How the re-freeze was
+done: [evidence/final_refreeze.md](evidence/final_refreeze.md).
 
-### Review Follow-Up: Failure Privacy
+To check that the recorded generation is the one the installed UMAT-OTI
+computes, and that the fixtures carry it:
 
-Review checks on 2026-09-18: **60 passed, zero failures/skips**, comprising 52
-presentation tests and eight unchanged thin-CLI GUI guards. Retained result:
-[focused JUnit](evidence/review_fixes_focused.xml). From the workspace root,
-with the recovery import and OTILib environment above:
-
-```sh
-.venv/bin/pytest -q -ra imq-ra-recovery/tests/integration/test_presentation_request.py imq-ra-recovery/tests/framework/test_gui_is_a_thin_cli_front_end.py --junitxml=imq-ra-recovery/docs/evidence/review_fixes_focused.xml
+```bash
+python -c "import json; print(json.load(open('schemas/transform_generation.json'))['transform_fingerprint'])"
+python -c "from umat_oti.store import transform_fingerprint; print(transform_fingerprint())"
+python -m pytest -q tests/contract/test_the_two_repositories_speak_one_contract.py \
+    tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py
 ```
 
-Failure output keeps the exact public name `run_report.txt`. It reports a fixed
-category/action and the relative diagnostic path `private/error_report.txt`;
-the latter retains the original exception and traceback. CLI failures return 2
-and the thin GUI displays the sanitized CLI diagnostic. Missing input paths are
-identified by role without echoing private path text; missing ODB field actions
-name only allowlisted fields. If the output directory cannot be prepared or
-written, the CLI reports that private diagnostics are unavailable.
+Measured: both commands print `16c9f305df378089`, and the tests report
+`26 passed`.
 
-Two explicitly marked unit cases inject solver failure and exporter subprocess
-stdout/stderr with a recognizable sensitive marker, checking service errors,
-all public files that exist, CLI stderr/stdout and GUI-visible text. They are
-disclosure tests, **not numerical integration proof**. Four missing-path unit
-cases and five missing-field transport cases also pass. The compiled numerical
-presentation regressions remain unchanged, including the genuine archived J2
-field check; no core mathematics was mocked in those checks. No full suite,
-fresh licensed analysis or clean-install gate was run for this review.
+## 11. The clean-install gate
 
-The [274-row ledger](COMPLETION_LEDGER.md) and [machine-readable requirement
-index](evidence/usage_requirements.json) distinguish 104 implemented bounded
-rows, 159 partial-evidence rows and 11 unestablished release-gate rows.
-**Zero rows have final clean-install PASS; all 274 remain open
-under that rule.** No source-suite or working-tree wheel result is promoted.
-Highest priorities: final committed-pair clean-clone reproduction; all-example
-GUI execution and installed example discovery; general stateful finite/FCC and
-full-size prescribed-displacement histories; higher-order full FE; current
-corpus evidence and missing historical cross-reader checks. A diagnostic refusal
-is safer than silent physics loss, but it does not implement the refused feature.
+`scripts/clean_install_gate.py` is the acceptance test of an installation
+([INSTALL.md](INSTALL.md#7-the-clean-install-gate)). It builds wheels of both
+repositories from clean trees and installs them into a new environment. From
+the installed commands only, it then runs:
+
+- the provider build;
+- the four-file request on a genuine ODB, against the uniaxial closed form;
+- the same request with every read of a Fortran source denied;
+- both GUIs up to HTTP readiness;
+- with `--cantilever`, the full-size J2 cantilever with the homogeneity
+  identity.
+
+The recorded run is in
+[evidence/final_clean_clone.md](evidence/final_clean_clone.md). It ran on
+fresh clones of the published branches, at Residual_Assembler `3504a02` and
+UMAT_source_transformation `1352114`:
+
+- all 22 commands exited 0 and the gate passed;
+- the request matched the closed form to 1.7e-7 (`E`), 8.7e-16 (`SIGY0`) and
+  8.8e-9 (`H`);
+- the source-denied outputs were byte-identical;
+- the cantilever request took 22.7 s and the re-equilibrated replay 33.0 s,
+  with the identity at 1.4e-12.
+
+From the same clones, the UMAT-OTI suite passed (3,370 passed, 158 skipped).
+The offline Residual_Assembler suite had 494 passed, 20 skipped and 6 failed,
+all six from one check in the verification scripts, which has since been
+corrected. That record describes an **earlier commit pair**. A new gate run
+on the published commits follows the push of this version.
+
+## 12. Status and evidence
+
+The requirement-by-requirement status is in
+[COMPLETION_LEDGER.md](COMPLETION_LEDGER.md); the evidence files are in
+[evidence/](evidence/).
