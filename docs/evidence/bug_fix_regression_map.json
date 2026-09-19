@@ -253,6 +253,10 @@
   {
    "commit": "fe85ab8",
    "reason": "Tooling (the integrity audits themselves); 'exit 2' and 'stale' describe what the audit reports, not a corrected behaviour."
+  },
+  {
+   "commit": "b8f7a85",
+   "reason": "Ledger data (row T-11 of tools/ledger_rows.json); 'regression' names the kind of test the row maps, not a corrected behaviour."
   }
  ],
  "changelog_fixed": {}
