@@ -176,7 +176,7 @@ Step-4/Step-7 gold checks that do NOT need Abaqus):
    the 24 DOFs (central difference, h≈1e-6·scale) and compare `dr/dU` to `K`.
    Report absolute error, relative error (Frobenius), and max entry error.
 
-## 5. Field-exchange format (Abaqus ↔ Python), written by `extract_abaqus_fields.py`
+## 5. Field-exchange format (Abaqus ↔ Python), written by `io/abaqus_odb_export.py`
 
 Portable JSON (`fields.json`), Abaqus-Python-2.7 friendly (json only, numpy optional):
 
