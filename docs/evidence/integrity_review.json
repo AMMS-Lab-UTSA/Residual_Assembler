@@ -228,6 +228,20 @@
     }
    ]
   },
+  "skip:scripts/reproduce_from_clean_clones.sh:ci-line:f9b4c74c": {
+   "verdict": "justified",
+   "reason": "The offline suite command the installation guide documents, as the clean-clone reproduction script runs it (with --junitxml, which changes only what pytest writes). No test that existed at the baseline is marked abaqus, arc or network (the audit's 'existing test now marked' check finds none), so the filter deselects only tests added in this work that need licensed Abaqus, the HPC scheduler or the network.",
+   "evidence": [
+    {
+     "in": "docs/INSTALL.md",
+     "text": "python -m pytest -q -m \"not abaqus and not arc and not network\""
+    },
+    {
+     "in": "BASE:pyproject.toml",
+     "text": "abaqus: needs a licensed Abaqus installation; cannot run in public CI"
+    }
+   ]
+  },
   "removed_check:tests/integration/test_connected_j2.py:test_public_cli_solve_replay_and_failure:6bde7964": {
    "verdict": "justified",
    "reason": "The example folder was renamed to examples/bounded_j2_c3d8 with identical content (the deleted_example entries); the assertion is unchanged apart from the path.",

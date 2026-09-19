@@ -147,7 +147,7 @@ cd Residual_Assembler
 
 Copyleft and licence-unknown sources are marked `update = none` and are never
 fetched by setup ([sources/LICENSING.md](../sources/LICENSING.md)). None of the
-seven worked examples needs these sources. Without them, the tests that read
+eight worked examples needs these sources. Without them, the tests that read
 them are skipped, each naming the file it needs and this command.
 
 ## 6. Verify the installation
@@ -226,12 +226,64 @@ environment the server answered its health check (`/_stcore/health` returned
 python -m pytest -q -m "not abaqus and not arc and not network"
 ```
 
-Tests that need OTILib run for real only when `RUN_OTILIB_TESTS=1` is set
-with the OTILib variables of section 4; otherwise they are skipped by name.
+The tests that need OTILib run whenever `PYOTI_PATH` and `OTILIB_ROOT`
+(section 4) point to a working build, and are skipped by name when it is
+missing. Set `RUN_OTILIB_TESTS=1` whenever OTILib is meant to be present: a
+missing or broken build then fails those tests instead of skipping them.
+
+If the two packages are installed from wheels rather than with `-e` (the
+clean-install gate of section 7 installs them that way), first run
+`export UMAT_OTI_REPO="$PWD/../UMAT_source_transformation"`. The history-replay
+tests (`tests/replay_history/`) and the verification tests (`tests/verification/`)
+read the UMAT models from that checkout, and a wheel does not contain them.
+With the `-e` install of section 3 they find the checkout themselves.
+
 The full suite was not re-run for this guide. The tests that exercise the
 examples were: `tests/integration/test_presentation_request.py -k "real_archived
 or compiled_offline"` (2 passed) and `tests/replay_history/test_history_example.py`
 with `tests/gui/test_solve_screen.py` (16 passed).
+
+**7. Every example that needs no Abaqus, in one command (optional, 4 min).**
+With OTILib (section 4):
+
+```bash
+python scripts/audit_recovery_usage.py --umat ../UMAT_source_transformation --phase examples \
+    --work "$WORK/examples" --evidence-dir "$WORK/examples_record"
+```
+
+It first runs the two documented checks, `otilib_status()` (section 4; it must
+report `'available': True`) and `transform_fingerprint()` (it must equal the
+generation in `schemas/transform_generation.json`). Then, in this order, it
+runs the commands each example's walkthrough gives, checks each result against
+the example's reference, and stops at the first failure:
+
+| Record | Example | Commands | Check |
+| --- | --- | --- | --- |
+| R-X1 | 1 | `resasm init --template python`, `resasm check`, `resasm run`, `resasm report` | the five derivatives against the closed form, to 1e-8 |
+| R-X2 | 8 | the same with `--template blackbox-order2` | the same |
+| R-X3 | 2 | `resasm assemble` of `minimal_c3d8_stress_driven` | the norm and the largest entry against the face tractions, to 1e-10 |
+| Example 4 | 4 | `umat-oti-provider build` of the J2 contract, then `resasm history` on the committed beam | `run_report.txt` begins with `Status: executed successfully` |
+| R-X4 | 6 | `python scripts/reproduce_connected_pipeline.py --skip-abaqus` | `"passed": true` in its manifest |
+| R-X5 | 7 | `python examples/finite_strain_c3d8/benchmark.py`, `resasm --config ... assemble` and `resasm --config ... sensitivity` | `"passed": true` in the benchmark's report |
+| U-X1 to U-X5 | UMAT-OTI 1 to 5 | the command blocks of their READMEs | `RESULT: PASS` from each example's script; the verifier's `"passed": true` for 3, 4 and Part A of 5 |
+| Example 6 | UMAT-OTI 6 | the twenty-model sweep | every model reproduces the original's stress; no comparison row disagrees |
+
+R-X1 to R-X5 and U-X1 to U-X5 are the ten reference examples that
+[COMPLETION_LEDGER.md](COMPLETION_LEDGER.md) names. The Residual_Assembler
+commands run from this folder, the UMAT-OTI commands from the `--umat` checkout,
+and every output goes to `--work` (the UMAT-OTI examples write there instead of
+to `umat_oti_workspace/examples/`). Each command, exit code, output and check is
+recorded in `RA/usage_examples.json` and `UMAT/usage_examples.json` under
+`--evidence-dir` (without it, in `docs/evidence/` of each checkout).
+
+It sets `UMAT_OTI_REPO` to the `--umat` checkout, from which the pipeline of
+Example 6 builds its provider. It puts its own Python's `bin` folder first on
+`PATH`, so that `resasm`, `umat-oti` and `umat-oti-provider` are those of the
+same environment, and runs every Python command as `python -I`, so that the
+installed packages are imported rather than the checkouts (`--imports
+environment` runs plain `python` with your `PYTHONPATH` instead). Examples 3
+and 5 need Abaqus and are not part of it; the clean-install gate (section 7)
+runs Example 3's request and, with `--cantilever`, Example 5's J2 model.
 
 ## 7. The clean-install gate
 
@@ -255,7 +307,12 @@ What it checks, in order:
    `gfortran` and the Abaqus launcher are on `PATH`.
 3. It creates a new virtual environment with a scratch `HOME` and no inherited
    Python path, builds a wheel of each repository, installs both with their
-   extras and runs `pip check`.
+   extras and runs `pip check`. It then checks that the packages
+   (`residual_core`, `resasm_user`, `umat_oti` and both GUIs) are imported
+   from the new environment's site-packages and not from the checkouts, that
+   no installed distribution is editable, and that the packaged data files
+   (among them the Fortran driver and stubs and the contract schemas) are
+   present.
 4. With the installed `umat-oti-provider`, it builds the J2 provider from a
    copy of the public contract and UMAT.
 5. With the installed `resasm`, it runs the four-file request of
@@ -265,17 +322,74 @@ What it checks, in order:
    uniaxial closed form (relative error below 2e-5, `|dU1/dnu|` below 1e-8).
 6. It repeats the request with every read of a Fortran source denied and
    requires identical public files: the material source is not needed.
-7. It starts both GUIs and waits until each answers over HTTP.
+7. It renders both installed GUIs headlessly with Streamlit's `AppTest` (no
+   exception, a title or header present), then starts each with
+   `python -m streamlit run` and waits until it answers over HTTP
+   (`/_stcore/health`).
 8. With `--cantilever` (a folder holding `j2/cantilever_j2_nominal.inp` and
    `.odb`, see [Example 5](../examples/cantilevers/WALKTHROUGH.md)), it runs
    the request on the full-size J2 cantilever, re-equilibrates it, and
    requires the homogeneity identity at every increment to 1e-10.
+
+**The two Abaqus inputs.** `--odb` is the Abaqus result of
+`examples/presentation_request/Analysis.inp` with the ORIGINAL J2 UMAT
+([Example 3](../examples/presentation_request/WALKTHROUGH.md)), and
+`--cantilever` a folder whose `j2/` holds the J2 cantilever deck and its
+result ([Example 5](../examples/cantilevers/README.md)). Make both once, from
+the folder that holds the two checkouts, into a folder outside them:
+
+```bash
+RA="$PWD/Residual_Assembler"; UMAT="$PWD/UMAT_source_transformation"
+IN="$HOME/gate_inputs"; mkdir -p "$IN/one_element" "$IN/cantilever/j2"
+cp "$RA/examples/presentation_request/Analysis.inp" "$IN/one_element/"
+python "$RA/examples/cantilevers/gen_cantilever.py" j2 --out "$IN/cantilever/j2/cantilever_j2_nominal.inp"
+cd "$IN/one_element" && abaqus job=Analysis input=Analysis.inp \
+    user="$UMAT/parameter_sensitivity/models/m3_j2/umat.for" cpus=1 interactive
+cd "$IN/cantilever/j2" && abaqus job=cantilever_j2_nominal input=cantilever_j2_nominal.inp \
+    user="$UMAT/parameter_sensitivity/models/m3_j2/umat.for" double=both interactive
+grep "COMPLETED SUCCESSFULLY" "$IN/one_element/Analysis.sta" "$IN/cantilever/j2/cantilever_j2_nominal.sta"
+```
+
+Then give the gate `--odb "$IN/one_element/Analysis.odb" --cantilever "$IN/cantilever"`.
+Judge each job by `THE ANALYSIS HAS COMPLETED SUCCESSFULLY` in its `.sta`
+file: Abaqus 2021.HF5 can abort with signal 6 during teardown after writing a
+complete ODB. The two Abaqus jobs were not re-run for this guide; the other
+lines were (2026-09-19).
 
 `--work` must be a new folder outside both repositories. It receives
 `report.json` (every command, exit code, log path, the wheel digests, the
 versions and the verdict `passed`) and the logs. The gate was not re-run for
 this guide; its recorded results are in
 [evidence/final_clean_clone.md](evidence/final_clean_clone.md).
+
+**The environment the gate made.** `<work>/env` holds both packages installed
+from their wheels. To run the offline test suites (section 6, item 6) and the
+examples check (section 6, item 7) against exactly those wheels, activate it
+with `. <work>/env/bin/activate`, set the OTILib variables of section 4,
+`RUN_OTILIB_TESTS=1` and `UMAT_OTI_REPO` (section 6, item 6), and run them
+from the checkouts.
+
+**From fresh clones, all at once.** `scripts/reproduce_from_clean_clones.sh`
+does all of this from fresh clones of the published `main` branches. With the
+OTILib build of section 4 and the two Abaqus inputs above:
+
+```bash
+export PYOTI_PATH="$HOME/otilib/build" OTILIB_ROOT="$HOME/otilib/build"
+bash Residual_Assembler/scripts/reproduce_from_clean_clones.sh --python python3.11 \
+    --odb "$IN/one_element/Analysis.odb" --cantilever "$IN/cantilever" /path/to/new/folder
+```
+
+It first drops the calling shell's Python settings (`PYTHON*`, `PIP_*`,
+`CONDA*`, `VIRTUAL_ENV`), so that no other Python installation reaches the
+run. It then clones both repositories into the new folder (section 2), runs
+the gate with `--branch main` and `--cantilever`, and, in the gate's
+environment as above, runs both offline suites and the examples check. Each
+step's exit code goes to `summary.tsv`, next to the suites' JUnit XML
+(`ra_suite.xml`, `umat_suite.xml`), the gate's `gate/report.json` and the
+examples' records (`usage/`). It stops before the gate if the OTILib build is
+not at the commit section 4 pins, and records whether the run left the clones
+unmodified. It needs Abaqus (the gate reads both ODBs) and takes about
+30 minutes.
 
 ## 8. Troubleshooting
 
