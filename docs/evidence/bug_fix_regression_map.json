@@ -257,6 +257,10 @@
   {
    "commit": "b8f7a85",
    "reason": "Ledger data (row T-11 of tools/ledger_rows.json); 'regression' names the kind of test the row maps, not a corrected behaviour."
+  },
+  {
+   "commit": "acf7c20",
+   "reason": "Ledger and evidence of the clean-clone run; 'failed' appears in the count of suite results ('none failed'), not as a corrected behaviour."
   }
  ],
  "changelog_fixed": {}
