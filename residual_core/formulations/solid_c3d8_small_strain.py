@@ -19,6 +19,16 @@ from .base import Formulation
 from . import c3d8_kernel as k
 
 
+#: What a bound material must declare for this element: it hands the material
+#: ``{"strain", "dstrain"}`` and integrates the returned stress with B0 over the
+#: reference volume, so it can only drive a small-strain law with a Cauchy
+#: (small-strain) stress and a DDSDDE tangent. A material that declares none of
+#: these attributes is taken to be small-strain (the Material default).
+_SMALL_STRAIN_MEASURES = {"kinematic_input": ("small_strain",),
+                          "stress_measure": ("cauchy",),
+                          "tangent_measure": ("ddsdde", None)}
+
+
 class SolidC3D8SmallStrain(Formulation):
     name = "solid_c3d8_small_strain"
     element_types = ("C3D8",)
@@ -59,6 +69,16 @@ class SolidC3D8SmallStrain(Formulation):
         if material is None:
             raise ValueError("solid_c3d8_small_strain needs a material binding "
                              "(Mode 2). For Mode 1 use stress_driven_adapter.")
+        for attribute, accepted in _SMALL_STRAIN_MEASURES.items():
+            actual = getattr(material, attribute, accepted[0])
+            if actual not in accepted:
+                raise ValueError(
+                    "solid_c3d8_small_strain: material %s has %s=%r; requires %s. "
+                    "This element passes the small strain and its increment, not a "
+                    "deformation gradient; bind a finite-strain material to "
+                    "solid_c3d8_finite_strain instead."
+                    % (getattr(material, "name", type(material).__name__), attribute,
+                       actual, " or ".join(repr(a) for a in accepted)))
         nstate = getattr(binding, "n_state_vars", 0) or material.n_state_vars
         pts, wts = k.ABAQUS_C3D8_GAUSS.points, k.ABAQUS_C3D8_GAUSS.weights
 
