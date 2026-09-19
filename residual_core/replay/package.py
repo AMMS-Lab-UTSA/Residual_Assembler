@@ -1,4 +1,4 @@
-"""Material package manifest: the boundary contract for a JHU material.
+"""Material package manifest: the boundary contract for a developer's material.
 
 A material package is ``{material_package.json + oti binary}``. The manifest is
 the load-bearing half: it is the ONLY place parameter names, PROPS slots, OTI

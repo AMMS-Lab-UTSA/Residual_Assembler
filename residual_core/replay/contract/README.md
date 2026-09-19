@@ -1,7 +1,7 @@
 # Material C ABI (`resasm_mat_abi.h`, v1)
 
 The stable, compiler-independent boundary between a collaborator's residual
-tool and a material developer's (e.g. JHU's) **closed-source** constitutive
+tool and a material developer's **closed-source** constitutive
 binary. The header `resasm_mat_abi.h` is the normative spec; this file explains
 it.
 
@@ -69,5 +69,5 @@ evaluation at the converged strain.
 `../reference/elastic_reference.f90` implements this ABI for isotropic
 elasticity with **analytic** derivatives — a REFERENCE to exercise the pipeline,
 **not** the real OTI toolchain. The Python side (`../abi.py`) is identical for
-both; the real JHU OTI binary drops in by pointing the material package's
+both; a real OTI binary drops in by pointing the material package's
 `binaries.oti.path` at it.

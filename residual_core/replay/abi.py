@@ -1,8 +1,8 @@
 """ctypes binding to the versioned material C ABI (``contract/resasm_mat_abi_v1.h``).
 
 This is THE adapter between the Python residual tool and a compiled material
-binary. It is deliberately identical for the reference provider and the real
-JHU OTI binary -- only the shared-library path differs. No OTI/dual object ever
+binary. It is deliberately identical for the reference provider and a real
+OTI binary -- only the shared-library path differs. No OTI/dual object ever
 crosses this boundary: the binary returns the real response and, in separate
 arrays, the first-order derivative coefficients for each seeded parameter.
 
