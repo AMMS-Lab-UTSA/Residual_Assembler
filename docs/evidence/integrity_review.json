@@ -1,0 +1,404 @@
+{
+ "_about": [
+  "Reviewed findings of tools/audit_integrity.py --check t12: how the tests, the verification code,",
+  "the examples and the support metadata changed between the baseline commit and the audited commit.",
+  "Each finding id is the audit's; verdict is justified or violation. evidence, quote and moved_to",
+  "are checked by the audit: text must be in the named file of the audited commit, in the baseline",
+  "commit's file (BASE:path) or in a commit message (a hash). A loosened, changed or removed",
+  "tolerance, and a removed tolerance check, needs the quoted reasoning. pre_work_failures lists the",
+  "tests that failed or errored in the recorded pre-work run; each must still exist, or its rename",
+  "must be recorded. tests/test_audit_integrity.py fails on an unreviewed finding or a stale entry."
+ ],
+ "repository": "RA",
+ "baseline": "0789984c6c2750091d0f43b9ba42b84b3d890556",
+ "pre_work_record": "BASELINE_FAILURES.md and baseline_*.json of the workspace, recorded before the work at an earlier commit; not part of this repository.",
+ "pre_work_failures": {
+  "tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_passes_every_stage": {
+   "status": "renamed",
+   "now": "tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_holds_only_at_stages_with_sufficient_evidence",
+   "commit": "5ea3da4",
+   "reason": "Before the audited range (5ea3da4 precedes the baseline): the J2 fixture used to be required to FAIL the diagnosis at constitutive_derivative; the rewritten test requires the diagnosis to pass with that stage NOT ESTABLISHED, not blamed and not complete. The expectation moved with the diagnosis semantics, which also changed in that commit."
+  },
+  "tests/framework/test_compiled_umat_oti_to_resasm.py::test_compiled_oti_j2_drives_bridge_and_dRdp_matches_full_residual_fd": {
+   "status": "present"
+  },
+  "tests/framework/test_which_layer_the_failure_came_from.py::test_the_nine_layers_are_the_nine_the_brief_names": {
+   "status": "renamed",
+   "now": "tests/framework/test_which_layer_the_failure_came_from.py::test_the_layers_include_parameter_sensitivity_and_element_jacobian",
+   "commit": "5ea3da4",
+   "reason": "Before the audited range: the test pinned nine layers while the implementation had eleven; the renamed test pins the eleven (parameter_sensitivity and element_jacobian added)."
+  }
+ },
+ "findings": {
+  "skip:.github/workflows/ci.yml:ci-line:0ab412fe": {
+   "verdict": "justified",
+   "reason": "A comment or message text; it selects nothing."
+  },
+  "skip:.github/workflows/ci.yml:ci-line:1f29de04": {
+   "verdict": "justified",
+   "reason": "No test that existed at the baseline is marked abaqus, arc or network (the audit's 'existing test now marked' check finds none), so the offline filter deselects only tests added in this work that need licensed Abaqus; an abaqus-marked test run without Abaqus fails by design. It is the suite command the installation guide documents.",
+   "evidence": [
+    {
+     "in": "BASE:pyproject.toml",
+     "text": "abaqus: needs a licensed Abaqus installation; cannot run in public CI"
+    },
+    {
+     "in": "docs/INSTALL.md",
+     "text": "python -m pytest -q -m \"not abaqus and not arc and not network\""
+    }
+   ]
+  },
+  "skip:.github/workflows/ci.yml:ci-line:3249e7de": {
+   "verdict": "justified",
+   "reason": "No test that existed at the baseline is marked abaqus, arc or network (the audit's 'existing test now marked' check finds none), so the offline filter deselects only tests added in this work that need licensed Abaqus; an abaqus-marked test run without Abaqus fails by design. It is the suite command the installation guide documents.",
+   "evidence": [
+    {
+     "in": "BASE:pyproject.toml",
+     "text": "abaqus: needs a licensed Abaqus installation; cannot run in public CI"
+    },
+    {
+     "in": "docs/INSTALL.md",
+     "text": "python -m pytest -q -m \"not abaqus and not arc and not network\""
+    }
+   ]
+  },
+  "skip:.github/workflows/ci.yml:ci-line:53d8970d": {
+   "verdict": "justified",
+   "reason": "A comment or message text; it selects nothing."
+  },
+  "skip:.github/workflows/ci.yml:ci-line:54e89e3b": {
+   "verdict": "justified",
+   "reason": "The skip allow-list grows from OTILib alone to four named resources a public runner cannot provide: OTILib (external GPL build), the private corpus store (the real-store contract tests already skipped with 'is not on this machine' at the baseline), the third-party flow-rule driver sources (not redistributable) and Playwright for the browser tests. Caveat: 'is not on this machine' is a broad phrase; it also matches the companion-checkout skip, which CI prevents by cloning the companion first (that step fails loudly).",
+   "quote": "its skip check names each dependency a public runner cannot provide: OTILib, the private corpus store, the third-party flow-rule driver sources and a browser for the playwright tests.",
+   "quote_source": "8daf75f",
+   "evidence": [
+    {
+     "in": "BASE:tests/contract/test_both_readers_agree_on_the_real_store.py",
+     "text": "is not on this machine"
+    }
+   ]
+  },
+  "skip:.github/workflows/ci.yml:ci-line:70fbe4ab": {
+   "verdict": "justified",
+   "reason": "No test that existed at the baseline is marked abaqus, arc or network (the audit's 'existing test now marked' check finds none), so the offline filter deselects only tests added in this work that need licensed Abaqus; an abaqus-marked test run without Abaqus fails by design. It is the suite command the installation guide documents.",
+   "evidence": [
+    {
+     "in": "BASE:pyproject.toml",
+     "text": "abaqus: needs a licensed Abaqus installation; cannot run in public CI"
+    },
+    {
+     "in": "docs/INSTALL.md",
+     "text": "python -m pytest -q -m \"not abaqus and not arc and not network\""
+    }
+   ]
+  },
+  "skip:tests/contract/test_both_readers_agree_on_the_real_store.py:_producer:call:skip:410545ab": {
+   "verdict": "justified",
+   "reason": "A reworded baseline skip: the baseline already skipped with 'NOT COMPARED' when another umat_oti had been imported first. The condition is narrower now: an installed copy whose Python files are byte-identical to the checkout is compared instead of skipped.",
+   "evidence": [
+    {
+     "in": "BASE:tests/contract/test_both_readers_agree_on_the_real_store.py",
+     "text": "The two readers were NOT COMPARED."
+    },
+    {
+     "in": "924ee8c",
+     "text": "They now run against an installed copy whose Python files"
+    }
+   ]
+  },
+  "skip:tests/contract/test_both_readers_agree_on_the_real_store.py:_producer:call:skip:77dd0dd6": {
+   "verdict": "justified",
+   "reason": "A reworded baseline skip: the baseline already skipped with 'NOT COMPARED' when another umat_oti had been imported first. The condition is narrower now: an installed copy whose Python files are byte-identical to the checkout is compared instead of skipped.",
+   "evidence": [
+    {
+     "in": "BASE:tests/contract/test_both_readers_agree_on_the_real_store.py",
+     "text": "The two readers were NOT COMPARED."
+    },
+    {
+     "in": "924ee8c",
+     "text": "They now run against an installed copy whose Python files"
+    }
+   ]
+  },
+  "skip:tests/framework/test_inspection_commands.py:<module>:mark.skipif:eb94e78d": {
+   "verdict": "justified",
+   "reason": "New test that needs a genuine OTILib (external GPL build); the skip names it and CI's allow-list declares it.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "declared = (\"OTILib\""
+    }
+   ]
+  },
+  "skip:tests/framework/test_inspection_commands.py:test_doctor_writes_a_config_template_that_reads_back:call:importorskip:a8f7fafa": {
+   "verdict": "justified",
+   "reason": "PyYAML is the yaml extra, which CI and the documented install select.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "python -m pip install \".[yaml,gui,test]\""
+    }
+   ]
+  },
+  "skip:tests/framework/test_no_derivative_loss_on_oti_paths.py:test_a_genuine_oti_number_refuses_the_loud_operations:call:skip:a823e215": {
+   "verdict": "justified",
+   "reason": "New test that needs a genuine OTILib (external GPL build); the skip names it and CI's allow-list declares it.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "declared = (\"OTILib\""
+    }
+   ]
+  },
+  "skip:tests/framework/test_unrelated_pyoti_is_refused.py:<module>:mark.skipif:55f33359": {
+   "verdict": "justified",
+   "reason": "New test that needs a genuine OTILib (external GPL build); the skip names it and CI's allow-list declares it.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "declared = (\"OTILib\""
+    }
+   ]
+  },
+  "skip:tests/framework/test_unrelated_pyoti_is_refused.py:no_local_checkout:call:skip:82e60cb5": {
+   "verdict": "justified",
+   "reason": "New test of the refusal of an unrelated 'pyoti'; skips only where the environment it must construct is impossible (a local OTILib checkout would be probed first, or a genuine OTILib already sits in site-packages)."
+  },
+  "skip:tests/framework/test_unrelated_pyoti_is_refused.py:test_without_the_unrelated_package_the_error_names_no_impostor:call:skip:a5bbf99c": {
+   "verdict": "justified",
+   "reason": "New test of the refusal of an unrelated 'pyoti'; skips only where the environment it must construct is impossible (a local OTILib checkout would be probed first, or a genuine OTILib already sits in site-packages)."
+  },
+  "skip:tests/framework/test_verify_equilibrium_exit.py:test_gui_propagates_failed_equilibrium:call:importorskip:b7185db2": {
+   "verdict": "justified",
+   "reason": "streamlit is the gui extra, which CI and the documented install select.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "python -m pip install \".[yaml,gui,test]\""
+    }
+   ]
+  },
+  "skip:tests/gui/conftest.py:pytest_collection_modifyitems:hook:pytest_deselected:2c724976": {
+   "verdict": "justified",
+   "reason": "New tests/gui/conftest.py: deselects only tests marked gui (browser tests needing Playwright and Chromium) unless -m names gui; no test that existed at the baseline carries the gui marker, and pytest reports deselections.",
+   "evidence": [
+    {
+     "in": "tests/gui/conftest.py",
+     "text": "item.get_closest_marker(\"gui\")"
+    }
+   ]
+  },
+  "skip:tests/gui/test_solve_screen_browser.py:<module>:call:importorskip:003ece3f": {
+   "verdict": "justified",
+   "reason": "New browser test (gui-marked, deselected by default); its skips name Playwright, a saved analysis outside the repository, and licensed Abaqus Python to read the ODB."
+  },
+  "skip:tests/gui/test_solve_screen_browser.py:handed_over:call:skip:67ca85c2": {
+   "verdict": "justified",
+   "reason": "New browser test (gui-marked, deselected by default); its skips name Playwright, a saved analysis outside the repository, and licensed Abaqus Python to read the ODB."
+  },
+  "skip:tests/gui/test_solve_screen_browser.py:handed_over:call:skip:e3eb8b3a": {
+   "verdict": "justified",
+   "reason": "New browser test (gui-marked, deselected by default); its skips name Playwright, a saved analysis outside the repository, and licensed Abaqus Python to read the ODB."
+  },
+  "skip:tests/integration/test_connected_j2.py:_require_otilib:call:skip:bb8f5c39": {
+   "verdict": "justified",
+   "reason": "test_no_live_oti_cast and test_field_inputs_reject_live_oti existed at the baseline and failed where OTILib is absent; they now skip with the declared reason, as the baseline's other OTILib tests did, and with RUN_OTILIB_TESTS=1 (set by the clean-clone run) a missing OTILib is an assertion failure. The skip names an external resource on CI's allow-list.",
+   "evidence": [
+    {
+     "in": "tests/integration/test_connected_j2.py",
+     "text": "assert os.environ.get(\"RUN_OTILIB_TESTS\") != \"1\""
+    },
+    {
+     "in": "BASE:tests/framework/test_otilib_adapter.py",
+     "text": "assert os.environ.get(\"RUN_OTILIB_TESTS\") != \"1\""
+    },
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "declared = (\"OTILib\""
+    }
+   ]
+  },
+  "skip:tests/verification/test_claim2_flowrule_jacobian.py:<module>:mark.skipif:689879d0": {
+   "verdict": "justified",
+   "reason": "New test; the flow-rule driver sources are third-party and not redistributable. The skip names them and CI's allow-list declares them.",
+   "evidence": [
+    {
+     "in": ".github/workflows/ci.yml",
+     "text": "\"external flow-rule sources not found\""
+    }
+   ]
+  },
+  "removed_check:tests/integration/test_connected_j2.py:test_public_cli_solve_replay_and_failure:6bde7964": {
+   "verdict": "justified",
+   "reason": "The example folder was renamed to examples/bounded_j2_c3d8 with identical content (the deleted_example entries); the assertion is unchanged apart from the path.",
+   "evidence": [
+    {
+     "in": "tests/integration/test_connected_j2.py",
+     "text": "str(ROOT / \"examples/bounded_j2_c3d8/model.json\"), *common"
+    }
+   ]
+  },
+  "warning_filter:tests/framework/test_unapplied_deck_keywords_are_named.py:test_a_deck_whose_keywords_are_all_applied_gets_no_note:call:simplefilter:e60dffb7": {
+   "verdict": "justified",
+   "reason": "Turns the DeckKeywordNotApplied warning into an error so the test fails if a clean deck gets the note; stricter, hides nothing."
+  },
+  "broad_except:verification/claim1_sensitivity_sweep.py:main:except Exception:2358721f": {
+   "verdict": "justified",
+   "reason": "A per-model or per-attempt error in a claim driver is recorded as that row's status ('error' or 'oti_transform_failed') with the message and printed; the run continues with the other models. Such a row never counts as measured: claim 1 exits 1 unless every model was measured, and the claim 4 and 5 tests fail on any row that is not prepared or measured.",
+   "evidence": [
+    {
+     "in": "verification/claim1_sensitivity_sweep.py",
+     "text": "return 0 if summary[\"models_measured\"] == summary[\"models_attempted\"] else 1"
+    },
+    {
+     "in": "tests/verification/test_claim4_benchmark_ddsdde.py",
+     "text": "assert row[\"status\"] == \"transform_failed\""
+    },
+    {
+     "in": "tests/verification/test_claim5_constitutive_jacobians.py",
+     "text": "assert record[\"status\"] == \"measured\""
+    }
+   ]
+  },
+  "broad_except:verification/claim4_benchmark_ddsdde.py:main:except Exception:2358721f": {
+   "verdict": "justified",
+   "reason": "A per-model or per-attempt error in a claim driver is recorded as that row's status ('error' or 'oti_transform_failed') with the message and printed; the run continues with the other models. Such a row never counts as measured: claim 1 exits 1 unless every model was measured, and the claim 4 and 5 tests fail on any row that is not prepared or measured.",
+   "evidence": [
+    {
+     "in": "verification/claim1_sensitivity_sweep.py",
+     "text": "return 0 if summary[\"models_measured\"] == summary[\"models_attempted\"] else 1"
+    },
+    {
+     "in": "tests/verification/test_claim4_benchmark_ddsdde.py",
+     "text": "assert row[\"status\"] == \"transform_failed\""
+    },
+    {
+     "in": "tests/verification/test_claim5_constitutive_jacobians.py",
+     "text": "assert record[\"status\"] == \"measured\""
+    }
+   ]
+  },
+  "broad_except:verification/claim5_constitutive_jacobians.py:main:except Exception:2358721f": {
+   "verdict": "justified",
+   "reason": "A per-model or per-attempt error in a claim driver is recorded as that row's status ('error' or 'oti_transform_failed') with the message and printed; the run continues with the other models. Such a row never counts as measured: claim 1 exits 1 unless every model was measured, and the claim 4 and 5 tests fail on any row that is not prepared or measured.",
+   "evidence": [
+    {
+     "in": "verification/claim1_sensitivity_sweep.py",
+     "text": "return 0 if summary[\"models_measured\"] == summary[\"models_attempted\"] else 1"
+    },
+    {
+     "in": "tests/verification/test_claim4_benchmark_ddsdde.py",
+     "text": "assert row[\"status\"] == \"transform_failed\""
+    },
+    {
+     "in": "tests/verification/test_claim5_constitutive_jacobians.py",
+     "text": "assert record[\"status\"] == \"measured\""
+    }
+   ]
+  },
+  "broad_except:verification/claim5_constitutive_jacobians.py:measure:except Exception:ade87868": {
+   "verdict": "justified",
+   "reason": "A per-model or per-attempt error in a claim driver is recorded as that row's status ('error' or 'oti_transform_failed') with the message and printed; the run continues with the other models. Such a row never counts as measured: claim 1 exits 1 unless every model was measured, and the claim 4 and 5 tests fail on any row that is not prepared or measured.",
+   "evidence": [
+    {
+     "in": "verification/claim1_sensitivity_sweep.py",
+     "text": "return 0 if summary[\"models_measured\"] == summary[\"models_attempted\"] else 1"
+    },
+    {
+     "in": "tests/verification/test_claim4_benchmark_ddsdde.py",
+     "text": "assert row[\"status\"] == \"transform_failed\""
+    },
+    {
+     "in": "tests/verification/test_claim5_constitutive_jacobians.py",
+     "text": "assert record[\"status\"] == \"measured\""
+    }
+   ]
+  },
+  "broad_except:verification/common.py:import_origins:except Exception:46d5b4e9": {
+   "verdict": "justified",
+   "reason": "Provenance only: the report's import origins record 'unavailable: <error>' for pyoti; the verification imports what it needs elsewhere and fails without it."
+  },
+  "deleted_example:renamed-to:examples/bounded_j2_c3d8/README.md": {
+   "verdict": "justified",
+   "reason": "Renamed to a descriptive folder name; the content moved with it (git sees a rename).",
+   "moved_to": "examples/bounded_j2_c3d8/README.md"
+  },
+  "deleted_example:renamed-to:examples/bounded_j2_c3d8/model.json": {
+   "verdict": "justified",
+   "reason": "Renamed to a descriptive folder name; the content moved with it (git sees a rename).",
+   "moved_to": "examples/bounded_j2_c3d8/model.json"
+  },
+  "mock:tests/framework/test_nonlinear_spring_sensitivity.py:test_cli_exit_code_reports_a_failed_finite_difference_check:monkeypatch.setattr:e5a75efd": {
+   "verdict": "justified",
+   "reason": "Fault injection: registers a spring whose hand-coded tangent is doubled, to show the CLI exits 1 when the finite-difference check fails; nothing is made to pass.",
+   "evidence": [
+    {
+     "in": "tests/framework/test_nonlinear_spring_sensitivity.py",
+     "text": "class DoubledTangentSpring(NonlinearSpring1):"
+    }
+   ]
+  },
+  "mock:tests/framework/test_otilib_spring_sensitivity.py:test_missing_otilib_still_exits_3:monkeypatch.setattr:661165a4": {
+   "verdict": "justified",
+   "reason": "Simulates an absent OTILib (the adapter's module-level handle) to test the exit code and message; no numerical function is replaced."
+  },
+  "mock:tests/framework/test_otilib_spring_sensitivity.py:test_missing_otilib_still_exits_3:monkeypatch.setattr:aa3b650a": {
+   "verdict": "justified",
+   "reason": "Simulates an absent OTILib (the adapter's module-level handle) to test the exit code and message; no numerical function is replaced."
+  },
+  "mock:tests/framework/test_user_layer.py:test_run_without_otilib_is_a_clean_error:monkeypatch.setattr:556c39b6": {
+   "verdict": "justified",
+   "reason": "Simulates an absent OTILib (the adapter's module-level handle) to test the exit code and message; no numerical function is replaced."
+  },
+  "mock:tests/framework/test_user_layer.py:test_run_without_otilib_is_a_clean_error:monkeypatch.setattr:b7f157df": {
+   "verdict": "justified",
+   "reason": "Simulates an absent OTILib (the adapter's module-level handle) to test the exit code and message; no numerical function is replaced."
+  },
+  "mock:tests/gui/test_solve_screen.py:inputs:monkeypatch.setattr:858b930b": {
+   "verdict": "justified",
+   "reason": "Replaces only the ODB reader, which needs licensed Abaqus Python, with one that returns the committed fields of a genuine export (tests/fixtures/presentation_j2/fields.json); the provider build, replay and sensitivities run for real.",
+   "evidence": [
+    {
+     "in": "tests/gui/test_solve_screen.py",
+     "text": "FIELDS = ROOT / \"tests\" / \"fixtures\" / \"presentation_j2\" / \"fields.json\""
+    },
+    {
+     "in": "tests/gui/test_solve_screen.py",
+     "text": "build_provider(_umat_repository()"
+    }
+   ]
+  },
+  "warn_call:residual_core/core/model.py:from_abaqus:warnings.warn:81c5b575": {
+   "verdict": "justified",
+   "reason": "A new diagnostic where the deck path was silent; it does not stand in for a failure, because verify refuses a deck whose equilibrium-relevant keywords are not applied (8e4cf2f).",
+   "quote": "Assembly still runs: this is a diagnostic, and verify already refuses *Equation.",
+   "quote_source": "07703d3",
+   "evidence": [
+    {
+     "in": "8e4cf2f",
+     "text": "resasm verify refuses a deck whose equilibrium-relevant keywords are not"
+    }
+   ]
+  },
+  "reference_data:tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json": {
+   "verdict": "justified",
+   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time and the transform fingerprint changed (checked field by field).",
+   "quote": "Every number in them is unchanged; only the generation time and the fingerprint differ.",
+   "quote_source": "ea1ed80",
+   "json_only_changed": [
+    "generated",
+    "transform_fingerprint"
+   ]
+  },
+  "reference_data:tests/fixtures/verified/j2_props--2feae9f158.json": {
+   "verdict": "justified",
+   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time and the transform fingerprint changed (checked field by field).",
+   "quote": "Every number in them is unchanged; only the generation time and the fingerprint differ.",
+   "quote_source": "ea1ed80",
+   "json_only_changed": [
+    "generated",
+    "transform_fingerprint"
+   ]
+  }
+ }
+}
