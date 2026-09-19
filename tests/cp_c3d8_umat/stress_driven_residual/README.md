@@ -78,7 +78,7 @@ Produces `Compression111.odb`.
 ## 2. Extract the fields
 
 ```bash
-abaqus python /path/to/residual_core/extract_abaqus_fields.py -- \
+abaqus python /path/to/residual_core/io/abaqus_odb_export.py -- \
     --odb Compression111.odb \
     --instance PART-1-1 \
     --step Step-1 \

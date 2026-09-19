@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-extract_abaqus_fields.py -- Abaqus/Python ODB field extractor.
+abaqus_odb_export.py -- Abaqus/Python ODB field extractor.
 
 Writes the `fields.json` exchange format defined in residual_core/CONTRACT.md
 section 5 (undeformed nodal coords, C3D8 connectivity, and per-frame nodal U,
@@ -11,19 +11,19 @@ assembler and the UMAT replay adapter can consume Abaqus results.
 RUN IT WITH ABAQUS' PYTHON (this is Python 2.7 + odbAccess; it will NOT run
 under a normal python3).  Examples:
 
-    abaqus python extract_abaqus_fields.py -- \
+    abaqus python residual_core/io/abaqus_odb_export.py -- \
         --odb Compression111.odb --out fields.json
 
-    abaqus python extract_abaqus_fields.py -- \
+    abaqus python residual_core/io/abaqus_odb_export.py -- \
         --odb Job-1.odb --instance PART-1-1 --step Step-1 \
         --frames last --elset Set-1 --out fields.json
 
     # all frames, comma list, or explicit indices:
-    abaqus python extract_abaqus_fields.py -- --odb job.odb --frames all
-    abaqus python extract_abaqus_fields.py -- --odb job.odb --frames 0,5,10
+    abaqus python residual_core/io/abaqus_odb_export.py -- --odb job.odb --frames all
+    abaqus python residual_core/io/abaqus_odb_export.py -- --odb job.odb --frames 0,5,10
 
     # via CAE (no GUI):
-    abaqus cae noGUI=extract_abaqus_fields.py -- --odb job.odb --out fields.json
+    abaqus cae noGUI=residual_core/io/abaqus_odb_export.py -- --odb job.odb --out fields.json
 
 CLI:
     --odb       (required) path to the .odb
@@ -56,7 +56,7 @@ try:
 except Exception as exc:  # not running under Abaqus python
     sys.stderr.write(
         "ERROR: this script must be run with Abaqus' Python (odbAccess).\n"
-        "       e.g.  abaqus python extract_abaqus_fields.py -- --odb job.odb\n"
+        "       e.g.  abaqus python residual_core/io/abaqus_odb_export.py -- --odb job.odb\n"
         "       import error: %s\n" % exc)
     sys.exit(2)
 

@@ -7,7 +7,7 @@ Ties the pieces together:
     c3d8_residual.assemble_global_internal_force   (f_int = integral B^T sigma dv)
         +
     fields.json   (nodal U, integration-point Cauchy stress S, reactions RF,
-                   exported from an Abaqus ODB by extract_abaqus_fields.py)
+                   exported from an Abaqus ODB by io/abaqus_odb_export.py)
 
 and answers the Step-5 verification question WITHOUT trusting our UMAT replay:
 

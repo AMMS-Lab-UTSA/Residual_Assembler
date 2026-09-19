@@ -59,11 +59,11 @@ S, SDV
 
 ```bash
 abaqus job=Compression111 user=umat.for double=both interactive
-abaqus python /path/to/residual_core/extract_abaqus_fields.py -- \
+abaqus python /path/to/residual_core/io/abaqus_odb_export.py -- \
     --odb Compression111.odb --frames all --out fields.json
 ```
 
-`extract_abaqus_fields.py` records the exported SDV numbers in `fields.json`
+`residual_core/io/abaqus_odb_export.py` records the exported SDV numbers in `fields.json`
 under `sdv_labels`, so the replay lines them up with the right `STATEV` indices.
 
 If you can only afford sparse output (e.g. `frequency=200`), the replay still
