@@ -37,6 +37,10 @@ from ..replay.history_verify import summarize_fd, tangent_check, whole_model_fd
 
 EXPORTER = Path(__file__).resolve().parents[1] / "replay" / "odb_export_npz.py"
 
+#: Adjacent FD steps must agree to this (relative) for the reference to count
+#: as resolved: "Reference resolved: yes". Only a resolved reference can verify.
+PLATEAU_SPREAD_LIMIT = 1e-4
+
 
 def register(subparsers):
     parser = subparsers.add_parser(
@@ -157,6 +161,7 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
                     ", state %.3f (max |dSDV| %.3e)" % (ratio("state"), parity["state_max_abs"])
                     if "state_max_abs" in parity else ""))})
         verification = {}
+        derivative_verified = False
         if verify in ("tangent", "fd"):
             check = tangent_check(engine, result, sorted({1, len(result.increments) // 2 or 1,
                                                           len(result.increments)}))
@@ -182,16 +187,23 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
             verification["whole_model_fd"] = {"summary": summary, "steps": fd["steps"],
                                               "definition": fd["definition"], "seconds": fd["seconds"],
                                               "replay_vs_python_equilibrium_du_rel": replay_vs_solve}
-            passed = worst_error <= max(1e-6, 2 * worst_spread) and zero_oti <= 1e-6
-            report["report_fields"]["derivative verified"] = (
-                "%s: whole-model central FD of the ORIGINAL UMAT re-equilibrated in Python; worst "
+            # an unresolved reference (no plateau) verifies nothing, however
+            # close OTI and FD happen to be
+            resolved = worst_spread < PLATEAU_SPREAD_LIMIT
+            derivative_verified = (resolved and worst_error <= max(1e-6, 2 * worst_spread)
+                                   and zero_oti <= 1e-6)
+            details = (
+                "whole-model central FD of the ORIGINAL UMAT re-equilibrated in Python; worst "
                 "nonzero-derivative error %.2e (plateau spread %.2e); zero references: |OTI - FD| <= %.1e "
                 "on the field scale; the ODB-driven du/dp differs from the Python-equilibrium du/dp by "
-                "%.2e (relative)" % ("yes" if passed else "NO", worst_error, worst_spread, zero_oti,
-                                     replay_vs_solve))
+                "%.2e (relative)" % (worst_error, worst_spread, zero_oti, replay_vs_solve))
+            report["report_fields"]["derivative verified"] = (
+                "not verified: the reference did not resolve (largest plateau spread %.2e >= %.0e); %s"
+                % (worst_spread, PLATEAU_SPREAD_LIMIT, details) if not resolved else
+                "%s: %s" % ("yes" if derivative_verified else "NO", details))
             report["report_fields"]["reference resolved"] = (
                 "yes: a plateau (adjacent steps of %s agreeing to %.1e) for every nonzero derivative"
-                % (fd["steps"], worst_spread) if worst_spread < 1e-4 else
+                % (fd["steps"], worst_spread) if resolved else
                 "partially: largest plateau spread %.2e" % worst_spread)
         results_fields = Fields(engine, result)
         timings = {key: round(value, 3) for key, value in result.timings.items()}
@@ -206,7 +218,8 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
         report["metadata"] = {
             "sensitivity_semantics": "total equilibrated history (dSTRESS, dSTATEV chained through "
                                      "UMAT_OTI_EVAL_TOTAL; du_c/dp = 0 on prescribed DOFs)",
-            "verified": verify != "none", "verification": verification,
+            # True only when the derivatives passed the whole-model FD check
+            "verified": derivative_verified, "verification": verification,
             "max_scaled_free_residual": result.max_scaled_residual,
             "parity": parity, "tolerances": result.tolerances, "timings_s": timings,
             "parameter_values": dict(zip(result.parameters, result.parameter_values.tolist())),

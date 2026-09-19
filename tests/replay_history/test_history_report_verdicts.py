@@ -12,7 +12,8 @@ from UMAT-OTI, and each is checked against the numbers the same run writes to
   ORIGINAL routine and says ``yes`` with the measured error;
 * ``--verify fd`` adds whole-model central differences; with the default step
   ladder adjacent steps agree (a plateau: ``yes``), with a ladder of coarse
-  steps they do not (``partially``);
+  steps they do not (``partially``), and then the derivatives are ``not
+  verified`` whatever the error;
 * a deck with a feature the replay does not reproduce stops the run, and the
   report written for the failed run names the feature.
 """
@@ -85,6 +86,8 @@ def test_tangent_verified_under_verify_tangent(provider, tmp_path):
     # a tangent check alone runs no whole-model reference
     assert _report_line(out, "Reference resolved") == "not applicable (no reference was run)"
     assert _report_line(out, "Derivative verified") == "not run"
+    # ... so it verifies no derivative
+    assert json.loads((out / "sensitivity_results.json").read_text())["metadata"]["verified"] is False
 
 
 def test_tangent_verified_under_verify_fd(fd_run):
@@ -109,6 +112,7 @@ def test_reference_resolved_is_a_plateau_with_the_default_ladder(fd_run):
         "yes: a plateau (adjacent steps of %s agreeing to %.1e) for every nonzero derivative"
         % (steps, spread))
     assert _report_line(fd_run, "Derivative verified").startswith("yes: whole-model central FD")
+    assert json.loads((fd_run / "sensitivity_results.json").read_text())["metadata"]["verified"] is True
 
 
 def test_reference_resolved_is_partial_when_the_steps_do_not_agree(provider, tmp_path):
@@ -119,6 +123,12 @@ def test_reference_resolved_is_partial_when_the_steps_do_not_agree(provider, tmp
     assert spread >= 1e-4
     assert _report_line(out, "Reference resolved") == \
         "partially: largest plateau spread %.2e" % spread
+    # Regression: this run said "Derivative verified: yes ... worst nonzero-derivative
+    # error 9.63e-01 (plateau spread 8.95e-01)". An unresolved reference verifies nothing.
+    assert _report_line(out, "Derivative verified").startswith(
+        "not verified: the reference did not resolve (largest plateau spread %.2e >= 1e-04); "
+        % spread)
+    assert json.loads((out / "sensitivity_results.json").read_text())["metadata"]["verified"] is False
 
 
 @pytest.mark.parametrize("change, feature", [
