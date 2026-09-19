@@ -60,9 +60,9 @@ def _name(path):
     return str(path.relative_to(ROOT))
 
 
-def test_the_index_lists_seven_walkthroughs_that_exist():
+def test_the_index_lists_eight_walkthroughs_that_exist():
     walkthroughs = listed_walkthroughs()
-    assert len(walkthroughs) == 7, walkthroughs
+    assert len(walkthroughs) == 8, walkthroughs
     missing = [_name(path) for path in walkthroughs if not path.is_file()]
     assert not missing, missing
 
