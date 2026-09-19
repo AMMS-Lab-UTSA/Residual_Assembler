@@ -25,9 +25,10 @@ Windows requires WSL). It is **NOT** the unrelated PyPI package also named
      ``third_party/gpl/otilib`` (clearly marked GPLv3).
 
 A module is accepted only if it exposes the genuine OTI surface (``e`` +
-``number`` + ``get_im``), which rejects the PyPI squat. When absent,
-``otilib_available()`` returns False and callers skip cleanly — there is **no**
-silent fall back to Dual1.
+``number`` + ``get_im``), which rejects the PyPI squat; when a module named
+``pyoti`` imports but is refused, ``otilib_status()["error"]`` names its file.
+When absent, ``otilib_available()`` returns False and callers skip cleanly —
+there is **no** silent fall back to Dual1.
 
 Canonical direction representation
 ----------------------------------
@@ -66,6 +67,14 @@ _MISSING_MSG = (
     "GPLv3): build with conda + CMake (Windows requires WSL) — see "
     "docs/otilib_integration.md, or run scripts/setup_otilib.sh. You may also set "
     "OTILIB_ROOT or PYOTI_PATH to an existing build.")
+
+
+#: Prefixed to the error when a module named ``pyoti`` imports but is refused.
+_UNRELATED_MSG = (
+    "Refused a module named pyoti that is not OTILib: %s provides neither the OTI "
+    "number API (e, number, get_im) nor pyoti.sparse. It is the unrelated PyPI "
+    "package of that name (remove it: pip uninstall pyoti) or an incomplete "
+    "OTILib build, and it shadows any genuine build later on the path.\n")
 
 
 def _repo_root() -> str:
@@ -112,6 +121,7 @@ def _probe_backend():
         if d not in sys.path:
             sys.path.insert(0, d)
     # (B) import the genuine module; prefer the flexible dynamic-sparse impl.
+    impostor = None
     for modname in ("pyoti.sparse", "pyoti.static", "pyoti"):
         try:
             mod = __import__(modname, fromlist=["*"])
@@ -123,7 +133,13 @@ def _probe_backend():
             _OTI = mod
             _OTI_API = getattr(mod, "__name__", modname)
             return
+        impostor = mod
     _OTI_ERROR = _MISSING_MSG
+    if impostor is not None:
+        # something named pyoti imports but is not OTILib: say which one
+        _OTI_ERROR = (_UNRELATED_MSG % (getattr(impostor, "__file__", None)
+                                        or getattr(impostor, "__name__", "pyoti"))
+                      + _MISSING_MSG)
 
 
 def otilib_available() -> bool:
