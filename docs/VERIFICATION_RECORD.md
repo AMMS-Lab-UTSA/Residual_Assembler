@@ -397,11 +397,24 @@ shows 19; PCLI_R and VPDCL_R also carry GDIA). All 21 were measured; the OTI
 value agrees with FD in every one (worst 2e-9, the FD reference's own limit).
 Against the hand-coded value: 5 exact, 10 within 1e-5 (eight of them at 1e-13 or
 below, i.e. one to a few units in the last place, which the slide would have
-called Exact), and 6 that differ — every one of the six because the hand-coded
-Jacobian is wrong (it disagrees with FD by the same amount): NKH's ANP1P and BNP1P
-drop a factor (1 − D), VPDCO's and VPDCL_R's GDIA(3,3) drop (1 − D), and their
-FJAC, which uses GDIA, is 2.6e-3 off. With damage D = 0 these would be exact; the
-probe path activates damage. The slide's "14 exact, 5 within tolerance" is
+called Exact), and 6 that differ — in every one of the six the hand-coded value
+is the one that disagrees with FD, by the same amount. Four drop a factor
+(1 − D): NKH's ANP1P and BNP1P and VPDCO's and VPDCL_R's GDIA(3,3). Their
+relative difference is the damage D at the probed state (1.9e-4 and 6.7e-5; the
+probe path activates damage), and with the factor restored in a copy of the
+source, or with D held at 0, they agree with OTI to 2e-16. The other two,
+VPDCO's and VPDCL_R's FJAC (2.6e-3), have a different cause: FJAC is not the
+derivative of the residual the Newton loop evaluates. It differentiates FGAM
+with the yield stress taken at the current iterate (EQPLAS1 formed with the
+current FBAR, which gives the factor TETA2 and the term
+(2/3)·EHARDI·(1 − D)·FBAR), while the loop updates the yield stress after each
+Newton step from the previous iterate's FBAR (at the probe, the previous iterate
+is the loop's start value). Restoring (1 − D) in GDIA(3,3) leaves FJAC bit-identical, because that
+entry belongs to the hydrostatic direction, which the deviatoric projector
+removes before FJAC; with D held at 0, FJAC still differs by 2.6e-3. Writing
+FJAC as the derivative of the residual the loop evaluates, or evaluating the
+yield stress at the current iterate before FGAM, makes FJAC agree with OTI to
+2e-16. The slide's "14 exact, 5 within tolerance" is
 therefore not what the current code measures for these hand-coded values; the
 statement "all needed derivatives can be computed with our framework" is
 supported (OTI = FD everywhere).
