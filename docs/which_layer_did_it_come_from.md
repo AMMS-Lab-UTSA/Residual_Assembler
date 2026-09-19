@@ -95,7 +95,7 @@ isochoric cannot separate the two and reports so rather than choosing.
 A fixture is evidence about the transformation that produced it. `load()`
 refuses one whose `transform_fingerprint` differs from the generation recorded
 in `schemas/transform_generation.json`, the file both repositories read
-(currently `da1f183708c19072`). Verifying today's assembler against a fixture
+(currently `16c9f305df378089`). Verifying today's assembler against a fixture
 frozen under an older transformation is verifying it against somebody else's
 run. The two current fixtures in `tests/fixtures/verified/` (isotropic
 elasticity and J2) were regenerated in Abaqus at that generation; the re-freeze
