@@ -175,7 +175,13 @@ regular path compiled into the same object) at sampled points.
 the ORIGINAL UMAT at p(1 +/- h) for a ladder of h, and the OTI derivatives are
 compared with the adjacent pair of steps that forms the plateau. It costs
 2 x (number of steps) x NPARAM solves - minutes for the reduced meshes,
-longer at cantilever size.
+longer at cantilever size. The derivatives count as verified only when that
+reference resolves, that is when adjacent steps agree to 1e-4 for every nonzero
+derivative (`Reference resolved: yes`). Otherwise the report says
+`Derivative verified: not verified: the reference did not resolve` with the
+spread, and `metadata.verified` in `sensitivity_results.json` is `false`
+(measured on the j2_beam example with `--fd-steps 0.3,0.1`: spread 8.95e-01).
+`metadata.verified` is `true` only when `--verify fd` verified the derivatives.
 
 ## How `resasm request` chooses this engine
 

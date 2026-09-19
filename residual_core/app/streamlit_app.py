@@ -1184,7 +1184,8 @@ def _tab_request() -> None:
                 result = json.loads((Path(output) / "sensitivity_results.json").read_text())
             st.session_state["request_completed_output"] = str(Path(output).resolve())
             st.session_state["request_completed_message"] = "Executed: %d scalar results. Independent validation: %s." % (
-                len(result["results"]), "passed" if result["metadata"]["verified"] else "not run")
+                len(result["results"]), "passed" if result["metadata"]["verified"]
+                else "run, NOT passed (see run_report.txt)" if validate else "not run")
         except (ValueError, OSError) as error:
             st.error(str(error))
     completed = st.session_state.get("request_completed_output")
