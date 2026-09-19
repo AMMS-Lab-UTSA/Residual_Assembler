@@ -411,22 +411,23 @@ the published branches together with both offline test suites and the
 examples check above, and records every step (same section).
 
 The recorded run is in
-[evidence/final_clean_clone.md](evidence/final_clean_clone.md). It ran on
-fresh clones of the published branches, at Residual_Assembler `3504a02` and
-UMAT_source_transformation `1352114`:
+[evidence/final_clean_clone.md](evidence/final_clean_clone.md). It ran this
+script on 2026-09-19 on fresh clones of the published branches, at
+Residual_Assembler `bf3600c` and UMAT_source_transformation `5dcdd8d`, and
+every step exited 0 (26 min 40 s):
 
-- all 22 commands exited 0 and the gate passed;
+- all 22 gate commands exited 0 and the gate passed;
 - the request matched the closed form to 1.7e-7 (`E`), 8.7e-16 (`SIGY0`) and
   8.8e-9 (`H`);
 - the source-denied outputs were byte-identical;
-- the cantilever request took 22.7 s and the re-equilibrated replay 33.0 s,
-  with the identity at 1.4e-12.
+- the cantilever request took 21.7 s and the re-equilibrated replay 30.8 s,
+  with the identity at 1.4e-12;
+- the Residual_Assembler offline suite: 647 passed, 20 skipped, 0 failed;
+- the UMAT-OTI suite: 3399 passed, 160 skipped, 0 failed;
+- the examples check: 31 of 31 commands passed.
 
-From the same clones, the UMAT-OTI suite passed (3,370 passed, 158 skipped).
-The offline Residual_Assembler suite had 494 passed, 20 skipped and 6 failed,
-all six from one check in the verification scripts, which has since been
-corrected. That record describes an **earlier commit pair**. A new gate run
-on the published commits follows the push of this version.
+The completion ledger was set from that run alone: 265 of its 274 rows are
+reproduced from a clean installation.
 
 ## 12. Status and evidence
 
