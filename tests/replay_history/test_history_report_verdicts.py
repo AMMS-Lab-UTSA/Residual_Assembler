@@ -63,7 +63,7 @@ def fd_run(provider, tmp_path_factory):
 
 def test_without_verification_nothing_is_claimed_verified(provider, tmp_path):
     out = tmp_path / "results"
-    assert _history(provider, out) == 0
+    assert _history(provider, out) == 0          # nothing was asked for, so nothing failed
     assert _report_line(out, "Tangent available").startswith("yes: DDSDDE")
     assert _report_line(out, "Tangent verified") == "not run"
     assert _report_line(out, "Derivative verified") == "not run"
@@ -73,7 +73,7 @@ def test_without_verification_nothing_is_claimed_verified(provider, tmp_path):
 
 def test_tangent_verified_under_verify_tangent(provider, tmp_path):
     out = tmp_path / "results"
-    assert _history(provider, out, "--verify", "tangent") == 0
+    assert _history(provider, out, "--verify", "tangent") == 0     # the check passed
     line = _report_line(out, "Tangent verified")
     check = _verification(out)["tangent"]
     match = re.fullmatch(r"yes: max relative error (\S+) vs central FD of the ORIGINAL UMAT at "
@@ -115,10 +115,15 @@ def test_reference_resolved_is_a_plateau_with_the_default_ladder(fd_run):
     assert json.loads((fd_run / "sensitivity_results.json").read_text())["metadata"]["verified"] is True
 
 
-def test_reference_resolved_is_partial_when_the_steps_do_not_agree(provider, tmp_path):
-    """Coarse steps (30 % and 10 % of each parameter) leave no plateau."""
+def test_reference_resolved_is_partial_when_the_steps_do_not_agree(provider, tmp_path, capsys):
+    """Coarse steps (30 % and 10 % of each parameter) leave no plateau.
+
+    Regression: the run exited 0 although the verification it was asked for
+    failed. It now exits 1 and names the check on standard error."""
     out = tmp_path / "results"
-    assert _history(provider, out, "--verify", "fd", "--fd-steps", "0.3,0.1") == 0
+    assert _history(provider, out, "--verify", "fd", "--fd-steps", "0.3,0.1") == 1
+    assert ("verification FAILED: Derivative verified: not verified: the reference did not "
+            "resolve") in capsys.readouterr().err
     spread = _worst_spread(_verification(out))
     assert spread >= 1e-4
     assert _report_line(out, "Reference resolved") == \
@@ -154,3 +159,37 @@ def test_an_unsupported_feature_is_reported_as_detected(provider, tmp_path, caps
     assert _report_line(out, "Residual assembled") == "no"
     assert _report_line(out, "Derivative calculated") == "no"
     assert not (out / "sensitivity_results.json").exists()
+
+
+def _report(tangent=None, derivatives=None):
+    """A report as run_history_request leaves it, for the checks it ran."""
+    verification, fields = {}, {"tangent verified": "not run", "derivative verified": "not run"}
+    if tangent is not None:
+        verification["tangent"] = {"passed": tangent}
+        fields["tangent verified"] = "%s: max relative error ..." % ("yes" if tangent else "NO")
+    if derivatives is not None:
+        verification["whole_model_fd"] = {"passed": derivatives}
+        fields["derivative verified"] = "yes: ..." if derivatives else "not verified: ..."
+    return {"metadata": {"verification": verification}, "report_fields": fields}
+
+
+@pytest.mark.parametrize("tangent, derivatives, failed", [
+    (None, None, []),
+    (True, None, []),
+    (False, None, ["Tangent verified: NO: max relative error ..."]),
+    (True, True, []),
+    (True, False, ["Derivative verified: not verified: ..."]),
+    (False, False, ["Tangent verified: NO: max relative error ...",
+                    "Derivative verified: not verified: ..."]),
+])
+def test_every_requested_check_that_fails_is_named_and_sets_exit_1(tangent, derivatives, failed,
+                                                                     capsys):
+    """``resasm history`` and ``resasm request`` (history engine) exit 1 when a
+    verification they were asked for did not pass, the tangent included, and 0
+    when none was asked for or all passed."""
+    from residual_core.ui.cmd_history import _verification_exit, failed_verifications
+    report = _report(tangent, derivatives)
+    assert failed_verifications(report) == failed
+    assert _verification_exit(report) == (1 if failed else 0)
+    err = capsys.readouterr().err
+    assert err.splitlines() == ["verification FAILED: " + line for line in failed]

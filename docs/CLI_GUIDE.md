@@ -49,7 +49,8 @@ described [at the end](#umat-oti-provider-build).
 - `--config FILE` (a `.yml` or `.json` config) is a **global** option. It goes
   before the subcommand: `resasm --config config.json assemble model.json ...`.
 - Exit codes follow one pattern: `0` success; `1` the command ran and the
-  answer is negative (a check failed, a job is not ready); `2` the command
+  answer is negative (a check failed, including a verification you asked
+  for, or a job is not ready); `2` the command
   could not run with these inputs (missing ingredient, bad path, usage error);
   `3` OTILib was requested and is not installed (`sensitivity` and `run`).
   Each subcommand below lists its measured codes.
@@ -112,9 +113,17 @@ the last reads `request executed: history engine, 40 increments; verified=False`
 and log, the full-field result and the link library. Runs handed to the
 history engine write that engine's outputs, see [`history`](#resasm-history).
 
-**Exit codes.** `0` executed. `2` failed; the message names a category and an
-action, `run_report.txt` repeats them, and `private/error_report.txt` holds the
-details. Measured categories:
+**Exit codes.** `0` executed (and, with `--validate`, verified). `1` a run
+handed to the history engine executed, but the `--validate` it was asked for
+did not pass: standard error names the check (`verification FAILED:
+Derivative verified: ...`), as for [`history`](#resasm-history). `2` failed; the
+message names a category and an action, `run_report.txt` repeats them, and
+`private/error_report.txt` holds the details. On the bounded engine a
+`--validate` that finds a disagreement is exit 2, category
+`derivative_verification`. Measured on the one-element deck of Example 3:
+without `--validate` exit 0; with it, exit 2 on the bounded engine, and exit 0
+with `verified=True` when a von Mises output hands the same run to the
+history engine. Measured categories:
 
 | Category | Example cause |
 | --- | --- |
@@ -205,7 +214,15 @@ every increment; it contains the whole solution, so share it only if the model
 may be shared). Private: `private/run_details.json`, the ODB export
 (`private/fields.npz` when `--odb` was used), its log, and the link library.
 
-**Exit codes.** `0` executed. `2` failed, with the reason on standard error
+**Exit codes.** `0` executed, and every check asked for with `--verify`
+passed (a run without `--verify` checks nothing and exits 0). `1` executed, but
+a requested check did not pass: the tangent under `--verify tangent` or `fd`,
+or the derivatives under `--verify fd`, including a reference that did not
+resolve. The outputs are written and standard error names each failed check;
+measured with `--verify fd --fd-steps 0.3,0.1` on `j2_beam`:
+`verification FAILED: Derivative verified: not verified: the reference did not
+resolve (largest plateau spread 8.95e-01 >= 1e-04); ...`. With the default
+ladder the same run exits 0. `2` failed, with the reason on standard error
 and in `run_report.txt`; measured examples:
 `output directory must be empty or new; refusing to mix results`, and
 `Abaqus launcher 'abaqus' not found: exporting Analysis.odb needs Abaqus Python (or pass --fields with an existing export)`.
