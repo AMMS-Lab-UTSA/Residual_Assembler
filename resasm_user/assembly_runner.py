@@ -96,9 +96,13 @@ def run_recipe(path: str):
     # stress-driven. Default 'formulation'.
     mode = str(r.sensitivity.get("mode") or "formulation")
 
-    pkg = prob.sensitivity_package(mode=mode, parameters=list(r.parameters),
-                                   max_order=order, algebra="OTI",
-                                   generate_rhs=True, backend="otilib")
+    from residual_core.core.rhs_provider import UnseededParameterError
+    try:
+        pkg = prob.sensitivity_package(mode=mode, parameters=list(r.parameters),
+                                       max_order=order, algebra="OTI",
+                                       generate_rhs=True, backend="otilib")
+    except UnseededParameterError as exc:
+        raise ConfigError(str(exc)) from exc
     if not getattr(pkg, "runnable", False):
         raise ConfigError("cannot assemble in mode '%s': %s"
                           % (mode, getattr(pkg, "minimum_missing", "unknown")))

@@ -31,6 +31,7 @@ import numpy as np
 
 from . import wizard as _wiz
 from .config import Config, write_config_template
+from ..algebra.otilib_adapter import OtiUnavailableError
 from ..core import requirements as _req
 from ..formulations.registry import build_formulation_registry
 from ..materials.registry import build_material_registry
@@ -60,6 +61,23 @@ def _attach_common(prob, args):
     return prob
 
 
+# what attach_results raises for an unreadable field export: the file cannot be
+# opened (OSError), is not JSON or has the wrong layout (ValueError), or is a
+# binary ODB, which needs Abaqus (NotImplementedError)
+_FIELD_EXPORT_ERRORS = (OSError, ValueError, NotImplementedError)
+
+
+def _field_export_error(args, exc):
+    """One line on stderr naming the field export and why it is unusable."""
+    source = getattr(args, "fields", None) or getattr(args, "odb", None)
+    if isinstance(exc, OSError):
+        print("ERROR: cannot read the field export %s: %s"
+              % (source, exc.strerror or exc), file=sys.stderr)
+    else:
+        print("ERROR: %s" % exc, file=sys.stderr)
+    return 2
+
+
 def _cmd_inspect(args):
     prob, _ = _load_problem(args.model, args.config)
     rep = prob.inspect(print_it=True)
@@ -71,14 +89,20 @@ def _cmd_inspect(args):
 
 def _cmd_requirements(args):
     prob, _ = _load_problem(args.model, args.config)
-    _attach_common(prob, args)
+    try:
+        _attach_common(prob, args)
+    except _FIELD_EXPORT_ERRORS as exc:
+        return _field_export_error(args, exc)
     print(prob.requirements(args.mode).render())
     return 0
 
 
 def _cmd_assemble(args):
     prob, _ = _load_problem(args.model, args.config)
-    _attach_common(prob, args)
+    try:
+        _attach_common(prob, args)
+    except _FIELD_EXPORT_ERRORS as exc:
+        return _field_export_error(args, exc)
     # progressive disclosure: if data is missing, print the clean requirements
     # report (minimum missing input only) instead of crashing.
     report = prob.requirements(args.mode)
@@ -109,7 +133,10 @@ def _cmd_verify(args):
     prob, _ = _load_problem(args.model, args.config)
     fields = getattr(args, "fields", None) or getattr(args, "odb", None)
     if fields:
-        prob.attach_results(fields)
+        try:
+            prob.attach_results(fields)
+        except _FIELD_EXPORT_ERRORS as exc:
+            return _field_export_error(args, exc)
     report = prob.requirements("stress-driven")
     if not report.runnable:
         print(report.render(), file=sys.stderr)
@@ -246,16 +273,18 @@ def _cmd_sensitivity(args):
                                        generate_rhs=True, fd_check=not args.no_fd,
                                        backend=backend)
     except (RuntimeError, ValueError) as exc:
-        # OTILib missing (or backend error) -> report cleanly, do NOT fall back
+        # report cleanly, do NOT fall back; exit 3 only when OTILib is missing,
+        # otherwise 2 with the backend's own reason (e.g. no tangent)
         print("hypercomplex backend: %s" % backend, file=sys.stderr)
         print("ERROR: %s" % exc, file=sys.stderr)
-        if backend.lower().startswith(("oti", "hypad")):
+        if isinstance(exc, OtiUnavailableError):
             print("\nInstall OTILib from https://github.com/mauriaristi/otilib.git "
                   "(GPLv3) — run scripts/setup_otilib.sh or see "
                   "docs/otilib_integration.md. For a first-order-only smoke test "
                   "you may pass --backend dual1 (NOT the production path).",
                   file=sys.stderr)
-        return 3
+            return 3
+        return 2
     if not pkg.runnable:
         print("Cannot assemble in %s mode." % mode, file=sys.stderr)
         print("  minimum missing input: %s" % pkg.minimum_missing, file=sys.stderr)
@@ -281,15 +310,25 @@ def _cmd_sensitivity(args):
               "sensitivities — use a parameterized formulation/material backend).",
               file=sys.stderr)
         return 2
+    if s.diagnostics.get("hypercomplex_ready") is False:
+        # the provider left the columns of the elements it could not evaluate
+        # at zero; those are not derivatives, so none are reported
+        print("  derivatives NOT computed: R^(1) is incomplete because the %s "
+              "backend could not evaluate these elements:" % s.algebra.algebra,
+              file=sys.stderr)
+        for note in s.diagnostics.get("notes", []):
+            print("    %s" % note, file=sys.stderr)
+        return 2
 
     fd = None
     if not args.no_fd:
         try:
             fd = prob.finite_difference_sensitivity(mode, list(s.parameter_map))
-        except Exception:
-            fd = None
+        except (RuntimeError, ValueError, np.linalg.LinAlgError) as exc:
+            print("  finite-difference check  = not run: %s" % exc)
     print("  solved derivative orders : %s"
           % [p for p in range(1, order + 1) if s.R(p) is not None])
+    fd_failed = []
     for p in range(1, order + 1):
         if s.R(p) is None:
             continue
@@ -310,12 +349,21 @@ def _cmd_sensitivity(args):
             if p == 1 and fd is not None:
                 fv = fd[:, col]
                 fs = float(fv[0]) if fv.size == 1 else float(np.linalg.norm(fv))
-                rel = abs(raw - fs) / max(abs(fs), 1e-30)
+                # the whole column, not only its norm: a zero, a sign or a
+                # misplaced entry must all show as a disagreement
+                rel = float(np.linalg.norm(up - fv)) / max(float(np.linalg.norm(fv)), 1e-30)
                 line += "   [FD %+.6e, rel %.2e]" % (fs, rel)
+                if not rel < _wiz.FD_REL_TOLERANCE:
+                    fd_failed.append(label)
             print(line)
     if args.out:
         pkg.save(args.out)
         print("  saved package -> %s.{json,npz,md}" % args.out)
+    if fd_failed:
+        print("finite-difference check FAILED for %s: relative error >= %g; "
+              "these derivatives are not confirmed"
+              % (", ".join(fd_failed), _wiz.FD_REL_TOLERANCE), file=sys.stderr)
+        return 1
     return 0
 
 
@@ -472,11 +520,15 @@ def _cmd_check(args):
 
 def _cmd_run(args):
     from resasm_user import run_from_config, ConfigError
+    from resasm_user.oti_global import OtiUnavailable
     try:
         res = run_from_config(args.config_file)
     except ConfigError as exc:
         print("ERROR: %s" % exc, file=sys.stderr)
         return 2
+    except (OtiUnavailable, OtiUnavailableError) as exc:
+        print("ERROR: %s" % exc, file=sys.stderr)
+        return 3
     print("run complete: %s" % res.summary)
     print("  private outputs -> %s" % res.private_dir)
     print("  public  outputs -> %s" % res.public_dir)
@@ -485,15 +537,19 @@ def _cmd_run(args):
 
 
 def _cmd_report(args):
-    from resasm_user import read_report, ConfigError
+    from resasm_user import read_report, job_output_dir, ConfigError
+    output_dir = args.output_dir
     try:
-        rep = read_report(args.output_dir)
+        if os.path.isfile(output_dir):
+            # a job's resasm.yml: read the folder that job writes to
+            output_dir = job_output_dir(output_dir)
+        rep = read_report(output_dir)
     except ConfigError as exc:
         print("ERROR: %s" % exc, file=sys.stderr)
         return 2
     meta = rep.get("metadata", {})
     vs = rep.get("validation_summary", {})
-    print("Sensitivity run report: %s" % args.output_dir)
+    print("Sensitivity run report: %s" % output_dir)
     print("  residual norm (free) : %s" % vs.get("residual_free_norm"))
     print("  tangent source       : %s" % vs.get("tangent_source"))
     print("  parameters           : %s" % ", ".join(meta.get("parameters", [])))
@@ -616,7 +672,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=_cmd_run)
 
     s = sub.add_parser("report", help="summarize a completed run's output dir")
-    s.add_argument("output_dir")
+    s.add_argument("output_dir", help="the job's output folder, or its resasm.yml "
+                                      "(then the folder that job writes to)")
     s.set_defaults(func=_cmd_report)
     return p
 

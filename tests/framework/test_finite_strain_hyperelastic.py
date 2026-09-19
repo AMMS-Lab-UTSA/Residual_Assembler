@@ -232,6 +232,23 @@ def test_multi_element_benchmark_and_cli(tmp_path):
                      "--params", str(tmp_path / "params.json")]) == 0
 
 
+def test_dual1_refuses_the_finite_strain_model_instead_of_printing_zeros(capsys):
+    """Regression: `--backend dual1` never seeded mu and lambda (they are
+    material constants, not section entries), printed d^1/e1 = d^1/e2 = 0 with
+    'FD ..., rel 1.00e+00' beside them, and exited 0."""
+    from pathlib import Path
+    from residual_core.ui import cli
+
+    verified = Path(__file__).resolve().parents[2] / "examples/finite_strain_c3d8/verified"
+    code = cli.main(["--config", str(verified / "config.json"), "sensitivity",
+                     str(verified / "model.json"), "--params", str(verified / "params.json"),
+                     "--backend", "dual1"])
+    captured = capsys.readouterr()
+    assert code == 2
+    assert "backend='dual1' cannot differentiate the finite-strain C3D8" in captured.err
+    assert "d^1/" not in captured.out
+
+
 def test_gui_uses_finite_cli_backend(tmp_path):
     import json
     pytest.importorskip("streamlit")

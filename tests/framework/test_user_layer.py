@@ -182,6 +182,43 @@ def test_report_refuses_missing_or_invalid_results(tmp_path, failure):
     assert "Traceback" not in result.stderr
 
 
+def test_report_reads_where_the_job_wrote(tmp_path):
+    """Regression (GUI Job tab): the report was looked for in a fixed folder.
+    Given the job's resasm.yml, `resasm report` reads the folder that job
+    writes to, including a custom `output: dir:`."""
+    from residual_core.ui import cli
+    _write(str(tmp_path), "my_solver.py", _BLACKBOX_SOLVER)
+    _write(str(tmp_path), "resasm.yml", _cfg("blackbox") + "output:\n  dir: results_here\n")
+    np.save(str(tmp_path / "solution.npy"), np.array([2.0]))
+    config = str(tmp_path / "resasm.yml")
+    res = run_from_config(config)
+    assert res.output_dir == str(tmp_path / "results_here")
+    result = subprocess.run([sys.executable, "-m", "residual_core.ui.cli", "report", config],
+                            cwd=_ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "public  outputs      : %s" % res.public_dir in result.stdout
+    assert cli.main(["report", str(tmp_path / "resasm_output")]) == 2
+
+
+def test_run_without_otilib_is_a_clean_error(tmp_path, monkeypatch, capsys):
+    """Regression: without OTILib, `resasm run` of a Python job ended in a
+    traceback (exit 1). It must end in the error and exit 3, as `sensitivity`
+    does. The adapter's probe result is set to 'not found', as on a machine
+    without OTILib."""
+    from residual_core.algebra import otilib_adapter
+    from residual_core.ui import cli
+    monkeypatch.setattr(otilib_adapter, "_OTI", None)
+    monkeypatch.setattr(otilib_adapter, "_OTI_ERROR", otilib_adapter._MISSING_MSG)
+    _write(str(tmp_path), "user_residual.py", _PY_RESIDUAL)
+    _write(str(tmp_path), "resasm.yml", _cfg("python"))
+    np.save(str(tmp_path / "solution.npy"), np.array([2.0]))
+    code = cli.main(["run", str(tmp_path / "resasm.yml")])
+    err = capsys.readouterr().err
+    assert code == 3
+    assert err.startswith("ERROR: OTILib backend requested but genuine OTILib was not found.")
+    assert not (tmp_path / "resasm_output").exists()
+
+
 def test_python_path_check():
     """Python path: runs with OTILib; otherwise reports an actionable install
     message (never a raw KeyError/AttributeError)."""

@@ -174,6 +174,54 @@ def test_example_loads():
                 % (ready, dudk, DUDK_EXACT))
 
 
+_EXAMPLE_MODEL = os.path.join(_ROOT, "residual_core", "examples",
+                              "minimal_nonlinear_spring_sensitivity", "model.json")
+
+
+def test_cli_refuses_a_parameter_it_cannot_seed(capsys):
+    """Regression: a parameter that no element carries was printed as
+    du/dp = 0 with a finite-difference 'rel 0.00e+00' and exit 0."""
+    from residual_core.ui import cli
+    code = cli.main(["sensitivity", _EXAMPLE_MODEL, "--param", "spring.k",
+                     "--param", "spring.zzz", "--backend", "dual1"])
+    captured = capsys.readouterr()
+    assert code == 2
+    assert ("'spring.zzz': material 'spring' has no section entry 'zzz'"
+            in captured.err)
+    assert "d^1/" not in captured.out
+
+
+def test_cli_exit_code_reports_a_failed_finite_difference_check(monkeypatch, capsys):
+    """Regression: `resasm sensitivity` printed a failing FD comparison and
+    still exited 0.
+
+    The backend here has a wrong hand-coded tangent (twice dR/du), so the
+    solved du/dk is half the re-solved finite difference: rel 0.5."""
+    from residual_core.formulations.nonlinear_spring1 import NonlinearSpring1
+    from residual_core.formulations.registry import build_formulation_registry
+    from residual_core.ui import cli, wizard
+
+    class DoubledTangentSpring(NonlinearSpring1):
+        def eval_element(self, *args):
+            r, tangent, state, info = super().eval_element(*args)
+            if tangent is not None:
+                tangent = [[2.0 * tangent[0][0]]]
+            return r, tangent, state, info
+
+    registry = build_formulation_registry()
+    registry.register(DoubledTangentSpring())
+    monkeypatch.setattr(wizard, "build_formulation_registry", lambda: registry)
+    argv = ["sensitivity", _EXAMPLE_MODEL, "--param", "spring.k", "--backend", "dual1"]
+    code = cli.main(argv)
+    captured = capsys.readouterr()
+    assert code == 1, captured.out + captured.err
+    assert "d^1/e1         = -1.666667e-01   [FD -3.33333" in captured.out
+    assert "rel 5.00e-01]" in captured.out
+    assert "finite-difference check FAILED for e1" in captured.err
+    # without a comparison there is nothing to fail
+    assert cli.main(argv + ["--no-fd"]) == 0
+
+
 def main():
     print("Nonlinear-spring sensitivity (first real R^(1) generation)")
     results = [_script_run(fn) for fn in (

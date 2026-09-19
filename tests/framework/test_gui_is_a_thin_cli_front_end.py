@@ -141,6 +141,34 @@ def test_the_gui_assembles_the_same_residual_as_the_cli():
     assert "ndof=24" in result.stdout
 
 
+@pytest.mark.integration
+def test_the_job_tab_reads_the_report_where_the_job_wrote_it(tmp_path):
+    """Regression: **Read report** ran `resasm report <job>/out`, a folder no
+    job writes to. It now hands the job's resasm.yml to the CLI, which reads
+    the folder that job wrote, here a custom `output: dir:`."""
+    _app()
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_string("from residual_core.app.streamlit_app import _init_state, "
+                              "_tab_job\n_init_state()\n_tab_job()")
+    app.session_state["workdir"] = str(tmp_path)
+    app.run()
+    app.text_input(key="job_folder").set_value("job").run()
+    app.selectbox(key="job_template").set_value("blackbox-order2").run()
+    app.button(key="btn_job_init").click().run(timeout=60)
+    config = tmp_path / "job" / "resasm.yml"
+    config.write_text(config.read_text() + "output:\n  dir: results_here\n")
+    app.button(key="btn_job_run").click().run(timeout=120)
+    app.button(key="btn_job_report").click().run(timeout=60)
+    assert not app.exception
+    report = app.session_state["results"]["job_report"]
+    assert report.code == 0, report.stdout + report.stderr
+    assert report.command == "resasm report job/resasm.yml"
+    summary = tmp_path / "job" / "results_here" / "public" / "summary.md"
+    assert summary.is_file()
+    assert any(str(summary) in expander.label for expander in app.expander)
+
+
 @pytest.mark.unit
 def test_the_shipped_examples_are_discoverable():
     """The example dropdown must not be empty in a fresh checkout."""

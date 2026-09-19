@@ -103,6 +103,47 @@ def test_otilib_spring_order2():
     assert not failed, "failed checks: " + "; ".join(failed)
 
 
+def test_otilib_refuses_a_parameter_it_cannot_seed():
+    """Regression: an unseeded parameter was returned as a zero column of R^(1)."""
+    from residual_core.core.rhs_provider import UnseededParameterError
+    _require_otilib()
+    p = _spring()
+    p.solve_newton("formulation")
+    with pytest.raises(UnseededParameterError, match="no section entry 'zzz'"):
+        p.sensitivity_package(mode="formulation", parameters=["spring.k", "spring.zzz"],
+                              generate_rhs=True, backend="otilib")
+
+
+_CUBE = os.path.join(_ROOT, "residual_core", "examples", "minimal_c3d8_stress_driven",
+                     "model.json")
+
+
+def test_a_missing_tangent_is_named_not_blamed_on_otilib(capsys):
+    """Regression: with OTILib present, a model without a tangent exited 3 with
+    an 'Install OTILib' hint. It must exit 2 and name the missing tangent."""
+    from residual_core.ui import cli
+    _require_otilib()
+    code = cli.main(["sensitivity", _CUBE])
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "no tangent is available: this mode (formulation) provides no" in err
+    assert "Install OTILib" not in err
+
+
+def test_missing_otilib_still_exits_3(monkeypatch, capsys):
+    """The install hint and exit 3 remain for the case they describe. The
+    adapter's probe result is set to 'not found', as on a machine without it."""
+    from residual_core.ui import cli
+    monkeypatch.setattr(A, "_OTI", None)
+    monkeypatch.setattr(A, "_OTI_ERROR", A._MISSING_MSG)
+    code = cli.main(["sensitivity", os.path.join(
+        _ROOT, "residual_core", "examples", "minimal_nonlinear_spring_sensitivity",
+        "model.json"), "--param", "spring.k"])
+    err = capsys.readouterr().err
+    assert code == 3
+    assert "genuine OTILib was not found" in err and "Install OTILib" in err
+
+
 def main():
     print("OTILib nonlinear-spring sensitivity (order 2)")
     ok = _script_run(test_otilib_spring_order2)

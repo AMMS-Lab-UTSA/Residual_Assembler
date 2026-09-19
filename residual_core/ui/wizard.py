@@ -41,6 +41,42 @@ from ..materials.base import MaterialBinding
 from ..io import abaqus_inp_parser
 from ..io import neutral_model_io
 
+#: Largest accepted relative error of a solved U^(1) column against the
+#: re-solved finite differences. The default step (1e-6, forward differences on
+#: the generic path) leaves an error of order 1e-6; 1e-4 leaves margin for it
+#: while any wrong derivative (a zero, a sign, a missing term) fails.
+FD_REL_TOLERANCE = 1e-4
+
+_FIELD_LAYOUT = ('expected {"stress_ip": {"<element id>": [[s11, s22, s33, s12, s13, '
+                 's23], ... one row per integration point]}}, as written by '
+                 'scripts/extract_odb_fields.py')
+
+
+def _stress_ip_from_export(data, source):
+    """``{element id: (n_ip, n_comp) array}`` from a JSON field export, or a
+    ValueError that names what is wrong with its layout."""
+    stress = data.get("stress_ip", data) if isinstance(data, dict) else None
+    if not isinstance(stress, dict) or not stress:
+        raise ValueError("field export %s holds no integration-point stress; %s"
+                         % (source, _FIELD_LAYOUT))
+    out = {}
+    for key, value in stress.items():
+        try:
+            element = int(key)
+        except ValueError:
+            raise ValueError("field export %s: key %r is not an element id; %s"
+                             % (source, key, _FIELD_LAYOUT)) from None
+        try:
+            array = np.asarray(value, float)
+        except (TypeError, ValueError):
+            array = None
+        if array is None or array.ndim != 2 or not array.size:
+            raise ValueError("field export %s: the stress of element %s is not a "
+                             "numeric table (integration points x components); %s"
+                             % (source, key, _FIELD_LAYOUT))
+        out[element] = array
+    return out
+
 
 class ResidualProblem:
     def __init__(self, model: Model, formulation_registry=None,
@@ -89,14 +125,17 @@ class ResidualProblem:
             self._fields = source if "stress_ip" in source else {"stress_ip": source}
         elif isinstance(source, str) and source.lower().endswith(".json"):
             with open(source, "r", encoding="utf-8") as fh:
-                d = json.load(fh)
-            stress = d.get("stress_ip", d)
-            self._fields = {"stress_ip": {int(k): np.asarray(v, float)
-                                          for k, v in stress.items()}}
+                try:
+                    d = json.load(fh)
+                except ValueError as exc:
+                    raise ValueError("field export %s is not valid JSON: %s"
+                                     % (source, exc)) from exc
+            self._fields = {"stress_ip": _stress_ip_from_export(d, source)}
         else:
             raise NotImplementedError(
-                "attach_results: binary ODB reading needs Abaqus (see "
-                "io/abaqus_odb_export.py). Provide a JSON/dict field export offline.")
+                "field export %r is not a .json file: binary ODB reading needs Abaqus. "
+                "Export the ODB once with 'abaqus python scripts/extract_odb_fields.py "
+                "--odb JOB.odb --out fields.json' and give the JSON." % (source,))
         return self
 
     def attach_subroutine(self, path: str) -> "ResidualProblem":
@@ -464,7 +503,7 @@ class ResidualProblem:
             denom = max(float(np.linalg.norm(fd)), 1e-30)
             rel = float(np.linalg.norm(U1 - fd) / denom)
             validation.add("sensitivity-vs-finite-difference", "rel error",
-                           rel, 1e-4, rel < 1e-4,
+                           rel, FD_REL_TOLERANCE, rel < FD_REL_TOLERANCE,
                            "solved U^(1) vs re-solved finite differences")
 
         return pkg
@@ -476,9 +515,10 @@ class ResidualProblem:
         b = (backend or "otilib").lower()
         if b in ("otilib", "oti", "hypad"):
             from ..core.oti_rhs_provider import OtiLibRHSProvider
-            from ..algebra.otilib_adapter import otilib_available, otilib_status
+            from ..algebra.otilib_adapter import (OtiUnavailableError, otilib_available,
+                                                  otilib_status)
             if not otilib_available():
-                raise RuntimeError(otilib_status()["error"])
+                raise OtiUnavailableError(otilib_status()["error"])
             if "solid_c3d8_finite_strain" in self.model.element_formulation.values():
                 from ..formulations.finite_strain_sensitivity import FiniteStrainParameterRHS
                 return FiniteStrainParameterRHS()
@@ -488,6 +528,13 @@ class ResidualProblem:
                 raise RuntimeError(
                     "backend='dual1' supports order 1 only (legacy smoke test). "
                     "Use backend='otilib' for order >= 2.")
+            if "solid_c3d8_finite_strain" in self.model.element_formulation.values():
+                # Its material constants live in MaterialBinding.constants, which
+                # only FiniteStrainParameterRHS seeds; Dual1 would return zeros.
+                raise ValueError(
+                    "backend='dual1' cannot differentiate the finite-strain C3D8 "
+                    "formulation (solid_c3d8_finite_strain): only the OTILib backend "
+                    "seeds its material constants. Use backend='otilib'.")
             from ..core.rhs_provider import default_rhs_provider
             return default_rhs_provider()
         raise ValueError("unknown sensitivity backend %r (use 'otilib' or 'dual1')"
