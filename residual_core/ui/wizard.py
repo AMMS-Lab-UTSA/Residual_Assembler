@@ -47,6 +47,13 @@ from ..io import neutral_model_io
 #: while any wrong derivative (a zero, a sign, a missing term) fails.
 FD_REL_TOLERANCE = 1e-4
 
+
+def _section_of(binding):
+    """The section-property dict of a material binding (or a raw dict), or None."""
+    section = binding if isinstance(binding, dict) else getattr(binding, "section", None)
+    return section if isinstance(section, dict) and section else None
+
+
 _FIELD_LAYOUT = ('expected {"stress_ip": {"<element id>": [[s11, s22, s33, s12, s13, '
                  's23], ... one row per integration point]}}, as written by '
                  'scripts/extract_odb_fields.py')
@@ -155,7 +162,61 @@ class ResidualProblem:
         return rep
 
     def _availability(self, mode: str) -> Dict[str, bool]:
+        return self._availability_and_reasons(mode)[0]
+
+    def _availability_and_reasons(self, mode: str):
+        """({requirement key: present?}, {requirement key: why it is missing})."""
         m = _req.canonical_mode(mode)
+        reasons: Dict[str, str] = {}
+        bindings, unbound = (self._replay_bindings() if m == "material-replay"
+                             else (None, {}))
+        backends = self._mode_formulations(m, bindings)
+        without, refused = set(), set()
+        for eid, fk in backends.items():
+            if fk is None:
+                etype = self.model.elements[eid].etype
+                material = self.model.element_material.get(eid)
+                if self._backend_for(etype, m) is None:
+                    without.add(etype)
+                else:       # backends exist, but none drives this material
+                    law = getattr((bindings or {}).get(material), "material", None)
+                    refused.add("%s with material %r (kinematic_input=%r)" % (
+                        etype, material, getattr(law, "kinematic_input", None)))
+        has_backends = bool(backends) and not (without or refused)
+        problems = (["no registered backend assembles %s in %s mode" % (", ".join(sorted(without)), m)]
+                    if without else [])
+        problems += ["no %s backend accepts %s" % (m, item) for item in sorted(refused)]
+        if problems:
+            reasons["formulation_backend"] = "; ".join(problems)
+        availability = self._mode_inputs(m, bindings, unbound, reasons)
+        availability["formulation_backend"] = has_backends
+        scope = self._deck_scope_problem(m, backends)
+        availability["deck_scope"] = scope is None
+        if scope:
+            reasons["deck_scope"] = scope
+        return availability, reasons
+
+    def _deck_scope_problem(self, m: str, backends) -> Optional[str]:
+        """Why the deck's state is outside what this general assembly
+        reproduces, or None. It applies every *Cload of the deck at once and
+        every *Boundary as one list, and integrates stress-driven and
+        small-strain elements over the reference configuration."""
+        steps = list(getattr(self.model, "steps", ()) or ())
+        if len(steps) > 1:
+            return ("the deck has %d steps, and the general assembly would apply the "
+                    "*Cload lines of all of them at once and their *Boundary lines as "
+                    "one list; resasm history replays a deck step by step" % len(steps))
+        if any(getattr(step, "nlgeom", False) for step in steps):
+            small = sorted({fk for fk in backends.values()
+                            if fk and fk != "solid_c3d8_finite_strain"})
+            if m == "stress-driven" or small:
+                return ("the deck's step is geometrically nonlinear (NLGEOM=YES), but %s "
+                        "integrates over the reference configuration"
+                        % ("stress-driven assembly" if m == "stress-driven"
+                           else ", ".join(small)))
+        return None
+
+    def _mode_inputs(self, m: str, bindings, unbound, reasons) -> Dict[str, bool]:
         has_mesh = bool(self.model.nodes) and bool(self.model.elements)
         has_stress = "stress_ip" in self._fields
         has_sub = self._subroutine is not None
@@ -172,43 +233,86 @@ class ResidualProblem:
                     "element_field": has_stress}
         if m == "material-replay":
             material_ok = has_sub or (any_builtin and not any_user)
+            if unbound:
+                # never replay with invented constants
+                reasons["material_parameters"] = "; ".join(unbound[name] for name in sorted(unbound))
             return {"mesh": has_mesh,
                     "solution_history": self._solution is not None or (any_builtin and not any_user),
                     "material_model": material_ok,
-                    "material_parameters": has_params or (any_builtin and not any_user),
+                    "material_parameters": (has_params or (any_builtin and not any_user)) and not unbound,
                     "state_prev": (not any_user) or has_sub,
                     "time_increments": True}
         if m == "direct-residual":
             return {"mesh": has_mesh, "element_dofs": True,
                     "uel_routine": has_sub}
         if m == "formulation":
-            has_sections = any(getattr(o, "section", None) for o in self.model.materials.values())
-            return {"formulation_backend": True, "section_properties": has_sections}
+            # every element this mode assembles reads its properties from the
+            # section of its material; without one the backend would fall back
+            # to its own defaults
+            lacking = sorted({str(self.model.element_material.get(eid))
+                              for eid in self.model.elements
+                              if not _section_of(self.model.materials.get(
+                                  self.model.element_material.get(eid)))})
+            if lacking:
+                reasons["section_properties"] = (
+                    "no section properties for material(s) %s" % ", ".join(lacking))
+            return {"section_properties": has_mesh and not lacking}
         return {}
 
     def requirements(self, mode: str) -> "_req.RequirementsReport":
-        return _req.evaluate_requirements(mode, self._availability(mode))
+        return _req.evaluate_requirements(mode, *self._availability_and_reasons(mode))
 
     # ---- formulation policy per mode -----------------------------------
-    def _policy_for_mode(self, mode: str):
+    def _backend_for(self, etype: str, mode: str, material=None):
+        """The registered backend that assembles ``etype`` in ``mode``, or None.
+
+        When several do (C3D8 in material replay: small and finite strain), the
+        element's material decides: a backend that declares the kinematic input
+        it drives (``accepted_kinematic_inputs``) is chosen only for a material
+        of that input. Without a material the first in name order is kept."""
+        candidates = []
+        for name in self.forms.find_for_element(etype):
+            spec = getattr(self.forms.get(name), "spec", None)
+            if spec and mode in spec.supported_modes:
+                candidates.append(name)
+        kinematic = getattr(material, "kinematic_input", None)
+        if kinematic is not None:
+            candidates = [name for name in candidates
+                          if kinematic in (getattr(self.forms.get(name), "accepted_kinematic_inputs",
+                                                   None) or (kinematic,))]
+        return candidates[0] if candidates else None
+
+    def _mode_formulations(self, mode: str, bindings=None) -> Dict[int, Optional[str]]:
+        """{element id: backend name, or None when no backend assembles it} for
+        ``mode``: the configured policy, else the model's explicit binding if it
+        supports the mode, else :meth:`_backend_for`. ``_run`` binds exactly
+        this, so readiness and assembly cannot disagree."""
         m = _req.canonical_mode(mode)
-        want = {"stress-driven": "stress-driven",
-                "material-replay": "material-replay",
-                "formulation": "formulation",
-                "direct-residual": "direct-residual"}.get(m)
+        chosen: Dict[int, Optional[str]] = {}
+        for eid, el in self.model.elements.items():
+            configured = self.config.formulation_policy.get(el.etype) if self.config else None
+            explicit = self._explicit_formulations.get(eid)
+            explicit_form = self.forms.get(explicit) if explicit else None
+            if configured:
+                fk = configured if configured in self.forms else None
+            elif explicit_form is not None and m in explicit_form.supported_modes:
+                fk = explicit
+            else:
+                binding = (bindings or {}).get(self.model.element_material.get(eid))
+                fk = self._backend_for(el.etype, m, getattr(binding, "material", None))
+            chosen[eid] = fk
+        return chosen
 
-        def policy(etype: str):
-            for name in self.forms.find_for_element(etype):
-                spec = getattr(self.forms.get(name), "spec", None)
-                if spec and want in spec.supported_modes:
-                    return name
-            return None
-        return policy
+    def _replay_bindings(self):
+        """(bindings, unbound) for material replay.
 
-    def _bind_materials_for_replay(self):
-        """Preserve explicit materials; resolve configured backends before defaults."""
+        ``bindings`` maps every material to the MaterialBinding the replay uses
+        (explicit materials and configured backends first). ``unbound`` names,
+        with the reason, each material an element uses that has no constants
+        to bind: the replay never invents them."""
         from ..materials.elastic_adapter import IsotropicElastic
-        bindings = {}
+        bindings, unbound = {}, {}
+        used = set(self.model.element_material.values())
         for name, obj in self._raw_materials.items():
             backend = self.config.material_backend.get(name) if self.config else None
             if backend:
@@ -222,8 +326,33 @@ class ResidualProblem:
                 # CP/UMAT: needs compiled Fortran; leave as-is (assemble will error)
                 bindings[name] = obj
             else:
-                consts = list(getattr(obj, "constants", []) or []) or [200000.0, 0.3]
-                bindings[name] = MaterialBinding(IsotropicElastic(), consts, 0, name)
+                # the built-in isotropic_elastic law, with the model's own E, nu
+                consts = list(getattr(obj, "constants", []) or [])
+                section = _section_of(obj)
+                if not consts and section and "E" in section and "nu" in section:
+                    consts = [float(section["E"]), float(section["nu"])]
+                if consts:
+                    bindings[name] = MaterialBinding(IsotropicElastic(), consts, 0, name)
+                    continue
+                bindings[name] = obj
+                if name in used:
+                    elastic_unread = any(note.startswith("*Elastic")
+                                         for note in self.model.unapplied_keywords)
+                    unbound[name] = (
+                        "material %r has no E and nu for the built-in isotropic_elastic "
+                        "law%s" % (name, ": the deck's *Elastic is not read (listed under "
+                                   "'Deck keywords present but NOT applied')" if elastic_unread
+                                   else ": give them as section E and nu, or as "
+                                        "material_parameters with a material_backend in a config"))
+        return bindings, unbound
+
+    def _bind_materials_for_replay(self):
+        """Preserve explicit materials; resolve configured backends before the
+        model's own elastic constants. Refuses a material without constants."""
+        bindings, unbound = self._replay_bindings()
+        if unbound:
+            raise RuntimeError("cannot bind materials for material-replay: %s"
+                               % "; ".join(unbound[name] for name in sorted(unbound)))
         return bindings
 
     # ---- assemble -------------------------------------------------------
@@ -236,31 +365,23 @@ class ResidualProblem:
         if not report.runnable:
             nxt = report.minimum_next
             raise RuntimeError(
-                "cannot assemble in mode '%s': minimum missing input -> %s. %s"
+                "cannot assemble in mode '%s': minimum missing input -> %s. %s%s"
                 % (report.mode, nxt.label,
-                   ("Recommendation: provide %s." % (nxt.recommendation or nxt.label))))
+                   ("Recommendation: provide %s." % (nxt.recommendation or nxt.label)),
+                   (" Why: %s." % report.reasons[nxt.key]) if nxt.key in report.reasons else ""))
 
         m = _req.canonical_mode(mode)
-        policy = self._policy_for_mode(mode)
-        # (re)bind element formulations under this mode's policy
-        self.model.element_formulation = {}
-        for eid, el in self.model.elements.items():
-            configured = self.config.formulation_policy.get(el.etype) if self.config else None
-            explicit = self._explicit_formulations.get(eid)
-            if configured:
-                fk = configured
-            elif explicit and m in self.forms.get(explicit).supported_modes:
-                fk = explicit
-            else:
-                fk = policy(el.etype)
-            if fk is not None:
-                self.model.element_formulation[eid] = fk
+        bindings = self._bind_materials_for_replay() if m == "material-replay" else None
+        # (re)bind element formulations under this mode's rule
+        self.model.element_formulation = {
+            eid: fk for eid, fk in self._mode_formulations(m, bindings).items() if fk is not None}
 
         if m == "material-replay":
-            self.model.materials = self._bind_materials_for_replay()
+            self.model.materials = bindings
             # honest guard: user-material replay needs compiled Fortran here
             for name, obj in self.model.materials.items():
-                if not isinstance(obj, MaterialBinding):
+                if (not isinstance(obj, MaterialBinding)
+                        and getattr(obj, "user_material", False)):
                     raise RuntimeError(
                         "material-replay for user material '%s' needs the compiled "
                         "UMAT (Intel ifort + Abaqus). Use mode='stress-driven' with "
@@ -277,6 +398,10 @@ class ResidualProblem:
         R, K, diag = asm.assemble(U, fields=self._fields or None,
                                   compute_tangent=compute_tangent, options=opts,
                                   collect_elements=collect_elements)
+        if not diag.get("elements"):
+            raise RuntimeError("no element was assembled in %s mode (%d element(s), %d without "
+                               "a backend for this mode)" % (m, len(self.model.elements),
+                                                             diag.get("skipped_no_formulation", 0)))
         self.last_diagnostics = diag
         self.dof_manager = dm
         return R, K, diag, dm
@@ -368,6 +493,11 @@ class ResidualProblem:
             free_R = R[free] if free.any() or finite else R
             if float(np.linalg.norm(free_R)) < tol:
                 break
+            if not _diag.get("tangent_contributions"):
+                raise RuntimeError(
+                    "cannot solve R(u) = 0 in %s mode: no element assembles a tangent "
+                    "dR/du there, so there is no Newton step (||R_free|| = %.6e)"
+                    % (_req.canonical_mode(mode), float(np.linalg.norm(free_R))))
             Kff = K[np.ix_(free, free)] if free.any() else K
             dU = np.linalg.solve(Kff, -free_R)
             U = U.copy()
@@ -461,7 +591,9 @@ class ResidualProblem:
             nxt = report.minimum_next
             return SensitivityPackage(
                 mode=_req.canonical_mode(mode), runnable=False, inspection=insp,
-                minimum_missing=(nxt.recommendation or nxt.label) if nxt else None)
+                minimum_missing=((nxt.recommendation or nxt.label)
+                                 + ("; why: %s" % report.reasons[nxt.key]
+                                    if nxt.key in report.reasons else "")) if nxt else None)
 
         params = list(parameters) if parameters else self._default_parameters()
 

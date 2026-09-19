@@ -81,8 +81,10 @@ What each step tells you (measured output, trimmed):
    Cannot assemble in stress-driven mode.
    Available:
      mesh: yes
+     formulation backend: yes
      solution field (U / U+rotation / T): yes
      stress / resultant field: no
+     one-step deck in scope: yes
 
    Minimum missing input:
      provide integration-point stress field S, or an ODB/CSV export (section resultants N/M/Q for beams/shells; heat flux for thermal).

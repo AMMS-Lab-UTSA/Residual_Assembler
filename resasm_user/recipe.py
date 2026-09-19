@@ -282,9 +282,9 @@ def infer(r: Recipe) -> Recipe:
         nb = len(getattr(model, "boundaries", []) or [])
         nl = len(getattr(model, "cloads", []) or [])
         if nb:
-            r.inferred["constraints"] = "%d *Boundary block(s) read from the mesh" % nb
+            r.inferred["constraints"] = "%d *Boundary line(s) read from the mesh" % nb
         if nl:
-            r.inferred["stimuli.loads"] = "%d *Cload(s) read from the mesh" % nl
+            r.inferred["stimuli.loads"] = "%d *Cload line(s) read from the mesh" % nl
 
     # --- sensitivity defaults
     r.sensitivity.setdefault("order", 1)

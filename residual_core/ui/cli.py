@@ -126,6 +126,26 @@ def _cmd_assemble(args):
     return 0
 
 
+#: Material-definition keywords. The stress-driven residual takes the stress
+#: from the exported field, so an unread material keyword does not enter it;
+#: every other unapplied keyword (loads, constraints, amplitudes, anything
+#: unread) can change equilibrium.
+_MATERIAL_KEYWORDS = frozenset({
+    "elastic", "plastic", "density", "expansion", "hyperelastic", "hyperfoam",
+    "viscoelastic", "creep", "conductivity", "specific heat", "damping",
+    "cyclic hardening", "rate dependent", "potential"})
+
+
+def _equilibrium_keywords_not_applied(model):
+    """The notes of Model.unapplied_keywords that change R = F_int - F_ext."""
+    notes = []
+    for note in getattr(model, "unapplied_keywords", ()) or ():
+        keyword = note.split(":", 1)[0].split("(", 1)[0].strip().lstrip("*").lower()
+        if keyword not in _MATERIAL_KEYWORDS:
+            notes.append(note)
+    return notes
+
+
 def _cmd_verify(args):
     if not np.isfinite(args.atol) or args.atol < 0:
         print("Verification tolerance --atol must be finite and nonnegative.", file=sys.stderr)
@@ -144,6 +164,11 @@ def _cmd_verify(args):
     try:
         if prob.model.equations:
             raise NotImplementedError("linear equation constraints are not supported by verification")
+        dropped = _equilibrium_keywords_not_applied(prob.model)
+        if dropped:
+            raise NotImplementedError(
+                "the deck asks for what the residual does not apply, so its equilibrium "
+                "cannot be verified: %s" % "; ".join(dropped))
         R = prob.assemble(mode="stress-driven")
         free_R, pres_idx, reac = _split_residual(prob, R)
     except (ValueError, KeyError, RuntimeError, NotImplementedError) as exc:
@@ -436,7 +461,7 @@ def _cmd_init(args):
         shutil.copytree(src, dest,
                         ignore=shutil.ignore_patterns(
                             "__pycache__", "*.pyc", "resasm_output", "build",
-                            "*.o", "*.mod", "*.exe"))
+                            "*.o", "*.mod", "*.exe", "WALKTHROUGH.md"))
         print("created %s (from template '%s')" % (dest, args.template))
         for f in sorted(os.listdir(dest)):
             print("  %s" % f)

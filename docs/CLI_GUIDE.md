@@ -188,7 +188,13 @@ With `--reequilibrate --verify fd` (11.6 s here) the lines become
 `Tangent verified: yes: max relative error 1.88e-10 vs central FD of the
 ORIGINAL UMAT at 36 points ...` and `Derivative verified: yes: whole-model
 central FD of the ORIGINAL UMAT re-equilibrated in Python; worst
-nonzero-derivative error 1.46e-07 ...`.
+nonzero-derivative error 1.46e-07 ...`. A derivative counts as verified only
+when the finite-difference reference resolved (`Reference resolved: yes`,
+adjacent steps agreeing to 1e-4). With coarse steps (`--fd-steps 0.3,0.1`,
+measured) the report says `Reference resolved: partially: largest plateau
+spread 8.95e-01` and `Derivative verified: not verified: the reference did not
+resolve (largest plateau spread 8.95e-01 >= 1e-04); ...`, and
+`sensitivity_results.json` records `"verified": false`.
 
 **Outputs.** Public: `sensitivity_results.json` (request, scope, metadata with
 parity, tolerances, timings, parameter values and input hashes; every result
@@ -280,6 +286,23 @@ Possible modes:
   - UEL-direct: not applicable
 ```
 
+When the deck holds keywords that the residual does not apply, `inspect` (and
+`doctor`) add a section **Deck keywords present but NOT applied**, one line
+per keyword: `*Dsload`, `*Dload`, `*Equation`, `*Amplitude` and `AMPLITUDE=`
+references, and any keyword the reader leaves unread. Every command that
+reads the deck also prints the same notes as a `DeckKeywordNotApplied`
+warning on standard error. Measured on
+`tests/cp_c3d8_umat/stress_driven_residual/c3d8_elastic.inp`:
+
+```text
+Deck keywords present but NOT applied (the residual omits them):
+  - *Elastic: present but not read, so not applied
+```
+
+`verify` refuses a deck with any such keyword other than a material
+definition (`*Elastic`, `*Plastic`, ...), because the stress-driven residual
+takes its stress from the field.
+
 **Outputs.** None (terminal only). **Exit codes.** `0`.
 
 ### `resasm inspect-model`
@@ -300,11 +323,11 @@ resasm inspect-model examples/presentation_request/Analysis.inp
 Residual assembly recipe: Analysis.inp
 ...
 Inferred for you (you did not have to type these):
-  constraints            3 *Boundary block(s) read from the mesh
+  constraints            3 *Boundary line(s) read from the mesh
   dof_map                built from the mesh (8 nodes)
   formulation.backend    auto-selected per element type: C3D8 -> solid_c3d8_finite_strain
   ...
-  stimuli.loads          1 *Cload(s) read from the mesh
+  stimuli.loads          1 *Cload line(s) read from the mesh
 
 Capability:
   assemble R           : yes
@@ -341,8 +364,10 @@ resasm requirements residual_core/examples/minimal_c3d8_stress_driven/model.json
 Cannot assemble in stress-driven mode.
 Available:
   mesh: yes
+  formulation backend: yes
   solution field (U / U+rotation / T): yes
   stress / resultant field: no
+  one-step deck in scope: yes
 
 Minimum missing input:
   provide integration-point stress field S, or an ODB/CSV export (section resultants N/M/Q for beams/shells; heat flux for thermal).
@@ -350,6 +375,18 @@ Minimum missing input:
 
 With `--fields residual_core/examples/minimal_c3d8_stress_driven/fields.json`
 it answers `Ready to assemble in stress-driven mode.`
+
+A mode is ready only if every element has a backend for it (`formulation
+backend`) and, in material replay, a material whose constants are known. A
+deck is in scope when it has one step, and `NLGEOM=YES` only with a
+finite-strain backend: the general assembly applies all `*Cload` lines of a
+deck at once and all its `*Boundary` lines as one list. When the model says
+why an input is missing, a `Why:` line follows. Measured:
+`--mode formulation` on the cube gives `Why: no registered backend assembles
+C3D8 in formulation mode.`; a two-step deck gives `Why: the deck has 2 steps,
+and the general assembly would apply the *Cload lines of all of them at once
+and their *Boundary lines as one list; resasm history replays a deck step by
+step.`
 
 **Outputs.** None. **Exit codes.** `0` in both cases (measured): read the text,
 not the code.
@@ -371,15 +408,19 @@ resasm doctor residual_core/examples/minimal_c3d8_stress_driven/model.json \
 ```text
 ...
 per-mode readiness:
-  direct-residual  needs: callable UEL adapter
-  formulation      ready
+  direct-residual  needs: formulation backend
+  formulation      needs: formulation backend
   material-replay  ready
   stress-driven    needs: stress / resultant field
 
 config template written to .../resasm_config.yml
 ```
 
-The template lists `mode`, `odb`, `subroutine`, `formulation_policy`,
+Each line is the verdict of `requirements` for that mode, and a mode called
+`ready` assembles every element. Here the cube's material replay binds the
+section's `E = 210000` and `nu = 0.3` to `solid_c3d8_small_strain`, the C3D8
+backend for a small-strain material. The template lists `mode`, `odb`,
+`subroutine`, `formulation_policy`,
 `material_backend`, `material_parameters` and `options`, each commented.
 
 **Outputs.** The template, if asked for. **Exit codes.** `0`.
@@ -394,10 +435,10 @@ resasm modes
 
 ```text
 assembly modes:
-  direct-residual  min inputs: mesh, element_dofs, uel_routine
-  formulation      min inputs: formulation_backend, section_properties
-  material-replay  min inputs: mesh, solution_history, material_model, material_parameters, state_prev, time_increments
-  stress-driven    min inputs: mesh, dof_field, element_field
+  direct-residual  min inputs: mesh, formulation_backend, element_dofs, uel_routine, deck_scope
+  formulation      min inputs: formulation_backend, section_properties, deck_scope
+  material-replay  min inputs: mesh, formulation_backend, solution_history, material_model, material_parameters, state_prev, time_increments, deck_scope
+  stress-driven    min inputs: mesh, formulation_backend, dof_field, element_field, deck_scope
 ```
 
 **Exit codes.** `0`.
@@ -495,9 +536,11 @@ printed `ndof=36  ||R||=1.744643e+00  max|R|=5.938249e-01`.
 
 **Outputs.** `--out` saves R as a NumPy `.npy` array (node by node, DOF by DOF).
 
-**Exit codes.** `0` assembled. `2` the mode is not runnable (the requirements
-report is printed instead of a residual), or the `--fields` file cannot be
-used. One line then names the file and the reason, measured:
+**Exit codes.** `0` assembled, with every element of the model. `2` the mode
+is not runnable (the requirements report is printed instead of a residual,
+with its `Why:` line; measured on `minimal_truss --mode material-replay`:
+`Why: no registered backend assembles T3D2 in material-replay mode.`), or the
+`--fields` file cannot be used. One line then names the file and the reason, measured:
 `ERROR: cannot read the field export .../field.json: No such file or directory`,
 and for a file in another layout (here the model file)
 `ERROR: field export .../model.json: key 'schema' is not an element id; expected {"stress_ip": ...}`.
@@ -531,8 +574,14 @@ stress-driven verification:
 loads. Reactions are printed but not compared with a reference.
 
 **Exit codes.** `0` equilibrium within `--atol`; `1` equilibrium failed (as
-here); `2` verification could not run, including a `--fields` file that is
-missing or in another layout (the same one-line `ERROR:` as `assemble`).
+here); `2` verification could not run: a `--fields` file that is missing or
+in another layout (the same one-line `ERROR:` as `assemble`), a mode that is
+not runnable (for example a deck with several steps or `NLGEOM=YES`), or a
+deck with loads or constraints the residual does not apply. The last prints
+`Cannot verify equilibrium: the deck asks for what the residual does not
+apply, so its equilibrium cannot be verified:` followed by the keywords
+(measured with `*Dsload`, `*Dload`, `*Amplitude` and `AMPLITUDE=` added to the
+one-element deck).
 
 ### `resasm sensitivity`
 
@@ -609,11 +658,10 @@ finite differences (unless `--no-fd`); `1` a finite-difference check failed;
 `2` the mode is not runnable (measured: `--mode stress-driven` without a field
 export prints `Cannot assemble in stress-driven mode.` and the missing input),
 the system is not ready, or the backend cannot run, with the cause on the
-`ERROR:` line (measured on the stress-driven cube without `--params`:
-`ERROR: OtiLibRHSProvider needs a dense tangent T to run the order loop
-(T U^(p) = -R^(p)); no tangent is available: this mode (formulation) provides
-no material/element tangent; ...`); `3` OTILib was requested and is not
-installed, with an installation hint.
+`ERROR:` line (measured on the stress-driven cube, its field attached with a
+config `odb:` entry: `ERROR: cannot solve R(u) = 0 in stress-driven mode: no
+element assembles a tangent dR/du there, so there is no Newton step`); `3`
+OTILib was requested and is not installed, with an installation hint.
 
 ---
 

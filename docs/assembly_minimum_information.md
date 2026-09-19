@@ -189,7 +189,7 @@ survive `sigma_ip`, `Bᵀσ` and the assembler's scatter).
 | DOF numbering | ✅ | `DofManager.for_model` — per-node union of the formulations' `dof_types` | none; mixed truss/beam/solid models work |
 | element → formulation | ✅ | element type → registry (`default_formulation_policy`, `_policy_for_mode`) | unmapped element types (`C3D8R`, `C3D4`, …) are skipped, not assembled |
 | element → material | ✅ | `*Solid Section, elset=…, material=…` | — |
-| built-in material binding | ✅ | non-user `*Material` → `isotropic_elastic` | falls back to `[E, nu] = [200000, 0.3]` if the `.inp` has no constants |
+| built-in material binding | ✅ | non-user material → `isotropic_elastic` with the model's own `[E, nu]` (its constants, or a section's `E` and `nu`) | never a default: without constants (a deck's `*Elastic` is not read) material replay is refused, `needs: material parameters (PROPS)` with the reason |
 | UMAT material | ❌ | — | `material-replay` blocked; use stress-driven |
 | parameter *names* | ✅ | `section` keys and `PROPS[i]` (`_default_parameters`) | if the model has none, it falls back to `["parameter_1"]` → zero RHS |
 | parameters to seed | ❌ | your choice | — |
