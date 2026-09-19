@@ -1,4 +1,12 @@
-"""Capture bounded recovery help/examples/GUI evidence; never launch an Abaqus job."""
+"""Run the documented commands of one phase and record each one; never launch an Abaqus job.
+
+``--phase examples`` is the one-command check of the worked examples that need
+no Abaqus: Residual_Assembler Examples 1, 2, 4, 6, 7 and 8 and UMAT-OTI
+Examples 1 to 6, each with the commands its walkthrough gives, after the
+documented OTILib and transform-generation checks. It runs from the
+Residual_Assembler checkout, with the UMAT-OTI checkout given by ``--umat``
+(Residual_Assembler docs/INSTALL.md, section 6, item 7).
+"""
 
 import argparse
 from collections import Counter
@@ -33,8 +41,8 @@ def main(argv=None):
     if args.imports == "installed":
         environment.pop("PYTHONPATH", None)
         environment.pop("PYTHONHOME", None)
+    # the checkout the connected pipeline (Example 6) builds its provider from
     environment["UMAT_OTI_REPO"] = str(umat)
-    environment["RUN_OTILIB_TESTS"] = "1"
     records = {"RA": [], "UMAT": []}
     roots = {"RA": ra, "UMAT": umat}
     previous_failures = {}
@@ -81,13 +89,23 @@ def main(argv=None):
                            "data": json.loads(content)}
         save()
 
+    def expect(record, text):
+        # a documented check prints its verdict: the record passes only when it does
+        record["verification"] = {"expected": text, "passed": text in record["stdout"]}
+        save()
+        assert record["verification"]["passed"], (record["name"], text)
+
     python = sys.executable
-    cli = [python, "-m", "residual_core.ui.cli"]
-    run("RA", "environment", [python, "-c", "from residual_core.algebra.otilib_adapter import OtiContext; OtiContext(1,1); "
-        "import sys,residual_core,umat_oti,pyoti.sparse; "
-        "from umat_oti.store import transform_fingerprint; "
-        "print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); "
-        "print(pyoti.sparse.__file__); print(transform_fingerprint())"])
+    # the console commands of the environment running this script (its bin folder is first on PATH)
+    cli = ["resasm"]
+    # the documented checks: OTILib (Residual_Assembler docs/INSTALL.md section 4) and the
+    # transform generation (both usage reports)
+    expect(run("RA", "environment", [python, "-c",
+           "from residual_core.algebra.otilib_adapter import otilib_status; print(otilib_status())"]),
+           "'available': True")
+    expect(run("UMAT", "fingerprint", [python, "-c",
+           "from umat_oti.store import transform_fingerprint; print(transform_fingerprint())"]),
+           json.loads((ra / "schemas/transform_generation.json").read_text())["transform_fingerprint"])
     run("UMAT", "compiler", ["gfortran", "--version"])
 
     if args.phase == "help":
@@ -117,15 +135,18 @@ def main(argv=None):
     elif args.phase == "examples":
         import numpy as np
 
+        # Residual_Assembler (cwd: its root). R-X1..R-X5 are the ten reference examples'
+        # labels; the documented example each one runs is named in the comment.
         for template, label, expected in (
-            ("user_python_residual", "R-X1", {(1, 0): -1/3, (0, 1): 1/24,
+            # Example 1 (examples/user_config_minimal/WALKTHROUGH.md)
+            ("python", "R-X1", {(1, 0): -1/3, (0, 1): 1/24,
                (2, 0): 2/9, (1, 1): -1/144, (0, 2): -1/576}),
-            ("user_blackbox_order2_residual", "R-X2", {(1, 0): -2/3, (0, 1): 1/48,
+            # Example 8 (templates/user_blackbox_order2_residual/WALKTHROUGH.md)
+            ("blackbox-order2", "R-X2", {(1, 0): -2/3, (0, 1): 1/48,
                (2, 0): 5/9, (1, 1): -1/144, (0, 2): -1/2304}),
         ):
             destination = work / label
-            template_name = "python" if template == "user_python_residual" else "blackbox-order2"
-            run("RA", label + " init", cli + ["init", "--template", template_name, "--out", destination])
+            run("RA", label + " init", cli + ["init", "--template", template, "--out", destination])
             run("RA", label + " check", cli + ["check", destination / "resasm.yml"])
             record = run("RA", label, cli + ["run", destination / "resasm.yml"])
             private = destination / "resasm_output/private"
@@ -143,10 +164,11 @@ def main(argv=None):
             save()
             assert record["verification"]["passed"]
             run("RA", label + " report", cli + ["report", destination / "resasm_output"])
-        model = ra / "residual_core/examples/minimal_c3d8_stress_driven"
-        record = run("RA", "R-X3", cli + ["assemble", model / "model.json", "--mode", "stress-driven",
-                     "--fields", model / "fields.json", "--out", work / "stress.npy"])
-        residual = np.load(work / "stress.npy")
+        # Example 2 (residual_core/examples/minimal_c3d8_stress_driven/WALKTHROUGH.md)
+        model = "residual_core/examples/minimal_c3d8_stress_driven"
+        record = run("RA", "R-X3", cli + ["assemble", model + "/model.json", "--mode", "stress-driven",
+                     "--fields", model + "/fields.json", "--out", work / "R_cube.npy"])
+        residual = np.load(work / "R_cube.npy")
         record["verification"] = {"norm": float(np.linalg.norm(residual)),
             "max_abs": float(np.max(np.abs(residual))), "reference_norm": 100 / np.sqrt(2),
             "reference_max_abs": 25.0, "tolerance": 1e-10,
@@ -154,10 +176,24 @@ def main(argv=None):
                            and np.allclose(np.max(np.abs(residual)), 25, atol=1e-10, rtol=0))}
         save()
         assert record["verification"]["passed"]
+        # Example 4 (examples/replay_history/WALKTHROUGH.md; docs/INSTALL.md section 6, item 2)
+        run("RA", "Example 4 provider", ["umat-oti-provider", "build",
+            umat / "parameter_sensitivity/models/m3_j2/contract_v2.json", "--out", work / "provider_j2"])
+        beam = "examples/replay_history/j2_beam"
+        record = run("RA", "Example 4", cli + ["history", "--model", beam + "/Analysis.inp",
+                     "--fields", beam + "/fields.npz", "--material", work / "provider_j2/umat_m3_j2_oti.obj",
+                     "--request", beam + "/sensitivity_request.json", "--out", work / "beam"])
+        record["verification"] = {"expected": "run_report.txt begins with 'Status: executed successfully'",
+                                  "passed": (work / "beam/run_report.txt").read_text().startswith(
+                                      "Status: executed successfully")}
+        save()
+        assert record["verification"]["passed"]
+        # Example 6 (examples/bounded_j2_c3d8/WALKTHROUGH.md)
         record = run("RA", "R-X4", [python, "scripts/reproduce_connected_pipeline.py", "--skip-abaqus",
-                 "--provider-repo", umat, "--imports", args.imports, "--out", work / "R-X4"])
+                     "--out", work / "R-X4"])
         proof("RA", record, work / "R-X4/private/manifest.json")
         assert record["proof"]["data"]["passed"]
+        # Example 7 (examples/finite_strain_c3d8/WALKTHROUGH.md)
         record = run("RA", "R-X5", [python, "examples/finite_strain_c3d8/benchmark.py", "--out", work / "R-X5"])
         proof("RA", record, work / "R-X5/report.json")
         assert record["proof"]["data"]["passed"]
@@ -165,18 +201,50 @@ def main(argv=None):
             work / "R-X5/model.json", "--mode", "material-replay", "--tangent"])
         run("RA", "R-X5 public sensitivity", cli + ["--config", work / "R-X5/config.json", "sensitivity",
             work / "R-X5/model.json", "--params", work / "R-X5/params.json", "--out", work / "R-X5/sensitivity"])
-        for label, model_name, elastic in (("U-X1", "m1_elastic", True), ("U-X2", "m3_j2", False),
-                                           ("U-X3", "m3_j2", False), ("U-X4", "m3_j2", False)):
-            command = [python, "-m", "umat_oti.validation.parameter_sensitivity_provider",
-                       f"parameter_sensitivity/models/{model_name}/contract_v2.json", "--out", work / label]
-            if elastic:
-                command.append("--elastic")
-            record = run("UMAT", label, command)
-            proof("UMAT", record, work / label / "verification.json")
+
+        # UMAT-OTI (cwd: its root), the command blocks of examples/0N_*/README.md with the
+        # outputs in the work folder instead of umat_oti_workspace/examples/.
+        # Examples 1 and 2: the tangent from four fields, then the comparison script
+        for label, model_name, script in (
+                ("U-X1", "m1_elastic", "examples/01_elastic_tangent/run.py"),
+                ("U-X2", "m3_j2", "examples/02_j2_plasticity_tangent/run.py")):
+            run("UMAT", label + " jacobian", ["umat-oti", "jacobian",
+                f"parameter_sensitivity/models/{model_name}/umat.for", "--ntens", "6",
+                "--out", work / label, "--compile"])
+            expect(run("UMAT", label, [python, script, "--jacobian-dir", work / label]), "RESULT: PASS")
+        # Examples 3 and 4: the provider, the verified hand-off package, the package reader
+        for label, contract, options, script in (
+                ("U-X3", "parameter_sensitivity/models/m3_j2/contract_v2.json", ["--j2-branches"],
+                 "examples/03_j2_parameter_sensitivities/run.py"),
+                ("U-X4", "examples/04_fcc_crystal_plasticity_provider/contract_tension_shear.json", [],
+                 "examples/04_fcc_crystal_plasticity_provider/run.py")):
+            run("UMAT", label + " build", ["umat-oti-provider", "build", contract,
+                "--out", work / label / "build", "--regular-object", "REAL_UMAT.obj"])
+            record = run("UMAT", label + " package", [python, "-m", "umat_oti.provider.collaborator", contract,
+                         "--out", work / label / "package", *options])
+            proof("UMAT", record, work / label / "package/verification/verification.json")
             assert record["proof"]["data"]["passed"]
-        record = run("UMAT", "U-X5", [python, "examples/verify_internal_jacobian.py", "--out", work / "U-X5"])
-        proof("UMAT", record, work / "U-X5/verification.json")
+            expect(run("UMAT", label, [python, script, "--package", work / label / "package"]), "RESULT: PASS")
+        # Example 5: Part A (the bundled flow model), then Part B (the damage UMAT)
+        record = run("UMAT", "U-X5 part A", [python, "examples/verify_internal_jacobian.py",
+                     "--out", work / "U-X5/05_cpflow"])
+        proof("UMAT", record, work / "U-X5/05_cpflow/verification.json")
         assert record["proof"]["data"]["passed"]
+        expect(run("UMAT", "U-X5", [python, "examples/05_internal_newton_jacobian/run.py",
+                                    "--out", work / "U-X5/05_vpdco"]), "RESULT: PASS")
+        # Example 6: the twenty-model sweep (absolute directories, as its README says)
+        record = run("UMAT", "Example 6", [python, "tools/run_parameter_sensitivity_sweep.py",
+                     "--work-dir", work / "06_sweep/work", "--results-dir", work / "06_sweep/results"])
+        sweep = json.loads((work / "06_sweep/results/parameter_sensitivity_round.json").read_text())
+        disagreeing = sum((model["stages"].get("derivatives_verified") or {}).get("rows_disagreeing", 0)
+                          for model in sweep["models"])
+        # every model reproduces the original's stress and no comparison row disagrees
+        # (a row the reference cannot resolve is reported as unresolved, not as agreement)
+        record["verification"] = {"funnel": sweep["funnel"], "rows_disagreeing": disagreeing,
+                                  "passed": sweep["funnel"]["primal_parity"] == sweep["funnel"]["attempted"]
+                                  and disagreeing == 0}
+        save()
+        assert record["verification"]["passed"]
 
     elif args.phase == "gui":
         code = "from streamlit.testing.v1 import AppTest; import sys; app=AppTest.from_file(sys.argv[1]).run(timeout=90); assert not app.exception, list(app.exception); print('rendered', len(app.title), 'titles', len(app.tabs), 'tabs')"

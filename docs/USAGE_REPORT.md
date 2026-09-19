@@ -4,7 +4,7 @@ This page describes what Residual_Assembler does, how to install and use it,
 and how its results are checked. It is the page to read first as a new user
 or as a reviewer. The other guides give the details:
 [INSTALL.md](INSTALL.md), [CLI_GUIDE.md](CLI_GUIDE.md),
-[GUI_GUIDE.md](GUI_GUIDE.md) and the seven [worked examples](../examples/README.md).
+[GUI_GUIDE.md](GUI_GUIDE.md) and the eight [worked examples](../examples/README.md).
 
 Every number below was measured on 2026-09-18 on Linux (Ubuntu 20.04), Python
 3.11.7, GNU Fortran 9.4.0, with Abaqus 2021.HF5 used only to read output
@@ -138,7 +138,7 @@ Every subcommand, with options, a worked invocation, its real output and the
 
 ## 5. Worked examples
 
-Seven examples, each with a walkthrough of the commands, the GUI steps, the
+Eight examples, each with a walkthrough of the commands, the GUI steps, the
 files written, the measured output and an independent check
 ([examples/README.md](../examples/README.md)):
 
@@ -151,8 +151,9 @@ files written, the measured output and an independent check
 | 5 | [Full-size cantilevers, J2 and FCC](../examples/cantilevers/WALKTHROUGH.md) | Yes, once | homogeneity identity 1.4e-12 (J2) and 1.2e-13 (FCC) at every increment; full-size finite differences for `SIGY0` 7.9e-9 or better where resolved |
 | 6 | [Provider-to-sensitivity pipeline](../examples/bounded_j2_c3d8/WALKTHROUGH.md) | No | every derivative within 9.7e-7 of whole-model finite differences (tolerance 2e-6), in about 10 s |
 | 7 | [Finite-strain neo-Hookean C3D8](../examples/finite_strain_c3d8/WALKTHROUGH.md) | No (OTILib) | residual 5.7e-16 from an independent quadrature; sensitivities 1.0e-10 from nonlinear re-solves |
+| 8 | [Second derivatives from your own solver](../templates/user_blackbox_order2_residual/WALKTHROUGH.md): a black-box executable returns Taylor coefficients up to order 2 | No | first and second derivatives equal the closed form to 1.2e-16 (measured 2026-09-19); finite differences of re-solved equilibria agree to 3.4e-7 or better, the step's truncation error |
 
-Examples 2, 4 and 6 need neither Abaqus nor OTILib. Example 6 checks both
+Examples 2, 4, 6 and 8 need neither Abaqus nor OTILib. Example 6 checks both
 packages together:
 
 ```bash
@@ -161,6 +162,44 @@ python scripts/reproduce_connected_pipeline.py --skip-abaqus --out "$WORK/pipeli
 
 Expected: `verified bounded J2 pipeline: .../manifest.json`, with
 `"passed": true` in that file (measured 9.9 s in a new environment).
+
+Examples 2, 7 and 8 in commands (Examples 1 and 4 are in
+[INSTALL.md](INSTALL.md#6-verify-the-installation), Example 3 in
+[section 7](#7-the-connected-workflow-with-umat-oti) and Example 5 in its
+walkthrough):
+
+```bash
+# Example 2: the residual of one C3D8 from a supplied stress field
+resasm assemble residual_core/examples/minimal_c3d8_stress_driven/model.json --mode stress-driven \
+    --fields residual_core/examples/minimal_c3d8_stress_driven/fields.json --out "$WORK/R_cube.npy"
+# Example 7 (needs OTILib): the benchmark, then its model through resasm
+python examples/finite_strain_c3d8/benchmark.py --out "$WORK/finite"
+resasm --config "$WORK/finite/config.json" assemble "$WORK/finite/model.json" --mode material-replay --tangent
+resasm --config "$WORK/finite/config.json" sensitivity "$WORK/finite/model.json" \
+    --params "$WORK/finite/params.json" --out "$WORK/finite/sens"
+# Example 8: first and second derivatives from a black-box solver
+resasm init --template blackbox-order2 --out "$WORK/bb2"
+resasm check "$WORK/bb2/resasm.yml"
+resasm run "$WORK/bb2/resasm.yml"
+resasm report "$WORK/bb2/resasm_output"
+```
+
+Every example that needs no Abaqus (1, 2, 4, 6, 7 and 8 here, and the six of
+UMAT-OTI) also runs as one command, which checks each result against the
+example's reference and records every command, its output and the check
+([INSTALL.md, section 6, item 7](INSTALL.md#6-verify-the-installation)):
+
+```bash
+python scripts/audit_recovery_usage.py --umat ../UMAT_source_transformation --phase examples \
+    --work "$WORK/examples" --evidence-dir "$WORK/examples_record"
+```
+
+It sets `UMAT_OTI_REPO` to the `--umat` checkout, from which the pipeline of
+Example 6 builds its provider, and runs every Python command as `python -I`,
+so that the installed packages are imported rather than the checkouts. It
+needs OTILib. Measured on 2026-09-19 in a new environment with both packages
+installed from wheels: all 31 commands exited 0 and every check passed, in
+3 min 24 s.
 
 ## 6. The GUI
 
@@ -353,15 +392,23 @@ Measured: both commands print `dbe9f928191e1d43`, and the tests report
 
 `scripts/clean_install_gate.py` is the acceptance test of an installation
 ([INSTALL.md](INSTALL.md#7-the-clean-install-gate)). It builds wheels of both
-repositories from clean trees and installs them into a new environment. From
-the installed commands only, it then runs:
+repositories from clean trees and installs them into a new environment. It
+checks that the packages are imported from that environment and that none is
+editable. From the installed commands only, it then runs:
 
 - the provider build;
 - the four-file request on a genuine ODB, against the uniaxial closed form;
 - the same request with every read of a Fortran source denied;
-- both GUIs up to HTTP readiness;
+- both GUIs, rendered headlessly (Streamlit `AppTest`) and up to HTTP readiness;
 - with `--cantilever`, the full-size J2 cantilever with the homogeneity
   identity.
+
+How to make its two Abaqus inputs (the ODB of Example 3's deck and the J2
+cantilever of Example 5) is in
+[INSTALL.md](INSTALL.md#7-the-clean-install-gate).
+`scripts/reproduce_from_clean_clones.sh` runs the gate from fresh clones of
+the published branches together with both offline test suites and the
+examples check above, and records every step (same section).
 
 The recorded run is in
 [evidence/final_clean_clone.md](evidence/final_clean_clone.md). It ran on

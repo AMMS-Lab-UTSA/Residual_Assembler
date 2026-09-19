@@ -36,7 +36,7 @@ Linux with Python 3.10+ and `gfortran`. Abaqus (tested: 2021.HF5) is needed
 only to read an ODB; the sensitivity computation itself does not call it.
 
 **New here?** Install with [docs/INSTALL.md](docs/INSTALL.md), then work
-through the seven [worked examples](examples/README.md), from a one-line
+through the eight [worked examples](examples/README.md), from a one-line
 residual to full-size Abaqus models. The [command-line guide](docs/CLI_GUIDE.md)
 and the [GUI guide](docs/GUI_GUIDE.md) cover every entry point with real
 output; [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) summarises the program as
@@ -44,7 +44,7 @@ it works now.
 
 ## Worked examples
 
-Seven complete examples, each with a walkthrough: what it shows, the exact
+Eight complete examples, each with a walkthrough: what it shows, the exact
 commands, the equivalent GUI steps, the measured output and how it is checked
 independently ([examples/README.md](examples/README.md)).
 
@@ -57,6 +57,7 @@ independently ([examples/README.md](examples/README.md)).
 | 5 | [Full-size cantilevers](examples/cantilevers/WALKTHROUGH.md) | J2 (1,536 C3D8, 40 increments) and FCC crystal plasticity (384 C3D8, 25 increments, 10 parameters); full-field sensitivities | Once, to run the analyses |
 | 6 | [Provider-to-sensitivity pipeline](examples/bounded_j2_c3d8/WALKTHROUGH.md) | Builds the compiled J2 material, solves a cyclic one-element history, verifies every derivative against whole-model finite differences | No |
 | 7 | [Finite-strain neo-Hookean C3D8](examples/finite_strain_c3d8/WALKTHROUGH.md) | Finite-strain assembly with the exact tangent and parameter sensitivities, against nonlinear re-solves | No |
+| 8 | [Second derivatives from your own solver](templates/user_blackbox_order2_residual/WALKTHROUGH.md) | A black-box executable returns Taylor coefficients up to order 2; first and second derivatives against the closed form | No |
 
 Measured on the two cantilevers: the replayed stress, state and reactions match
 the ODB at every integration point; the J2 model runs in about 10 s (25 s when
@@ -391,7 +392,7 @@ The black-box path does not require OTILib on our side.
 
 Start here:
 - [docs/INSTALL.md](docs/INSTALL.md) — installation from an empty machine, the checks that prove it works, troubleshooting
-- [examples/README.md](examples/README.md) — seven worked examples
+- [examples/README.md](examples/README.md) — eight worked examples
 - [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md) — every command, its options, real output and exit codes
 - [docs/GUI_GUIDE.md](docs/GUI_GUIDE.md) — a step-by-step walkthrough of every screen
 - [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md) — the program as it works now, in one place
