@@ -391,6 +391,7 @@ The black-box path does not require OTILib on our side.
 ## Docs
 
 Start here:
+- [docs/HANDBOOK.md](docs/HANDBOOK.md) — the course handbook: the whole program in one step-by-step guide, from installation to five worked examples on the command line and in the GUI (also as a formatted page, [docs/handbook.html](docs/handbook.html))
 - [docs/INSTALL.md](docs/INSTALL.md) — installation from an empty machine, the checks that prove it works, troubleshooting
 - [examples/README.md](examples/README.md) — eight worked examples
 - [docs/CLI_GUIDE.md](docs/CLI_GUIDE.md) — every command, its options, real output and exit codes
