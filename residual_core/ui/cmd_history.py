@@ -40,6 +40,9 @@ EXPORTER = Path(__file__).resolve().parents[1] / "replay" / "odb_export_npz.py"
 #: Adjacent FD steps must agree to this (relative) for the reference to count
 #: as resolved: "Reference resolved: yes". Only a resolved reference can verify.
 PLATEAU_SPREAD_LIMIT = 1e-4
+#: The provider's DDSDDE counts as verified when it agrees with central
+#: differences of the ORIGINAL UMAT to this (relative): "Tangent verified: yes".
+TANGENT_ERROR_LIMIT = 1e-5
 
 
 def register(subparsers):
@@ -165,10 +168,11 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
         if verify in ("tangent", "fd"):
             check = tangent_check(engine, result, sorted({1, len(result.increments) // 2 or 1,
                                                           len(result.increments)}))
+            check["passed"] = bool(check["max_relative_error"] < TANGENT_ERROR_LIMIT)
             verification["tangent"] = check
             report["report_fields"]["tangent verified"] = (
                 "%s: max relative error %.2e vs central FD of the ORIGINAL UMAT at %d points "
-                "(FD plateau spread %.2e)" % ("yes" if check["max_relative_error"] < 1e-5 else "NO",
+                "(FD plateau spread %.2e)" % ("yes" if check["passed"] else "NO",
                                                 check["max_relative_error"], check["points_checked"],
                                                 check["fd_plateau_spread"]))
         if verify == "fd":
@@ -192,6 +196,7 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
             resolved = worst_spread < PLATEAU_SPREAD_LIMIT
             derivative_verified = (resolved and worst_error <= max(1e-6, 2 * worst_spread)
                                    and zero_oti <= 1e-6)
+            verification["whole_model_fd"].update(resolved=resolved, passed=derivative_verified)
             details = (
                 "whole-model central FD of the ORIGINAL UMAT re-equilibrated in Python; worst "
                 "nonzero-derivative error %.2e (plateau spread %.2e); zero references: |OTI - FD| <= %.1e "
@@ -252,6 +257,29 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
         raise ValueError(str(error)) from error
 
 
+def failed_verifications(report):
+    """The report lines of every check the run was asked for and that did not
+    pass: the tangent under ``--verify tangent`` or ``fd``, the derivatives
+    (including an unresolved reference) under ``--verify fd``. Empty when
+    nothing was asked for or everything passed."""
+    verification = report.get("metadata", {}).get("verification", {})
+    fields = report["report_fields"]
+    failed = []
+    if "tangent" in verification and not verification["tangent"].get("passed"):
+        failed.append("Tangent verified: %s" % fields["tangent verified"])
+    if "whole_model_fd" in verification and not verification["whole_model_fd"].get("passed"):
+        failed.append("Derivative verified: %s" % fields["derivative verified"])
+    return failed
+
+
+def _verification_exit(report):
+    """Exit 1, naming the check, when a requested verification failed; else 0."""
+    failed = failed_verifications(report)
+    for line in failed:
+        print("verification FAILED: %s" % line, file=sys.stderr)
+    return 1 if failed else 0
+
+
 def _command_line(name, args, keys):
     """The command as parsed (not sys.argv, which is the host process when called in-process)."""
     words = ["resasm", name]
@@ -281,7 +309,7 @@ def run(args):
           % (scope["increments_replayed"], scope["integration_points"], len(scope["parameters"]),
              report["report_fields"]["equilibrium passed"]))
     print("results: %s" % (Path(args.out) / PUBLIC_FILES[0]))
-    return 0
+    return _verification_exit(report)
 
 
 # ----------------------------------------------------------------- routing
@@ -349,4 +377,4 @@ def route_request(args):
         return 2
     print("request executed: history engine, %d increments; verified=%s"
           % (report["scope"]["increments_replayed"], report["metadata"]["verified"]))
-    return 0
+    return _verification_exit(report)

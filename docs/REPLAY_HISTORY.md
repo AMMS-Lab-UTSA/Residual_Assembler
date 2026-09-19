@@ -182,6 +182,12 @@ derivative (`Reference resolved: yes`). Otherwise the report says
 spread, and `metadata.verified` in `sensitivity_results.json` is `false`
 (measured on the j2_beam example with `--fd-steps 0.3,0.1`: spread 8.95e-01).
 `metadata.verified` is `true` only when `--verify fd` verified the derivatives.
+A check that was asked for and did not pass (the tangent under `--verify
+tangent` or `fd`, the derivatives under `--verify fd`) makes `resasm history`
+exit 1 after writing its outputs, with `verification FAILED: <report line>` on
+standard error; `resasm request`, when it hands a run to this engine with
+`--validate`, does the same. Without `--verify` nothing is checked and the
+exit code is 0.
 
 ## How `resasm request` chooses this engine
 

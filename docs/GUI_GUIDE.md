@@ -132,7 +132,12 @@ repeated on the command line.
 ### 5. What appears after Solve
 
 - A green line, for example `Executed: 1 scalar results. Independent
-  validation: not run.`
+  validation: not run.`, or `... Independent validation: passed.` when the
+  validation was ticked and passed. When it was ticked and did not pass (the
+  command's exit code 1, a run of the history engine), the line is yellow and
+  reads `Independent validation: run, NOT passed (exit code 1):` followed by
+  the failed check; the results are still offered. A bounded-engine
+  validation that disagrees stops the run, and its error is shown in red.
 - Three download buttons: `sensitivity_results.json`,
   `sensitivity_tables.csv` and `run_report.txt`, the public results. Everything
   else stays in the output directory, under `private/`.

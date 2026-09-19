@@ -1179,18 +1179,26 @@ def _tab_request() -> None:
                 if validate:
                     argv.append("--validate")
                 execution = _run(argv)
-                if execution.code:
+                results_file = Path(output) / "sensitivity_results.json"
+                # exit 1: the request executed, but the validation it asked for
+                # did not pass; the results exist and are shown with that verdict
+                if execution.code and not (execution.code == 1 and results_file.is_file()):
                     raise ValueError(execution.stderr or execution.stdout)
-                result = json.loads((Path(output) / "sensitivity_results.json").read_text())
+                result = json.loads(results_file.read_text())
             st.session_state["request_completed_output"] = str(Path(output).resolve())
+            st.session_state["request_validation_failed"] = execution.code == 1
             st.session_state["request_completed_message"] = "Executed: %d scalar results. Independent validation: %s." % (
                 len(result["results"]), "passed" if result["metadata"]["verified"]
-                else "run, NOT passed (see run_report.txt)" if validate else "not run")
+                else "run, NOT passed (exit code 1): %s" % execution.stderr.strip() if validate
+                else "not run")
         except (ValueError, OSError) as error:
             st.error(str(error))
     completed = st.session_state.get("request_completed_output")
     if completed:
-        st.success(st.session_state["request_completed_message"])
+        if st.session_state.get("request_validation_failed"):
+            st.warning(st.session_state["request_completed_message"])
+        else:
+            st.success(st.session_state["request_completed_message"])
         for filename in ("sensitivity_results.json", "sensitivity_tables.csv", "run_report.txt"):
             path = Path(completed) / filename
             if path.is_file():
