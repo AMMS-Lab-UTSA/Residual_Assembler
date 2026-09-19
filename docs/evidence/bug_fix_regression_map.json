@@ -1,0 +1,244 @@
+{
+ "_about": [
+  "Bug fixes since the baseline commit and the regression tests that exercise each, checked by",
+  "tools/audit_integrity.py --check t11 (tests/test_audit_integrity.py).",
+  "A regression test is a test added or changed in the fix commit, or named in its message.",
+  "untested_parts names a part of a fix that no test exercises."
+ ],
+ "baseline": "0789984c6c2750091d0f43b9ba42b84b3d890556",
+ "rule": {
+  "message_pattern": "\\b(fix|fixes|fixed|fixing|bugs?|defects?|wrong|refus\\w*|regression|incorrect|broke|broken|crash\\w*|silent\\w*|stale|failed|fails|exit(?:ed|s)? [0-9])\\b",
+  "selects": "every commit since the baseline whose subject or body (trailers removed) matches message_pattern, case-insensitive, and every commit that adds an entry under a '### Fixed' heading of CHANGELOG.md",
+  "definition": "A bug fix corrects behaviour of shipped code, scripts, tests or CI that was wrong before the commit, including messages the code prints. Documentation-only corrections, new features, evidence re-freezes and new tests of behaviour that was already right are not bug fixes.",
+  "review": "Every selected commit is either a fix mapped to regression tests (test node ids that must exist) or an exclusion with a reason. A fix the rule misses is added by hand with selected_by: manual. A fix with no test stays listed, with no_test_reason, and is reported as open."
+ },
+ "fixes": [
+  {
+   "commit": "0a680d9",
+   "selected_by": "manual",
+   "bug": "resasm verify returned 0 on the shipped unloaded stressed C3D8 with ||R_free|| = 70.71; equilibrium verification now fails unbalanced or non-finite residuals against an explicit absolute tolerance.",
+   "tests": [
+    "tests/framework/test_verify_equilibrium_exit.py::test_unbalanced_stressed_cube_has_failing_exit_code",
+    "tests/framework/test_verify_equilibrium_exit.py::test_invalid_tolerance_cannot_turn_failure_into_success",
+    "tests/framework/test_verify_equilibrium_exit.py::test_nonfinite_stress_never_passes",
+    "tests/framework/test_verify_equilibrium_exit.py::test_gui_propagates_failed_equilibrium"
+   ]
+  },
+  {
+   "commit": "a7271cd",
+   "bug": "The history engine's solve mode started each increment from a jump (the explicit FCC update overflowed) and accepted non-finite states; it now takes Abaqus's linear predictor and refuses non-finite states. The engine itself was added earlier in this work (9dd6a8c).",
+   "tests": [
+    "tests/replay_history/test_history_engine.py::test_fcc_whole_model_fd_of_original_umat",
+    "tests/replay_history/test_history_engine.py::test_j2_whole_model_fd_of_original_umat"
+   ],
+   "untested_parts": "No test forces a non-finite state to show it is refused."
+  },
+  {
+   "commit": "15a5240",
+   "bug": "Newton iterated for minutes on round-off when no step lowered the residual, and run_report's 'Command executed' line was rendered from sys.argv, which is wrong when resasm runs in-process.",
+   "tests": [
+    "tests/replay_history/test_history_example.py::test_public_private_outputs_and_report"
+   ],
+   "untested_parts": "No test drives Newton into stagnation to show the 'stagnated at' error."
+  },
+  {
+   "commit": "5e49cc9",
+   "bug": "The clean-install gate refused every checkout not on one hard-coded branch name, so it could not run on main or on a fresh clone.",
+   "tests": [],
+   "no_test_reason": "tests/integration/test_clean_install_gate.py does not exercise --branch or the branch check; only the gate step of the clean-clone run (with --branch main) exercises it, outside the suite."
+  },
+  {
+   "commit": "e03ef60",
+   "selected_by": "manual",
+   "bug": "CI never installed the companion UMAT-OTI, so the connected tests could not be collected there, and the verification-record scripts refused a umat_oti installed from a wheel (a clean clone's install) because its files are not under the checkout.",
+   "tests": [
+    "tests/verification/test_claim5_constitutive_jacobians.py::test_oti_agrees_with_fd_and_audits_the_hand_coded_jacobians",
+    "tests/integration/test_connected_j2.py::test_reproducer_fresh_build_and_nonzero_failure"
+   ],
+   "untested_parts": "The CI workflow change is exercised only by CI itself."
+  },
+  {
+   "commit": "8daf75f",
+   "bug": "Two replay-history modules imported helpers with 'from conftest import', which resolves to whichever conftest was imported last, so renaming a test folder broke them; two imports of residual_core.replay.presentation had been rewritten by a folder rename.",
+   "tests": [
+    "tests/replay_history/test_history_example.py::test_routing_keeps_bounded_models_and_sends_the_rest_to_the_history_engine",
+    "tests/integration/test_presentation_request.py::test_unit_failure_diagnostics_are_private",
+    "tests/integration/test_presentation_request.py::test_missing_odb_field_has_safe_action"
+   ]
+  },
+  {
+   "commit": "71cfe86",
+   "selected_by": "manual",
+   "bug": "The claim-5 verification script ran plain 'make'; GNU make predefines FC=f77, so the generated Makefile's 'FC ?= gfortran' never applied and the build failed wherever f77 is absent.",
+   "tests": [
+    "tests/verification/test_claim5_constitutive_jacobians.py::test_oti_agrees_with_fd_and_audits_the_hand_coded_jacobians"
+   ]
+  },
+  {
+   "commit": "924ee8c",
+   "bug": "The real-store contract tests refused a umat_oti installed (not editable) from the companion checkout because its files were not under the checkout, and skipped with a reason CI rejects.",
+   "tests": [
+    "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_repositories_speak_the_same_version",
+    "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_readers_agree_about_every_gate_in_every_record"
+   ],
+   "untested_parts": "These tests run only where the private corpus store is present; in CI and in a clean clone they skip, so no test that runs there exercises the byte-identical-copy rule."
+  },
+  {
+   "commit": "a3916be",
+   "bug": "scripts/extract_odb_fields.py failed at line 1 under Abaqus 2021's Python 2.7 (non-ASCII text without a coding line, annotations, shutil.which).",
+   "tests": [
+    "tests/framework/test_the_abaqus_python_scripts_run_on_python27.py::test_the_script_parses_under_python27",
+    "tests/framework/test_the_abaqus_python_scripts_run_on_python27.py::test_the_readme_export_command_runs_under_abaqus_python"
+   ]
+  },
+  {
+   "commit": "7774313",
+   "bug": "resasm sensitivity --backend dual1 printed zero derivatives and exited 0 for parameters no element seeds; a failing finite-difference comparison still exited 0; exit 3 and the OTILib hint were given for a missing tangent; missing --fields files gave tracebacks; the GUI's Job tab read the wrong folder.",
+   "tests": [
+    "tests/framework/test_finite_strain_hyperelastic.py::test_dual1_refuses_the_finite_strain_model_instead_of_printing_zeros",
+    "tests/framework/test_nonlinear_spring_sensitivity.py::test_cli_refuses_a_parameter_it_cannot_seed",
+    "tests/framework/test_nonlinear_spring_sensitivity.py::test_cli_exit_code_reports_a_failed_finite_difference_check",
+    "tests/framework/test_otilib_spring_sensitivity.py::test_otilib_refuses_a_parameter_it_cannot_seed",
+    "tests/framework/test_otilib_spring_sensitivity.py::test_a_missing_tangent_is_named_not_blamed_on_otilib",
+    "tests/framework/test_otilib_spring_sensitivity.py::test_missing_otilib_still_exits_3",
+    "tests/framework/test_user_layer.py::test_report_reads_where_the_job_wrote",
+    "tests/framework/test_user_layer.py::test_run_without_otilib_is_a_clean_error",
+    "tests/framework/test_verify_equilibrium_exit.py::test_an_unusable_field_export_is_a_one_line_error",
+    "tests/framework/test_gui_is_a_thin_cli_front_end.py::test_the_job_tab_reads_the_report_where_the_job_wrote_it"
+   ]
+  },
+  {
+   "commit": "de8ec64",
+   "bug": "resasm request kept a valid non-J2 provider on the bounded J2 engine, which refused it as material_mapping (exit 2); run_report.txt listed public files a failed run had not written.",
+   "tests": [
+    "tests/replay_history/test_history_example.py::test_another_provider_on_a_bounded_deck_goes_to_the_history_engine",
+    "tests/replay_history/test_history_example.py::test_the_report_lists_every_public_file_written"
+   ]
+  },
+  {
+   "commit": "4d34c74",
+   "selected_by": "manual",
+   "bug": "The ODB exporter's error message and usage text told users to run extract_abaqus_fields.py, a file that no longer exists under that name.",
+   "tests": [],
+   "no_test_reason": "No test checks the exporter's usage or error text; the commit changed text only."
+  },
+  {
+   "commit": "718ac7c",
+   "selected_by": "manual",
+   "bug": "The cantilever central-difference reference script recorded its usage line as the reference's note instead of its method paragraph.",
+   "tests": [],
+   "no_test_reason": "tests/replay_history/test_cantilever_decks.py checks the decks, not the reference script's output; no test runs fd_reference.py."
+  },
+  {
+   "commit": "a392cd5",
+   "selected_by": "manual",
+   "bug": "resasm backends printed 'tangent_support: none' for every material, and the UMAT adapter listed strain inputs while declaring a deformation gradient.",
+   "tests": [
+    "tests/framework/test_inspection_commands.py::test_what_the_listing_claims_is_what_each_backend_does",
+    "tests/framework/test_inspection_commands.py::test_backends_lists_every_registered_backend_as_it_is_declared",
+    "tests/framework/test_inspection_commands.py::test_template_prints_a_material_contract_with_its_measures"
+   ]
+  },
+  {
+   "commit": "07703d3",
+   "bug": "The general deck path (inspect, assemble, verify) accepted *Dload, *Dsload, *Equation and amplitudes without a word although it applies none of them.",
+   "tests": [
+    "tests/framework/test_unapplied_deck_keywords_are_named.py::test_each_unapplied_keyword_is_named_where_the_deck_is_read",
+    "tests/framework/test_unapplied_deck_keywords_are_named.py::test_resasm_inspect_lists_them_in_its_summary",
+    "tests/framework/test_unapplied_deck_keywords_are_named.py::test_every_general_deck_command_prints_the_diagnostic"
+   ]
+  },
+  {
+   "commit": "6df72c1",
+   "bug": "SolidC3D8SmallStrain handed a finite-strain material a strain increment and failed with a bare KeyError('F0').",
+   "tests": [
+    "tests/framework/test_small_strain_refuses_finite_strain_material.py::test_a_deformation_gradient_material_is_refused_by_name",
+    "tests/framework/test_small_strain_refuses_finite_strain_material.py::test_the_umat_adapter_is_refused_before_it_is_called",
+    "tests/framework/test_small_strain_refuses_finite_strain_material.py::test_resasm_assemble_reports_the_refusal"
+   ]
+  },
+  {
+   "commit": "fb3d059",
+   "bug": "When the unrelated PyPI package pyoti shadowed the genuine OTILib build, the probe said only that OTILib was not found.",
+   "tests": [
+    "tests/framework/test_unrelated_pyoti_is_refused.py::test_an_unrelated_pyoti_ahead_of_the_genuine_build_is_refused",
+    "tests/framework/test_unrelated_pyoti_is_refused.py::test_resasm_check_refuses_a_job_when_only_the_unrelated_package_is_found"
+   ]
+  },
+  {
+   "commit": "7dfa511",
+   "bug": "resasm history --verify fd judged derivatives against max(1e-6, twice the plateau spread), so with an unresolved reference a 9.6e-1 error was reported 'Derivative verified: yes'.",
+   "tests": [
+    "tests/replay_history/test_history_report_verdicts.py::test_reference_resolved_is_partial_when_the_steps_do_not_agree",
+    "tests/replay_history/test_history_report_verdicts.py::test_reference_resolved_is_a_plateau_with_the_default_ladder",
+    "tests/replay_history/test_history_report_verdicts.py::test_tangent_verified_under_verify_tangent"
+   ]
+  },
+  {
+   "commit": "8e4cf2f",
+   "bug": "requirements/doctor called modes ready that assembled nothing (assemble exited 0 with ndof=0), C3D8 replay bound silent default constants [200000, 0.3], verify judged equilibrium without the deck's unapplied loads and constraints, and multi-step or NLGEOM decks were summed over steps.",
+   "tests": [
+    "tests/framework/test_inspection_commands.py::test_a_mode_called_ready_assembles_every_element",
+    "tests/framework/test_inspection_commands.py::test_material_replay_binds_the_models_own_elastic_constants",
+    "tests/framework/test_inspection_commands.py::test_material_replay_refuses_a_deck_whose_elastic_constants_are_not_read",
+    "tests/framework/test_the_general_path_refuses_steps_it_cannot_place.py::test_a_deck_state_the_general_path_cannot_place_is_refused",
+    "tests/framework/test_unapplied_deck_keywords_are_named.py::test_verify_refuses_a_deck_whose_equilibrium_keywords_are_not_applied"
+   ]
+  },
+  {
+   "commit": "60c8d44",
+   "bug": "resasm history, and resasm request when it hands a model to the history engine, exited 0 whatever the requested --verify found.",
+   "tests": [
+    "tests/replay_history/test_history_report_verdicts.py::test_every_requested_check_that_fails_is_named_and_sets_exit_1",
+    "tests/replay_history/test_history_report_verdicts.py::test_without_verification_nothing_is_claimed_verified"
+   ]
+  }
+ ],
+ "excluded": [
+  {
+   "commit": "b891d74",
+   "reason": "Evidence (full-size whole-model FD); 'failed' is the suite's failure count."
+  },
+  {
+   "commit": "0b3746a",
+   "reason": "Feature (ticks, output, region and Solve on the request screen); 'failed' is the suite's failure count."
+  },
+  {
+   "commit": "58cfcfd",
+   "reason": "Feature and its browser test (equivalent plastic strain after Solve); 'failed' is the suite's failure count."
+  },
+  {
+   "commit": "2210eeb",
+   "reason": "Evidence rerun of the benchmark claim; 'defect' and 'fails' describe a UMAT source defect it measured, and 'fixes' the transformer fixes mapped in UMAT_source_transformation (b124e39, 24143f8)."
+  },
+  {
+   "commit": "b7a257d",
+   "reason": "New independent check (Euler's homogeneity identity); 'wrong' is a hypothetical wrong derivative the check would catch and 'fixed' is 'at fixed nu'."
+  },
+  {
+   "commit": "3bab862",
+   "reason": "Pin bump of the companion; 'fixes' names commits of UMAT_source_transformation."
+  },
+  {
+   "commit": "9e5e3b9",
+   "reason": "Documentation (seven worked examples and guides); 'stale' describes the GUI's documented guard against stale results."
+  },
+  {
+   "commit": "de92890",
+   "reason": "Documentation; 'stale' describes a documentation note it removed."
+  },
+  {
+   "commit": "d211658",
+   "reason": "New tests (report verdict lines, walkthroughs, derivative-loss scan) of behaviour that was already right; no code change."
+  },
+  {
+   "commit": "d3cdfd5",
+   "reason": "Documentation (walkthrough for example 8) and its index test; 'exits 2' describes measured behaviour."
+  },
+  {
+   "commit": "a288783",
+   "reason": "Evidence re-freeze and pin bump; 'fix' names the local-Jacobian fix of UMAT_source_transformation (1996782), mapped there."
+  }
+ ],
+ "changelog_fixed": {}
+}
