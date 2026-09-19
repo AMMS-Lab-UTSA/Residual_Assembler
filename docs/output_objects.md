@@ -1,5 +1,11 @@
 # Output objects
 
+This page specifies every file a `resasm.yml` run (`resasm run`) writes: its
+keys, shapes and conventions, and how to read it back. It is for users who
+post-process the results. The outputs of `resasm request` and `resasm history`
+are described in [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md) and
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md).
+
 Every run writes one directory (default `resasm_output/`, override with
 `output.dir`) split in two. Produced entirely by
 `resasm_user/output.py::write_outputs`.
@@ -225,7 +231,7 @@ The complete `validation` dict assembled by `runner.py`:
 | `status` | always | `"ok"` |
 | `residual_free_norm` | always | `‖R(u)[free]‖` on the Python/element path; `null` on the black-box path |
 | `residual_free_norm_reason` | black-box only | `"black-box did not expose real residual"` |
-| `rhs_finite_difference_check` | when `validation.rhs_finite_difference_check` is on (Python path) | `{max_rel_error, status: "pass"|"warn", checks: "..."}` — `pass` iff `max_rel_error < 1e-4` |
+| `rhs_finite_difference_check` | when `validation.rhs_finite_difference_check` is on (Python path) | `{max_rel_error, status: "pass"\|"warn", checks: "..."}` — `pass` iff `max_rel_error < 1e-4` |
 | `notes` | when `validation.solution_finite_difference_solver` was set | a list containing the explicit "reserved but NOT implemented" note |
 
 Note: the diagnostics your black-box returns are parsed

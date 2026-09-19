@@ -1,4 +1,9 @@
-# History-Dependent Models
+# History-dependent models
+
+This page explains why a history-dependent model needs its whole load history
+replayed to give correct sensitivities, and the three ways to do that with the
+partner kit. It is for collaborators whose model has plasticity, damage,
+viscoelasticity or crystal plasticity.
 
 **Essential for plasticity, damage, viscoelasticity, and crystal plasticity.**
 
@@ -63,9 +68,17 @@ computed sensitivity is **not** correct. The kit will still run, but you must us
 one of A/B/C above for a valid result. This is called out in the validation notes
 and should be recorded in your `diagnostics.json`.
 
-## Relationship to our core framework
+## Relationship to the main package
 
-The core framework's `StateManager` enforces committed/trial state across
-increments and its `docs/umat_validation_plan.md` states the same rule: replay the
-increment sequence in order. The partner kit inherits that discipline for
-partner-side execution.
+The core framework's `StateManager` enforces committed and trial state across
+increments, and
+[residual_core/docs/umat_validation_plan.md](../../residual_core/docs/umat_validation_plan.md)
+states the same rule: replay the increment sequence in order. The partner kit
+inherits that discipline for partner-side execution.
+
+For Abaqus analyses with a UMAT, the main package implements approach B in
+full: `resasm history` replays every recorded increment of a small-strain C3D8
+analysis with a compiled UMAT-OTI provider, carries the stress and state
+derivatives from one increment to the next, and solves for the displacement
+sensitivities at each increment. See
+[docs/REPLAY_HISTORY.md](../../docs/REPLAY_HISTORY.md).

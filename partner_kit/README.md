@@ -1,4 +1,12 @@
-# Partner Kit — local residual-sensitivity SDK
+# Partner kit: a local residual-sensitivity SDK
+
+This page introduces the partner kit, a small self-contained SDK that ships
+inside this repository for collaborators who own a residual (in Python, C++,
+Fortran or a closed executable) and want its parameter sensitivities computed
+locally. It is for those collaborators and for anyone reviewing the kit. Users
+with an Abaqus analysis should use `resasm request` instead
+([docs/REQUEST_INTERFACE.md](../docs/REQUEST_INTERFACE.md)); users of the main
+`resasm.yml` workflow should start at [START_HERE.md](../START_HERE.md).
 
 A self-contained kit a collaborator runs **on their own machine** to generate
 residual-sensitivity right-hand-sides and solve/export
@@ -75,7 +83,10 @@ parameter ranking, selected sensitivities. See
   grown toward OTI.
 - **History-dependent models** (plasticity, damage, viscoelasticity, crystal
   plasticity) require replaying the load history — final-step overloading is not
-  valid. See [docs/history_dependent_models.md](docs/history_dependent_models.md).
+  valid. See [docs/history_dependent_models.md](docs/history_dependent_models.md);
+  for Abaqus analyses with a UMAT, the main package's `resasm history` does this
+  replay ([docs/REPLAY_HISTORY.md](../docs/REPLAY_HISTORY.md)).
 - OTILib is **not bundled** (external GPLv3 dependency;
-  <https://github.com/mauriaristi/otilib.git>; do not `pip install pyoti` — that
-  name is squatted). This kit defines the contracts and the templated seam.
+  <https://github.com/mauriaristi/otilib.git>; do not `pip install pyoti`, which
+  is an unrelated package). This kit defines the contracts and the templated
+  seam.

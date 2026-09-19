@@ -1,4 +1,9 @@
-# Partner Output Contract
+# Partner output contract
+
+This page specifies what the partner kit writes: the private package that
+stays with the collaborator and the public report they may choose to share.
+It is for collaborators reading their results and for anyone deciding what to
+send back.
 
 The kit writes two trees under `output_dir`: a **private** package (full arrays,
 keep local) and a **public** report (shareable, no proprietary data).

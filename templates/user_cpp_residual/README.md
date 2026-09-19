@@ -1,4 +1,8 @@
-# C++ residual template (Path B — local compiled code)
+# C++ residual template (Path B: local compiled code)
+
+This template is the starting point for a residual written in C++ and run as a
+black-box executable (Path B). Copy it with
+`resasm init --template cpp --out my_case`.
 
 A complete, runnable job: `residual.cpp` builds to a single binary that is both a
 self-test and the black-box responder `resasm run` calls. The model is a 1-DOF

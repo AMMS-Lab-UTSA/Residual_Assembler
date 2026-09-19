@@ -1,4 +1,7 @@
-# Template — C++ global residual as a black-box executable
+# Template: C++ global residual as a black-box executable
+
+This template turns a templated C++ global residual into an executable that
+speaks the kit's black-box contract.
 
 Build a `your_solver` that speaks the kit's black-box JSON contract:
 

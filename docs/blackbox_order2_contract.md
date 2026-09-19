@@ -1,4 +1,9 @@
-# Black-box contract at order ≥ 2 — coefficients, not derivatives
+# Black-box contract at order ≥ 2: coefficients, not derivatives
+
+This page states the one rule a black-box provider (Path B) must follow at
+order 2 and above, why it exists, and how to check a provider against it. It
+is for anyone writing or reviewing a black-box executable that returns
+second- or higher-order residual coefficients.
 
 > ## ⚠ THE RULE
 >

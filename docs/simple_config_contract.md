@@ -1,5 +1,11 @@
 # Simple config contract (`resasm.yml`)
 
+This page is the reference for the `resasm.yml` provider configuration (a
+supplied residual, Paths B and C): required and optional blocks, defaults, and
+the behaviours worth knowing before a first run. It is for users writing or
+editing a configuration. The assembly-recipe dialect of the same file (Path A)
+is in [residual_assembly_recipe.md](residual_assembly_recipe.md).
+
 One small file describes the whole job. It is validated by
 [`schemas/resasm_config_v1.schema.json`](../schemas/resasm_config_v1.schema.json)
 and loaded by [`resasm_user/config.py`](../resasm_user/config.py).
@@ -139,7 +145,7 @@ solution finite-difference check.** No solution-level FD check is implemented.
 ## Commands
 
 ```bash
-resasm init --template python|blackbox|cpp|fortran --out DIR   # copy a ready-to-run template
+resasm init --template python|blackbox|blackbox-order2|cpp|fortran --out DIR   # copy a ready-to-run template
 resasm check resasm.yml                                        # readiness report, actionable errors
 resasm run   resasm.yml                                        # full sensitivity job
 resasm report resasm_output/                                   # summarize a completed run

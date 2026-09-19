@@ -1,4 +1,12 @@
-# Design Note — Residual Assembler for Crystal Plasticity
+# Design note: an element-level residual for crystal plasticity
+
+This is the original design note written at the start of the project, kept
+for its design rationale: why the element residual, and not the stress update
+alone, is the object to expose, and how licence tiers constrain which sources
+may be combined. It is for readers who want the background to the assembly
+framework. It is not a description of the current code; see
+[How the design evolved](#how-the-design-evolved) at the end, and
+[residual_core/README.md](residual_core/README.md) for what was built.
 
 **Goal.** Build a component that exposes the **element residual** `r(u, a)` for a
 crystal-plasticity solid, where
@@ -13,7 +21,8 @@ assembly. We want `r` and `∂r/∂u` in the open, at the element level, so the 
 driven by an external solver, differentiated, or embedded in a reduced-order / residual-based
 method later.
 
-> Scope of this note: architecture and open questions only. **No Fortran is written yet.**
+> Scope of this note: the architecture and open questions as they stood before
+> any code was written.
 
 ---
 
@@ -238,3 +247,29 @@ external time stepper.
 - Bring-up follows a validation ladder from a single FCC crystal along `[100]` (checked against
   Huang/Kysar) up to a polycrystal mesh, with the finite-difference tangent check as the key
   correctness gate.
+
+---
+
+## How the design evolved
+
+The implementation kept the central idea of this note (expose `r` and
+`∂r/∂u` rather than only the stress update) but moved the assembly out of
+Abaqus:
+
+- The residual is assembled **outside the solver**, in Python, by the
+  formulation-agnostic framework in `residual_core/`. Element formulations and
+  materials are registered backends; crystal plasticity is one of them
+  (`solid_c3d8_finite_strain` with the `crystal_plasticity` material), not the
+  organising principle. See [residual_core/README.md](residual_core/README.md).
+- The UEL route of this note survives as the `uel_direct` adapter (a
+  skeleton, `R = -RHS`).
+- Parameter sensitivities of Abaqus analyses come from replaying a UMAT that
+  the companion UMAT-OTI has transformed to OTI arithmetic and compiled
+  (`resasm request`, `resasm history`); see
+  [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md).
+- The licence rules of §3 still hold: the redistributable core builds only
+  against `sources/permissive/`, and the AGPL and unlicensed crystal-plasticity
+  codes remain reference-only.
+- The framework's own validation ladder is the generic Levels 0 to 7 of
+  `residual_core/core/verification.py`; external UMAT and UEL cases are
+  tracked as verification cards under `tests/verification_zoo/`.

@@ -1,4 +1,8 @@
-# Validation Checklist
+# Validation checklist
+
+This page lists the local checks the partner kit runs on a collaborator's
+provider, what each one catches, and how to read its status. It is for
+collaborators validating their provider before trusting or sharing a result.
 
 All checks run **locally** on the partner machine (`python/validators.py`). They
 need no shared data. Run them via `partner_cli` (they populate

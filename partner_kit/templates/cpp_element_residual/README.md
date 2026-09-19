@@ -1,4 +1,7 @@
-# Template — C++ element residual (templated Scalar)
+# Template: C++ element residual (templated Scalar)
+
+This template shows how to write a C++ element residual once, generic in the
+scalar type, so the same source gives real values and parameter derivatives.
 
 Implement your element residual once, generic in the scalar type, so it evaluates
 with `double` (real), `resasm::Dual1` (order-1 sensitivity), or a future

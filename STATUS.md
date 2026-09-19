@@ -1,290 +1,241 @@
-# STATUS — Model-Agnostic Residual Assembly Framework (CP is one example backend)
+# Status
 
-## Current Recovery Status (2026-09-18)
+This page records what Residual_Assembler supports today and how each
+capability was verified. It is for users deciding whether the program fits
+their model and for reviewers checking a claim. For each workflow run end to
+end with its real output, read [docs/USAGE_REPORT.md](docs/USAGE_REPORT.md);
+for every quantitative claim with the command that reproduces it, read
+[docs/VERIFICATION_RECORD.md](docs/VERIFICATION_RECORD.md).
 
-[Current usage](docs/USAGE_REPORT.md) supersedes the July snapshot below.
-The retained full RA offline result is 419 passed, 11 existing skips, zero
-failures/errors. Five fresh bounded example checks passed in
-[machine-readable evidence](docs/evidence/usage_examples.json); the genuine
-artifact-only J2 presentation consumer also passed its separate analytic check.
-Abaqus is available on this machine; this audit used extraction only, no new job.
-Genuine Python-3.11 OTILib is available and exercised.
+One rule applies throughout: **a capability is claimed only for what was
+verified against an independent reference, and the page says which
+reference.** Code that runs is not, by itself, a verified result.
 
-Supported finite-strain claims are limited to stateless isotropic total
-neo-Hookean C3D8 and first-order material parameters. Pinned J2 replay is
-small-strain. Generic finite UMAT/FCC, full-size presentation models and
-higher-order full FE remain unestablished. Historical CP numbers below are not
-new recovery verification. Ordinary request output remains `verified=false`.
+## Current status (2026-09-18)
 
-[Ledger](docs/COMPLETION_LEDGER.md): 104 bounded implemented, 159 partial,
-11 unestablished, 0 final clean-install complete, 274 outstanding. The earlier
-working-tree wheel gate is not a final-branch clone. No skips were added here.
+### Supported workflows
 
-## Historical July Snapshot
+| Workflow | Command | Scope | How it is verified |
+|---|---|---|---|
+| Sensitivities of a finished Abaqus analysis, bounded engine | `resasm request` | one homogeneous J2 C3D8/B-bar static step (NLGEOM=NO), zero fixed boundaries, ramped nodal loads, the pinned `m3_j2` provider | genuine Abaqus ODB against the analytic uniaxial J2 derivatives (relative error: E 1.7e-7, initial yield stress 8.7e-16, H 8.8e-9); the same run with every read of a Fortran source denied gives byte-identical outputs |
+| History replay for any provider | `resasm history`; `resasm request` routes here automatically | small-strain C3D8 (B-bar), one static step, one user material, ramped boundaries including nonzero prescribed displacements, concentrated loads, many increments, any provider that exports `UMAT_OTI_EVAL_TOTAL` | replayed stress, state and reactions checked against the ODB at every integration point and increment; sensitivities against whole-model central differences of the ORIGINAL UMAT and against Abaqus reruns; Euler's homogeneity identity at every increment |
+| Connected replay of a bounded J2 model | `resasm replay` | the pinned `m3_j2` provider on a synthetic converged FE record | whole-history derivatives against independently compiled ORIGINAL material and re-equilibrated FE paths, scaled error below `2e-6` |
+| Stress-driven C3D8 assembly | `resasm assemble --mode stress-driven` | integration-point stress supplied from an export | patch tests to machine precision; unit-cube example against analytic face tractions to `1e-10` |
+| Finite-strain neo-Hookean C3D8 | `resasm assemble` / `resasm sensitivity` with the bounded example configuration | stateless isotropic total neo-Hookean, first-order material parameters | independent first-Piola force (5.70e-16), complete nodal tangent FD, OTILib `du/dp` against nonlinear re-solves; reactions and reaction derivatives against one Abaqus UHYPER job |
+| Direct Python residual | `resasm run` with `residual.type: python` | any order through OTILib | cubic spring against the closed form to `1e-8` at orders 1 and 2 |
+| Black-box residual | `resasm run` with `residual.type: executable` | any order; the executable returns Taylor coefficients | closed form to `1e-8` at orders 1 and 2 |
 
-Date: 2026-07-10. Honest accounting. The rule "**do not claim success because the
-code runs**" is applied throughout: each claim says exactly what was verified and
-how, and what is still pending a real Abaqus run. Two parts:
+Measured on the two full-size cantilevers of
+[examples/cantilevers](examples/cantilevers/README.md) (evidence:
+[docs/evidence/history_replay_cantilevers.md](docs/evidence/history_replay_cantilevers.md)):
 
-- **Part I — the refactor** into a formulation-agnostic framework (below).
-- **Part II — the crystal-plasticity C3D8+UMAT backend** (the original Step-10
-  criteria), unchanged and still verified, now living as **one example backend**
-  behind the interfaces.
+| | J2 cantilever | FCC cantilever |
+|---|---|---|
+| mesh, DOF, integration points, increments, parameters | 1,536 C3D8, 7,497, 12,288, 40, 4 | 384 C3D8, 2,025, 3,072, 25, 10 |
+| engine time, recorded state / re-equilibrated | 9.9 s / 25.2 s | 18.8 s / 71.5 s |
+| worst agreement with whole-model FD of the ORIGINAL UMAT | E 6.6e-8, nu 5.8e-8, initial yield stress 7.9e-9, H 5.4e-6 | all ten parameters at most 6.7e-7 |
+| homogeneity identity after re-equilibration, every increment | 1.0e-12 | 1.2e-13 |
 
-Offline suite green: framework (assembler + truss2 + beam2 + mixed-model
-dispatch), both C3D8 solid backends, UEL adapter, UMAT/CP material adapters via a
-mock UMAT, parser, ODB-export compile, neutral-model IO round-trip, runnable API
-examples, manifest. Abaqus is not installed here, so ODB-comparison / real-UMAT
-levels are delivered ready-to-run and marked ⏳.
+The homogeneity identity needs no finite differences: both models are
+homogeneous of degree one in their stress-dimensioned parameters, so at every
+increment the parameter-weighted sensitivities of each stress and reaction sum
+to the value itself, and those of each displacement sum to zero. The method
+and tolerances are in [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md).
 
----
+Ordinary `resasm request` runs report `verified=false`: they check the replay
+against the ODB but do not run the independent finite-difference reference
+unless asked (`--validate`, or `resasm history --verify tangent|fd`).
 
-## Part I — Refactor success criteria
+### Clean installation and test suites
+
+Both repositories were cloned from their published `main` branches into a new
+directory and everything ran from those clones
+([docs/evidence/final_clean_clone.md](docs/evidence/final_clean_clone.md)):
+
+- The clean-install gate (`scripts/clean_install_gate.py`) passed all 22
+  commands: provider build, `resasm request` on a genuine ODB, the
+  source-denied run, both GUIs up to HTTP readiness, and the full-size J2
+  cantilever (`resasm request` in 22.7 s; `resasm history --reequilibrate` in
+  33.0 s, homogeneity identity 1.4e-12 of the largest term at every increment).
+- The offline suite (`-m "not abaqus and not arc and not network"`) gave 494
+  passed, 20 skipped and 6 failed. The six failures had one cause, an import
+  check in the verification-record scripts that refused an installed
+  `umat_oti` identical to the checkout's; `verification/common.py` now accepts
+  a byte-identical installed copy.
+
+[docs/COMPLETION_LEDGER.md](docs/COMPLETION_LEDGER.md) tracks every
+requirement of the program and the evidence for each.
+
+### Not supported
+
+Refused with a named reason, not approximated:
+
+- **Kinematics and elements:** finite-strain plasticity; element types other
+  than C3D8 (C3D8R, C3D20R and C3D4 are planned). `shell_placeholder` is a
+  contract only and `uel_direct` a skeleton.
+- **Loads and constraints:** distributed loads (`*Dsload` is parsed but not
+  applied), body forces, amplitudes, contact, and `*Equation`/MPC constraints
+  (parsed but not applied).
+- **Analysis structure:** several steps, several materials or instances, and
+  nonzero initial state.
+- **Sensitivity kinds:** load, boundary and shape sensitivities; derivatives
+  above first order for finite-element models.
+
+Other known limits:
+
+- The Oxford crystal-plasticity UMAT in `sources/permissive/` does not compile
+  under gfortran (Cray pointers and an ifort `trace()` kind mismatch). It needs
+  Intel ifort and Abaqus.
+- The finite-strain consistent tangent of `solid_c3d8_finite_strain` is
+  analytic but approximate, pending the comparison with Abaqus `AMATRX`.
+- The `resasm.yml` assembly recipe still reports `OTI-differentiate R: NO` for
+  the C3D8 backends. That capability gate
+  (`resasm_user/recipe.py::sensitivity_capability`) is deliberate and stays
+  until that path is verified; C3D8 sensitivities come from `resasm request`,
+  `resasm history` and the bounded finite-strain example instead.
+- OTILib does not build natively on Windows, so the Python residual path needs
+  WSL there.
+
+## Baseline framework (July 2026)
+
+The formulation-agnostic assembly framework and its first backend, C3D8
+crystal plasticity, were established and verified offline in July 2026. That
+record is kept below because its criteria still describe how the framework is
+built. Where later work changed a status, the table says so.
+
+### Framework criteria
 
 | # | Criterion | State |
-|---|-----------|-------|
-| 1 | Core makes no C3D8/CP/stress-strain/UMAT/displacement-only assumptions | ✅ `core/assembler.py` only calls `Formulation.eval_element` + scatters (grep-clean); `dof_manager.py` builds heterogeneous per-node DOF sets |
-| 2 | Crystal plasticity is only one backend | ✅ CP lives in `formulations/solid_c3d8_finite_strain.py` + `materials/crystal_plasticity_adapter.py`, registered alongside others |
-| 3 | Proven agnostic with a truss AND a beam backend | ✅ `truss2` (`EA/L`), `beam2` (`PL³/3EI`) verified; `tests/framework/test_truss2_backend.py`, `test_beam2_backend.py` |
-| 4 | Shell backend contract exists | ✅ `formulations/shell_base.py` + `shell_placeholder.py` (declared, documented, `supported_modes=()` = not runnable) |
-| 5 | Registry inspects models & auto-selects backends | ✅ `core/registry.py` + `core/diagnostics.py::inspect_model` (per-element auto-selection, reachable modes) |
-| 6 | CLI + API run with minimal input | ✅ `residual_core.ResidualProblem` + `resasm` CLI (`ui/`); assemble a real model's stress-driven residual with only a field export |
-| 7 | Requirements engine reports minimum missing data | ✅ `core/requirements.py` (per-mode minimum inputs, single "minimum next item") |
-| 8 | Docs explain adding backends | ✅ `docs/adding_a_formulation.md`, `docs/adding_a_material.md`, `docs/minimal_input_contract.md`, `docs/user_interface.md` |
-| 9 | Tests prove mixed-model dispatch | ✅ `tests/framework/test_mixed_model_dispatch.py` (truss + beam + solid, 3/6/3 DOFs/node, physics-blind scatter) |
-| 10 | Existing CP verification remains intact | ✅ `tests/cp_c3d8_umat/` unchanged, identical numbers; `test_assembler.py` reproduces the kernel **bitwise** (Mode 1 + Mode 2), FD tangent 2.2e-13 |
-| 11 | README no longer CP-centered | ✅ `residual_core/README.md` reframed as a model-agnostic framework; CP listed as one example backend |
+|---|---|---|
+| 1 | Core makes no C3D8/CP/stress-strain/UMAT/displacement-only assumptions | Met: `core/assembler.py` only calls `Formulation.eval_element` and scatters; `dof_manager.py` builds heterogeneous per-node DOF sets |
+| 2 | Crystal plasticity is only one backend | Met: CP lives in `formulations/solid_c3d8_finite_strain.py` and `materials/crystal_plasticity_adapter.py`, registered alongside the others |
+| 3 | Agnosticism shown with a truss and a beam backend | Met: `truss2` (`EA/L`) and `beam2` (`PL³/3EI`); `tests/framework/test_truss2_backend.py`, `test_beam2_backend.py` |
+| 4 | Shell backend contract exists | Met: `formulations/shell_base.py` and `shell_placeholder.py` (declared and documented, `supported_modes=()`, not runnable) |
+| 5 | Registry inspects models and auto-selects backends | Met: `core/registry.py` and `core/diagnostics.py::inspect_model` |
+| 6 | CLI and API run with minimal input | Met: `residual_core.ResidualProblem` and the `resasm` CLI assemble a real model's stress-driven residual from a field export alone |
+| 7 | Requirements engine reports the minimum missing data | Met: `core/requirements.py` reports one "minimum next item" per mode |
+| 8 | Docs explain adding backends | Met: `residual_core/docs/adding_a_formulation.md`, `adding_a_material.md`, `minimal_input_contract.md`, `user_interface.md` |
+| 9 | Tests prove mixed-model dispatch | Met: `tests/framework/test_mixed_model_dispatch.py` (truss, beam and solid; 3/6/3 DOFs per node) |
+| 10 | Existing CP verification remains intact | Met: `tests/cp_c3d8_umat/` unchanged; `test_assembler.py` reproduces the kernel bitwise in both modes, FD tangent 2.2e-13 |
 
-Backends registered: formulations `solid_c3d8_finite_strain`,
+Registered backends: formulations `solid_c3d8_finite_strain`,
 `solid_c3d8_small_strain`, `stress_driven_c3d8`, `truss2`, `beam2`,
-`shell_placeholder` (contract only), `uel_direct`; materials `isotropic_elastic`,
-`umat`, `crystal_plasticity`. Verification ladder generalized to Levels 0–7
-(`core/verification.py`: zero-field L1, rigid-body L2, FD-tangent L4, reactions L5;
-patch tests L3 in the CP kernel).
+`nonlinear_spring1`, `nonlinear_bar1`, `shell_placeholder` (contract only) and
+`uel_direct`; materials `isotropic_elastic`, `compressible_neo_hookean`, `umat`
+and `crystal_plasticity`.
+The generic verification ladder has Levels 0 to 7 (`core/verification.py`:
+zero-field L1, rigid-body L2, FD tangent L4, reactions L5; patch tests L3 in
+the C3D8 kernel).
 
-**Honest claim.** The framework is formulation-agnostic *by architecture*. Each
-formulation becomes supported when a backend satisfying the formulation contract
-is registered and verified.
+The framework is formulation-agnostic by architecture. A formulation becomes
+supported when a backend satisfying the contract is registered and verified,
+not before.
 
-What the refactor deliberately did **not** do: no OTI/HYPAD, no 150-parameter
-model, no non-mechanical coupled-field DOFs (thermal/pressure), no claim of
-arbitrary-formulation support. Continuum-solid coverage is still C3D8 only
-(C3D8R/C3D20R/C3D4 = "planned"); truss/beam are small-strain linear proof
-backends, not production elements; the shell backend is a contract, not runnable.
-
-### Part I-b — User-facing agnosticism audit & interface hardening
-
-Hardening pass focused on usability by a non-developer (no low-level object
-instantiation), verified offline:
+### Usability hardening
 
 | Area | Result |
 |---|---|
-| Minimal CLI workflow | ✅ `resasm inspect / doctor / requirements / assemble --fields / template / backends`; four runnable examples under `residual_core/examples/minimal_*` (model + command + expected output + auto-detected vs. manual notes) |
-| Requirements engine | ✅ reports only the **minimum** missing item, never crashes, never a generic checklist; `tests/framework/test_requirements_negative.py` (beam/no-section, solid/no-field, UMAT/no-source, shell-placeholder, UEL/no-callable) |
-| Backend registry audit | ✅ every backend declares `required_inputs_by_mode`, `optional_inputs_by_mode`, `material_interface_needed`, `state_requirements`, `tangent_support`, `verification_status`; `resasm backends` + `resasm inspect --detail` render per-element selection/status/limitations/modes/next-step |
-| Mixed-DOF edge cases | ✅ `tests/framework/test_dof_manager_mixed.py` (truss-only, beam-only, truss∪beam, beam∪solid); union rule documented in `docs/architecture.md` §3b |
-| Public API | ✅ `tests/framework/test_public_api.py` drives everything through `residual_core.ResidualProblem` with a static guard that no backend/internal classes are imported |
-| Solver-neutral JSON | ✅ `from_neutral` + `resasm inspect model.json`; round-trips nodes, elements/types, material/section tags, `user_material` flag, boundary/load metadata, and optional `field_refs` (`tests/framework/test_neutral_io.py`) |
-| Docs / README | ✅ README leads with "formulation-agnostic residual assembly framework"; CP listed under example backends only |
+| Minimal CLI workflow | `resasm inspect / doctor / requirements / assemble --fields / template / backends`; runnable examples under `residual_core/examples/minimal_*` |
+| Requirements engine | reports only the minimum missing item and never a generic checklist; `tests/framework/test_requirements_negative.py` |
+| Backend registry audit | every backend declares its required and optional inputs per mode, material interface, state requirements, tangent support and verification status; `resasm backends` and `resasm inspect --detail` render them |
+| Mixed-DOF edge cases | `tests/framework/test_dof_manager_mixed.py`; the union rule is in `residual_core/docs/architecture.md` §3b |
+| Public API | `tests/framework/test_public_api.py` drives everything through `residual_core.ResidualProblem`, with a static guard that no backend class is imported |
+| Solver-neutral JSON | `from_neutral` and `resasm inspect model.json` round-trip nodes, elements, material and section tags, the user-material flag, boundary and load metadata, and field references (`tests/framework/test_neutral_io.py`) |
 
----
+### OTILib sensitivity engine
 
-### Part I-c — OTILib (hypercomplex sensitivity engine): PASS PATH VERIFIED IN WSL
+OTILib is the hypercomplex engine behind the sensitivity paths: an external
+GPLv3 dependency, built separately and never vendored. Its tests were first
+run with a genuine build in WSL (Python 3.9, conda environment `pyoti`):
+`test_otilib_adapter.py`, `test_otilib_spring_sensitivity.py`,
+`test_otilib_fe_sensitivity.py` and `test_oti_recovery_factor.py` gave
+**11 passed, 0 skipped** with `RUN_OTILIB_TESTS=1`, so a skip would have
+counted as a failure. The current environment uses a Python 3.11 build
+([docs/OTILIB_VENV.md](docs/OTILIB_VENV.md)).
 
-**Status: ✅ OTILib pass path verified in WSL.** This is a real numeric run, not a skip.
+That run includes the order-2 recovery-factor proof: for the spring
+`R = k u³ − f` at `k=2, f=16, u=2`, the raw OTI coefficient for the `k²`
+direction is `1/9` and the recovered derivative is `2! · 1/9 = 2/9 = d²u/dk²`,
+cross-checked against a finite difference of the closed-form `u(k,f)`. Public
+reports quote recovered derivatives; both conventions and
+`direction_map_order<p>.json` are written to `private/`.
 
-| item | value |
-|---|---|
-| OTILib build | `/root/otilib` (source build, GPLv3, external — **not** vendored, **not** a dependency) |
-| conda env | `pyoti` at `/root/miniconda3/envs/pyoti` (Python 3.9.23, numpy 2.0.2) |
-| built extension | `/root/otilib/build/pyoti/sparse.cpython-39-x86_64-linux-gnu.so` |
-| adapter detection | `otilib_available()` → `True`; `api_module` = `pyoti.sparse` (genuine OTI API verified, not the unrelated PyPI squat) |
-| tests run | `tests/framework/test_otilib_adapter.py`, `test_otilib_spring_sensitivity.py`, `test_otilib_fe_sensitivity.py`, `test_oti_recovery_factor.py` |
-| result | **11 passed** (0 skipped), with `RUN_OTILIB_TESTS=1` so the skip guard is disabled and a skip would have been a failure |
-
-Included in that run: the **order-2 recovery-factor proof** — for the spring
-`R = k u³ − f` at `k=2, f=16, u=2`, the raw OTI coefficient for the `k²` direction
-is `1/9` and the recovered derivative is `2! · 1/9 = 2/9 = d²u/dk²`, cross-checked
-against a finite difference of the closed-form `u(k,f)`. Public reports quote the
-**recovered derivatives**; both conventions plus `direction_map_order<p>.json` ship
-in `private/`.
-
-Reproduce with **one command**:
+Reproduce with one command:
 
 ```bash
-# from inside WSL / Linux
-bash scripts/run_otilib_tests_wsl.sh
-```
-```powershell
-# from Windows (launches WSL for you)
-powershell -ExecutionPolicy Bypass -File scripts\run_otilib_tests_wsl.ps1
+bash scripts/run_otilib_tests_wsl.sh                                   # inside WSL or Linux
+powershell -ExecutionPolicy Bypass -File scripts\run_otilib_tests_wsl.ps1   # from Windows
 ```
 
-`scripts/run_otilib_tests_wsl.sh` makes activation **deterministic**: it locates
-conda, activates the env holding the built `pyoti`, exports `OTILIB_ROOT` (+
-`PYTHONPATH`), asserts the genuine OTI API actually imports, and exports
-`RUN_OTILIB_TESTS=1` so the tests **cannot silently skip**. If any piece is
-missing it exits non-zero and names exactly what is missing and how to fix it
-(verified: bad `OTILIB_ROOT` → exit 1, missing conda env → exit 1). All of
-`OTILIB_ROOT`, `OTILIB_CONDA_ENV`, `CONDA_SH` are overridable.
+The script locates conda, activates the environment holding the built
+`pyoti`, exports `OTILIB_ROOT` and `PYTHONPATH`, checks that the genuine OTI
+API imports, and sets `RUN_OTILIB_TESTS=1` so the tests cannot skip silently.
+If anything is missing it exits non-zero and names what is missing and how to
+fix it. `OTILIB_ROOT`, `OTILIB_CONDA_ENV` and `CONDA_SH` can be overridden.
+`pytest` must be installed in that environment (`python -m pip install
+pytest`); the script prints that command when it is absent.
 
-**Correction to an earlier report.** An earlier acceptance summary stated
-"OTILib is not available in Windows or WSL; the pass path could not be
-exercised." **That was wrong.** The probe used WSL's *system* `python3` without
-activating the `pyoti` conda env, so it missed a build that was present all
-along (the extension is compiled for the env's Python 3.9, not system Python).
-The WSL script exists precisely so this cannot happen again.
+On Windows without WSL the OTILib tests skip with a reason, never a silent
+pass, and the Python residual path cannot run, because
+`oti_global.solve_python` requires OTILib.
 
-**On Windows (no WSL): the OTILib tests SKIP cleanly** — `otilib_available()` is
-`False`, and `python -m pytest` reports 3 skips with a reason, never a silent
-pass. OTILib does not build natively on Windows.
+### Crystal-plasticity C3D8+UMAT backend
 
-Two honest caveats:
-- `pytest` had to be installed into the `pyoti` conda env (`python -m pip install
-  pytest`); `scripts/setup_otilib.sh` does not install it. The script detects its
-  absence and prints the exact install command rather than failing obscurely.
-- The Python residual path (`resasm run` with `residual.type: python`) hard-requires
-  OTILib in `oti_global.solve_python`, so it cannot run on Windows regardless of the
-  `backend:` setting — the advertised `dual1` backend is currently unreachable there.
-  Pre-existing; not changed.
+The first verified backend (`formulations/solid_c3d8_finite_strain.py` and
+`materials/crystal_plasticity_adapter.py`, tests under `tests/cp_c3d8_umat/`)
+was built against the criteria below. In July 2026 Abaqus was not available,
+so every criterion that needs a real ODB or a compiled UMAT was built
+ready-to-run and marked pending. Abaqus 2021.HF5 has since been used for the
+replay engines, which close several of those gaps for UMAT-OTI providers; the
+last column says which.
 
----
+| # | Criterion | July 2026 | Current |
+|---|---|---|---|
+| 1 | The manifest classifies the downloaded examples | Verified | Unchanged |
+| 2 | A permissive C3D8 CP UMAT example is parsed | Verified | Unchanged |
+| 3 | Abaqus ODB fields are exported | Built, needed Abaqus | Exporters run on real ODBs: `residual_core/io/abaqus_odb_export.py` (used by `resasm request`) and `residual_core/replay/odb_export_npz.py` (used by `resasm history`) |
+| 4 | Stress-driven residual reproduces Abaqus RF and free residuals | Assembly mathematics verified offline; RF comparison needed an ODB | No run of the stress-driven scripts against a real ODB is recorded; the replay engines make the equivalent check from replayed stress (row 6) |
+| 5 | UMAT replay reproduces Abaqus stress and state history | Plumbing proven with a mock UMAT; real UMAT needed ifort | Replayed stress and state match the ODB at every integration point and increment for UMAT-OTI providers (J2 and FCC cantilevers); the Oxford CP UMAT itself still needs ifort |
+| 6 | Residual from replayed UMAT stress matches Abaqus RF | Both halves built | Done by the replay engines for UMAT-OTI providers: reactions and the free residual are checked against the ODB at every increment |
+| 7 | Tangent check passes or reports the DDSDDE mapping error | Verified, open item stated | Unchanged: the finite-strain `DDSDDE` to `AMATRX` mapping is still open |
 
-## Part II — Crystal-plasticity C3D8+UMAT backend (original Step-10 criteria)
+What the July criteria established:
 
-The following is unchanged; it is now the first verified backend
-(`formulations/solid_c3d8_finite_strain.py` + `materials/crystal_plasticity_adapter.py`),
-with tests under `tests/cp_c3d8_umat/`.
+1. **Manifest.** All 105 `.inp` files under
+   `sources/{permissive,copyleft,license-unknown}` are inventoried in
+   `residual_core/example_manifest.{md,json}`. The licence invariant holds
+   exactly: every copyleft or licence-unknown file is reference-only.
+2. **Parsing.** `abaqus_inp_parser.py` parses `HCPnoTwin/Compression111.inp`:
+   216 nodes, 125 C3D8 elements, material CPuranium (user material, 11
+   constants, 125 SDV) and all boundaries, resolving the part/assembly `Set-1`
+   name collision. The larger group-A jobs (DiscreteTwin, 8,035 elements;
+   PyCiGen, 2,940 elements and 95 grains) also parse.
+3. **Assembly mathematics, offline.** Divergence-theorem patch test on the real
+   Compression111 element and a distorted hexahedron: `∫BᵀσdV` equals the
+   surface-traction consistent forces to 5e-16, self-equilibrium to 1e-13. A
+   linear-stress patch and global body-load test (which catches per-IP weights
+   and intra-element redistribution that a uniform field cannot): 1e-13. The
+   finite-strain force is frame-objective to 5e-16 and reduces exactly to
+   small strain at `u = 0`.
+4. **UMAT replay plumbing.** `umat_adapter_fortran/` marches a full DFGRD
+   history in one process, persisting `STATEV` and the `/UMPS/` common block
+   across increments. The 37-argument UMAT signature matches `umat.for`, and
+   the STATEV layout matches `kmat.f`. A mock elastic UMAT shows the history
+   dependence (`STATEV(35)` accumulates `0 → 1e-5 → … → 1e-4` over five
+   increments; an identity increment gives zero stress).
+5. **Tangent.** The small-strain element tangent `K = ∫BᵀDB` agrees with finite
+   differences to 1.6e-16 (relative Frobenius). The finite-strain force
+   Jacobian at fixed σ agrees with an exact analytic Jacobian to 5e-11. The
+   mapping of a finite-strain UMAT `DDSDDE` to the element material tangent
+   (objective rate and geometric split) that would match Abaqus `AMATRX` is
+   still open; see `tests/cp_c3d8_umat/tangent_fd_check/README.md`.
 
-## Environment constraint (root cause of what is / isn't verifiable here)
+Each module was cross-audited when it was built: the mathematics was
+re-derived independently of the implementation and the builds re-run, and
+confirmed findings were fixed and re-verified. The shared conventions are in
+[residual_core/CONTRACT.md](residual_core/CONTRACT.md).
 
-**Abaqus is not installed in this environment** (`which abaqus` → none). Python
-3.12 + numpy and gfortran are available. Consequently:
-
-- Everything that does **not** need Abaqus is built AND verified here to machine
-  precision (manifest, parsing, the finite-element residual math, the tangent
-  machinery, the UMAT-driver plumbing).
-- Everything that **needs Abaqus** (running the job, ODB export, comparing to
-  reactions and to `STATEV`/`S` history, compiling the real UMAT with ifort) is
-  built **ready-to-run and documented**, but is **not executed** — and is
-  labelled ⏳, never ✅.
-
-## How this was built (process)
-
-A shared [`residual_core/CONTRACT.md`](residual_core/CONTRACT.md) fixed the
-conventions first. Then **parallel agents** built the modules (manifest, parser,
-residual/tangent, Abaqus IO + Fortran adapter); a second wave of **adversarial
-cross-audit agents** each reviewed modules they did *not* write, re-deriving the
-math from scratch and re-running the builds; confirmed findings were fixed and
-re-verified. Every deliverable was also re-run by the orchestrator independently
-(not trusting agent self-reports).
-
----
-
-## Step-10 criteria
-
-### 1. The manifest correctly classifies the downloaded examples — ✅ MET
-- All **105** `.inp` files under `sources/{permissive,copyleft,license-unknown}`
-  inventoried in `residual_core/example_manifest.{md,json}`.
-- Groups: **A=4** (C3D8-only CP UMAT — the target), **B=3** (non-C3D8 continuum),
-  **C=29** (UEL/cohesive/`U1`), **D=56** (all copyleft + license-unknown,
-  reference-only), **fragment=13** (`*Include` mesh pieces).
-- Independently re-verified by audit: counts match a fresh recount and on-disk
-  `find`; the **license invariant holds exactly** (all 56 copyleft/unknown files
-  are D — none can leak into the permissive core); the 4 priority files are all
-  group A with correct element type / user-material / constants / SDV.
-
-### 2. At least one permissive C3D8 + UMAT CP example is parsed — ✅ MET
-- `abaqus_inp_parser.py` parses `HCPnoTwin/Compression111.inp`: **216 nodes, 125
-  C3D8 elements, material CPuranium (user-material, 11 constants, 125 SDV)**, all
-  BCs, resolving the tricky part/assembly `Set-1` name collision correctly.
-  Independently re-derived from the raw file by audit — every number matches.
-- Also parses the larger group-A jobs (DiscreteTwin 8035 elems, PyCiGen 2940
-  elems/95 grains) without error.
-
-### 3. Abaqus ODB fields are exported — ⏳ BUILT, AWAITING ABAQUS
-- `extract_abaqus_fields.py` (Abaqus/Python-2.7) emits the CONTRACT-§5
-  `fields.json` (undeformed nodes, connectivity, per-frame `U`/`RF`, IP `S` in
-  Abaqus order with IPs sorted, `SDV`). odbAccess API usage audited and
-  **exercised against a hand-built fake ODB** (grouping/sorting/schema correct);
-  `py_compile` clean; 2.7-safe. Cannot run for real without Abaqus.
-
-### 4. Stress-driven residual assembly reproduces Abaqus RF / free residuals — ⏳ PARTIAL
-- **The assembly math is verified offline to machine precision** (this is the
-  substance of the check, minus Abaqus' actual numbers):
-  - Divergence-theorem patch test, real Compression111 element + a distorted
-    hex, random + uniaxial stress: `∫BᵀσdV` = surface-traction consistent forces
-    to **5e-16**; self-equilibrium to 1e-13.
-  - **Linear-stress** patch + global body-load test (catches per-IP weights and
-    intra-element redistribution that a uniform field can't): **1e-13**.
-  - Finite-strain force is **frame-objective to 5e-16** and reduces to
-    small-strain at `u=0` exactly — i.e. it really integrates Cauchy stress over
-    the current config, the Abaqus nlgeom convention.
-- `stress_driven_residual.py --fields fields.json` computes free-DOF residual and
-  compares prescribed-DOF internal force to `RF` (±sign) — **ready**, but the
-  actual RF comparison ⏳ awaits an ODB.
-- Caveat (documented): the Abaqus **IP ordering** is not offline-verifiable and
-  must be confirmed against the first ODB before trusting a non-uniform state.
-
-### 5. UMAT replay reproduces Abaqus STRESS and STATEV history — ⏳ PLUMBING PROVEN, REAL UMAT PENDING ifort
-- `umat_adapter_fortran/` marches a full DFGRD history in one process, persisting
-  `STATEV` + the `/UMPS/` common block across increments (never a final-step
-  jump). The **37-arg UMAT signature matches `umat.for` exactly** and the STATEV
-  layout claims match `kmat.f` (both line-by-line audited).
-- Verified with a **mock** elastic UMAT: 5-increment replay, `STATEV(35)`
-  accumulates `0→1e-5→…→1e-4` (proves history dependence), identity increment →
-  zero stress. This proves the driver/orchestrator plumbing.
-- The **real** Grilli UMAT does not compile under gfortran (Cray-pointer/`target`
-  twin arrays + an ifort `trace()` kind mismatch — confirmed, exactly two
-  errors, nothing hidden). It requires **Intel ifort + Abaqus (MKL)**; the build
-  route is documented. So STRESS/STATEV-vs-ODB ⏳ awaits that toolchain + a run.
-
-### 6. Residual from replayed UMAT stress matches Abaqus RF / free residuals — ⏳ AWAITING 4 & 5
-- This is the composition of (5)→(4): once the real UMAT replay produces per-IP
-  stress and the ODB exists, feed that stress through the (already verified)
-  assembler and compare to RF. Both halves are built; the end-to-end number
-  awaits Abaqus + ifort.
-
-### 7. Tangent check passes or clearly reports the DDSDDE mapping error — ✅ MET
-- Small-strain element tangent `K = ∫BᵀDB` verified by finite differences:
-  relative (Frobenius) error **1.6e-16**.
-- Finite-strain force Jacobian at fixed σ verified against an exact analytic
-  Jacobian (**5e-11**), and the audit confirmed this object is distinct from the
-  conventional geometric stiffness (a docstring that conflated them was fixed).
-- The report **clearly states the still-open mapping**: turning the *finite-strain
-  UMAT `DDSDDE`* into the finite-strain element material tangent `𝔻` (objective
-  rate + geometric split) to match Abaqus `AMATRX` is deferred to the Abaqus
-  comparison — see `tests/c3d8_tangent_fd_check/README.md`. Numbers in
-  `tests/c3d8_tangent_fd_check/last_report.txt`.
-
----
-
-## Summary
-
-| # | Criterion | State |
-|---|-----------|-------|
-| 1 | Manifest classification | ✅ verified |
-| 2 | Parse a C3D8 CP UMAT example | ✅ verified |
-| 3 | Export Abaqus ODB fields | ⏳ built, needs Abaqus |
-| 4 | Stress-driven residual = Abaqus RF | ⏳ math verified offline; RF compare needs ODB |
-| 5 | UMAT replay = ODB STRESS/STATEV | ⏳ plumbing proven; real UMAT needs ifort+Abaqus |
-| 6 | Residual from replayed stress = RF | ⏳ both halves built; needs 4+5 |
-| 7 | Tangent check / mapping error reported | ✅ passing + open item stated |
-
-**Fully met and verified: 1, 2, 7.** **Built, ready, and verified as far as is
-possible without Abaqus: 3, 4, 5, 6** — the remaining gap for each is a real
-Abaqus run (and, for 5/6, an ifort build of the MIT UMAT), not missing code.
-
-## Explicitly NOT done (per the brief's guardrails)
-No generic elastic MVP; no OTI/HYPAD; no UEL/cohesive path (inventoried
-separately as group C); no new/expanded CP physics; no 150-parameter model; no
-final-step parameter overloading — the replay marches the full increment history
-because `STATEV` is history-dependent.
-
-## Immediate next actions when an Abaqus license is available
-1. Run `Compression111` with the UMAT; export `fields.json` (`--frames all`).
-2. Confirm the C3D8 **IP ordering** with a single-element spatially-varying-stress job.
-3. Run Mode-1 (`stress_driven_residual.py --fields …`) at converged frames → expect
-   free-DOF residual ≈ 0, prescribed-DOF internal force = ±RF.
-4. Build the real UMAT (ifort+Abaqus), run Mode-2 replay increment-by-increment,
-   compare STRESS↔S and STATEV↔SDV, then close Mode-1 with replayed stress.
+The baseline deliberately made no claim about generic elastic models, UEL or
+cohesive elements (inventoried separately as group C), new crystal-plasticity
+physics, or final-step parameter overloading: every replay marches the full
+increment history, because `STATEV` is history-dependent.

@@ -1,12 +1,22 @@
-# Verification Contract
+# Verification contract
 
-What Residual_Assembler checks, what each check actually proves, and — stated
-plainly — **which levels are not implemented today**.
+This page states what Residual_Assembler checks when it runs a `resasm.yml`
+job, what each check actually proves, and, stated plainly, **which levels are
+not implemented today**. It is for users deciding how far to trust a result and
+for reviewers.
 
 > This ladder is about the **residual-sensitivity execution contract** (the user
 > layer, `resasm check` / `resasm run`). It is a different ladder from
 > `residual_core/docs/verification_strategy.md`, which grades the *finite-element
 > backends* inside the framework. Do not conflate them.
+>
+> The analysis replay (`resasm request`, `resasm history`) has its own checks:
+> replayed stress, state and reactions against the ODB at every integration
+> point and increment; the provider tangent against finite differences of the
+> ORIGINAL UMAT (`--verify tangent`); whole-model central differences of the
+> ORIGINAL UMAT (`--verify fd`, `resasm request --validate`). They are
+> described in [REPLAY_HISTORY.md](REPLAY_HISTORY.md), and the measured results
+> in [VERIFICATION_RECORD.md](VERIFICATION_RECORD.md).
 
 ---
 
@@ -17,7 +27,7 @@ plainly — **which levels are not implemented today**.
 | **0** | config loads | the `resasm.yml` is well-formed and complete | ✅ implemented (`resasm check`) |
 | **1** | solution vector loads; `ndof` consistent | `u` is readable, and `problem.unknowns` (if given) agrees with it | ✅ implemented |
 | **2** | residual evaluates; shape is `(ndof,)` | the provider runs and returns the right shape | ✅ implemented |
-| **3** | real residual norm on free DOFs | the supplied `u` really is converged | ✅ implemented **only when the residual is exposed** (Paths A/C). **Impossible in black-box mode** — see below. |
+| **3** | real residual norm on free DOFs | the supplied `u` really is converged | ✅ implemented **only when the residual is exposed** (a Python residual). **Impossible in black-box mode** — see below. |
 | **4** | tangent shape + free/prescribed partition | `T` is `(ndof, ndof)` and the partition is usable | ✅ implemented |
 | **5** | tangent finite-difference check | that `T` really is `∂R/∂u` | ❌ **NOT implemented** |
 | **6** | RHS finite-difference check: `dR/dp` at fixed `u` | the generated `R^(p)` and the solve that consumes it | ✅ implemented (`validation.rhs_finite_difference_check`) |
@@ -154,7 +164,7 @@ If you set it, the run performs no such check and says so explicitly in
 ## Honest summary of coverage
 
 **What is verified today:** the config, the solution vector, the provider's shape
-contract, the tangent's shape, the convergence of `u` (Paths A/C only), and the
+contract, the tangent's shape, the convergence of `u` (Python residuals only), and the
 generated RHS + the solve that consumes it.
 
 **What is NOT verified today:** the tangent itself (level 5), the conditioning of

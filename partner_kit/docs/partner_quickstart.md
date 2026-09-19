@@ -1,4 +1,8 @@
-# Partner Quickstart
+# Partner quickstart
+
+This page is the first run of the partner kit for a collaborator: implement a
+provider, write a configuration, run the command. It takes a few minutes and
+needs only Python 3 and NumPy.
 
 Run the residual-sensitivity kit locally in three steps. Requires Python 3 +
 NumPy. Nothing you provide leaves your machine unless you choose to share the

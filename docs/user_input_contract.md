@@ -1,6 +1,11 @@
 # User input contract
 
-The **minimum** the framework needs to compute sensitivities.
+This page is the short form of what a `resasm.yml` job for a supplied residual
+(Paths B and C) needs: the **minimum** the framework requires to compute
+sensitivities, and the black-box request/response format. It is for users who
+want the essentials on one page; [input_objects.md](input_objects.md) has every
+field and error message. For sensitivities of an Abaqus analysis see
+[REQUEST_INTERFACE.md](REQUEST_INTERFACE.md).
 
 ## Required for every run
 
@@ -11,7 +16,9 @@ The **minimum** the framework needs to compute sensitivities.
 3. **A residual evaluator** — one of:
    - Python: `residual(u, params, state=None, time=None) -> R`
    - Executable: a command that reads `request.json`, writes `response.npz`
-   - Element: a Python module the framework assembles element-by-element
+     (compiled C++ and Fortran providers use this form)
+
+   (`residual.type: element` is accepted but is an alias of `python`.)
 4. **A tangent** — `T = dR/du` at `u`. Provide it as a Python `tangent(...)`
    function, a saved `tangent.npz` file, or returned in the black-box response.
 5. **Requested derivative order** — `sensitivity.order` (≥ 1).
@@ -34,7 +41,10 @@ The **minimum** the framework needs to compute sensitivities.
 
 > The framework does not need to know your mesh if your residual function returns
 > the **global** residual. It only needs mesh/element data if you want the
-> framework to assemble the residual element-by-element (`residual.type: element`).
+> framework to assemble the residual element by element, which is an assembly
+> recipe (a `resasm.yml` that names a `mesh:`; see
+> [residual_assembly_recipe.md](residual_assembly_recipe.md)), not
+> `residual.type: element`.
 
 This is what lets private-code users keep everything local: expose only a global
 `R(u, params)` (Python) or an executable that returns `R^(p)` (black-box).

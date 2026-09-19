@@ -1,4 +1,7 @@
-# Example — black-box residual (no linking)
+# Example: black-box residual (no linking)
+
+This example shows the partner kit driving a residual it cannot see: the model
+lives behind an executable, and only files cross the boundary.
 
 The partner exposes only an **executable** ([mock_solver.py](mock_solver.py))
 that speaks the kit's JSON contract. The kit writes `request.json`, runs the
@@ -8,9 +11,14 @@ executable boundary. The kit performs no overloading here; the executable return
 
 ## Run
 
+From this directory, with the repository root on `PYTHONPATH` (see
+[the partner quickstart](../../docs/partner_quickstart.md)):
+
 ```bash
 python -m partner_kit.python.partner_cli --config config.json
 ```
+
+The run writes its output under `out/` in the current directory.
 
 ## Expected output
 

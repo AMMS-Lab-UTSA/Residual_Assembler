@@ -1,4 +1,7 @@
-# Example — private spring (global provider)
+# Example: private spring (global provider)
+
+This example is the smallest partner-kit run: one global residual, one
+parameter, and the full private/public output.
 
 A partner's proprietary model stand-in: a 1-DOF cubic spring `R = k u^3 - f`,
 implemented in [provider.py](provider.py) as a `GlobalResidualProvider`. The
@@ -7,9 +10,14 @@ provider and reads `dR/dk` from the imaginary part of a dual evaluation.
 
 ## Run
 
+From this directory, with the repository root on `PYTHONPATH` (see
+[the partner quickstart](../../docs/partner_quickstart.md)):
+
 ```bash
 python -m partner_kit.python.partner_cli --config config.json
 ```
+
+The run writes its output under `out/` in the current directory.
 
 ## Expected output
 

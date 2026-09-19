@@ -1,4 +1,12 @@
-# Problem Setting — the mathematics
+# Problem setting: the mathematics
+
+This page states the mathematics behind Residual_Assembler: the nonlinear
+problem, the sensitivity equation it solves, how OTI numbers produce its
+right-hand side, and the assumptions it rests on. It is for readers who want
+to know exactly what is computed. It is written for a residual evaluated at one
+converged state (the direct and black-box paths); the increment-by-increment
+form used for finite-element histories (`resasm request`, `resasm history`) is
+in [REPLAY_HISTORY.md](REPLAY_HISTORY.md).
 
 ## The nonlinear problem
 
@@ -33,9 +41,10 @@ This vector is an **input** to Residual_Assembler, not an output. The tool never
 performs the nonlinear solve.
 
 > "Converged" means the free-DOF residual norm is small. If the user's residual is
-> exposed (Path A/C), the tool measures `‖R(u,a)‖` on the free DOFs and warns if it
-> is not small. If the residual is **not** exposed (black-box, Path B), the tool
-> **cannot** check this and says so — it does not assume convergence.
+> exposed (a Python residual, Path C), the tool measures `‖R(u,a)‖` on the free
+> DOFs and warns if it is not small. If the residual is **not** exposed (a
+> black-box executable, Path B), the tool **cannot** check this and says so — it
+> does not assume convergence.
 
 ## The sensitivity equation
 
@@ -169,7 +178,7 @@ it is implemented in `resasm_user/oti_global.py`.
 | cost per extra order | another full sweep | one more RHS + back-substitution with the *same* `T` |
 | step size | must be chosen; truncation vs round-off | **none** |
 | accuracy | limited by the step | machine accuracy |
-| user's code | unchanged | must be evaluable in generic arithmetic (Path A) or expose OTI/derivative coefficients (Paths B/C) |
+| user's code | unchanged | must be evaluable in generic arithmetic (a Python residual, Path C) or return OTI coefficients (a black-box executable, Path B) |
 
 ## Assumptions and limits (stated, not hidden)
 
@@ -185,7 +194,7 @@ it is implemented in `resasm_user/oti_global.py`.
 4. **History dependence must be handled by the user's provider.** `q` is passed
    through; if the model is path-dependent, the state supplied must be the state at
    the converged solution.
-5. **The residual must survive the OTI algebra (Path A).** Casting to `float`,
+5. **The residual must survive the OTI algebra (Python residual, Path C).** Casting to `float`,
    or any operation that discards the imaginary directions, silently destroys the
    derivatives.
 

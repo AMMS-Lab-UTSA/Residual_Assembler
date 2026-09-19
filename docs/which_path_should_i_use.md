@@ -1,27 +1,35 @@
 # Which path should I use?
 
-> **You should not have to provide R. You provide the ingredients, and
+This page helps you choose how to use Residual_Assembler for your model. Read
+the table from the top and stop at the first row that describes your
+situation.
+
+> **You do not have to provide R. You provide the ingredients, and
 > Residual_Assembler builds R.**
 
-Start at the top. Only fall through if the row above does not apply. All three
-paths produce the same `private/` + `public/` sensitivity package.
-
-| Your situation | Path | How you configure it |
+| Your situation | Path | How you run it |
 |---|---|---|
-| **Your solver hides the global residual** (Abaqus and friends) — but you have a mesh, a converged solution, a material, and BCs | **Path A — assembly from ingredients** *(the main path)* | a **recipe**: `mesh:` + `solution:` + `material:` + `parameters:` |
-| Your model is **private** and you will not expose the code, but your solver can return residual coefficients | **Path B — black-box** | `residual.type: executable` |
-| You can **already write `R(u, params)`** yourself (toy, prototype, small custom model) | **Path C — direct residual** *(shortcut)* | `residual.type: python` |
+| You have a **finished Abaqus analysis** (`.inp` + `.odb`) with a UMAT, and want sensitivities of its results | **Analysis replay** *(the main workflow)* | `resasm request` with the compiled OTI provider built by UMAT-OTI ([REQUEST_INTERFACE.md](REQUEST_INTERFACE.md)) |
+| Your solver hides the global residual, and you want **`R` itself**: a mesh, a converged solution, a material and boundary conditions | **Path A: assembly from ingredients** | a **recipe**: `mesh:` + `solution:` + `material:` + `parameters:` |
+| Your model is **private** and you will not expose the code, but your solver can return residual coefficients | **Path B: black-box** | `residual.type: executable` |
+| You can **already write `R(u, params)`** yourself (a prototype, a small custom model) | **Path C: direct residual** | `residual.type: python` |
 
 ```
-Path A   mesh + formulation + material + solution + stimuli  ->  WE assemble R
-Path B   your private executable                             ->  it returns R^(p) coefficients
-Path C   your own residual(u, params)                        ->  you hand us R
+Analysis replay   .inp + .odb + OTI provider + request  ->  WE replay the material and assemble R, K, dR/dp
+Path A            mesh + formulation + material + fields ->  WE assemble R
+Path B            your private executable                ->  it returns R^(p) coefficients
+Path C            your own residual(u, params)           ->  you hand us R
 ```
 
-`resasm.yml` has **two dialects**, decided by one key:
+Paths A, B and C are configured with `resasm.yml`, which has **two
+dialects**, decided by one key:
 
-- names a **`mesh:`**     → an **assembly recipe** (Path A)
-- names a **`residual:`** → a provider config (Path B / Path C)
+- it names a **`mesh:`**: an **assembly recipe** (Path A);
+- it names a **`residual:`**: a provider configuration (Path B or Path C).
+
+Paths B and C write the same `private/` + `public/` sensitivity package. The
+analysis replay writes `sensitivity_results.json`, `sensitivity_tables.csv` and
+`run_report.txt`, with full fields under `private/`.
 
 ## Not sure? Ask the tool
 
@@ -29,72 +37,92 @@ Path C   your own residual(u, params)                        ->  you hand us R
 resasm inspect-model model.inp
 ```
 
-It reports what it found, what it **inferred for you** (element type, backend, DOF
-map, integration rule, BCs), the **minimum missing ingredient**, and — crucially —
-whether the model can be OTI-differentiated at all.
+It reports what it found, what it **inferred for you** (element type, backend,
+DOF map, integration rule, boundary conditions), the **minimum missing
+ingredient**, and whether the recipe path can OTI-differentiate the model.
 
 ## Guidance per path
 
-- **Path A — assembly (main).** Give the ingredients; we build
+- **Analysis replay (main).** The material developer builds the provider once
+  (`umat-oti-provider build`) and shares `OTI_UMAT.obj` with its
+  `Mapping.json`; the person running the replay needs no material source.
+  `resasm request` handles one bounded J2 model itself and hands every other
+  readable model to `resasm history`, which covers small-strain C3D8 analyses
+  with any UMAT-OTI provider, prescribed displacements and many increments.
+  See [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md),
+  [REPLAY_HISTORY.md](REPLAY_HISTORY.md) and
+  [examples/cantilevers](../examples/cantilevers/README.md).
+
+- **Path A: assembly.** Give the ingredients; we build
   `R = F_int(u,a,q) - F_ext(a,t) + F_constraints(u,t)` by integrating element
   residuals. Almost everything is inferred from the mesh. See
   [residual_assembly_recipe.md](residual_assembly_recipe.md) and
   [abaqus_user_path.md](abaqus_user_path.md).
 
-- **Path B — black-box.** Your model stays entirely private: your program reads
+- **Path B: black-box.** Your model stays entirely private: your program reads
   `request.json` and writes the `R^(p)` **coefficients** (and optionally the
   tangent). We never see your code, mesh, or what the parameters mean.
-  Templates: `templates/user_blackbox_residual/` (order 1),
-  `templates/user_blackbox_order2_residual/` (order ≥ 2 — **read
-  [blackbox_order2_contract.md](blackbox_order2_contract.md) first: you must return
-  Taylor coefficients, not derivatives**). Compiled C++/Fortran code plugs in the
-  same way: `templates/user_cpp_residual/`, `templates/user_fortran_residual/`.
+  Templates: `templates/user_blackbox_residual/` (order 1) and
+  `templates/user_blackbox_order2_residual/` (order 2 and above; **read
+  [blackbox_order2_contract.md](blackbox_order2_contract.md) first: you must
+  return Taylor coefficients, not derivatives**). Compiled C++ and Fortran code
+  plugs in the same way: `templates/user_cpp_residual/`,
+  `templates/user_fortran_residual/`.
 
-- **Path C — direct residual (shortcut).** Write
-  `residual(u, params, state, time)` in ordinary arithmetic; we seed the parameters
-  with OTILib and extract `R^(p)`. Fine for toys and prototypes. **An Abaqus user
-  generally cannot use this** — the solver never exposes R. Template:
+- **Path C: direct residual.** Write `residual(u, params, state, time)` in
+  ordinary arithmetic; we seed the parameters with OTILib and extract `R^(p)`.
+  Suited to prototypes and small models. **An Abaqus user generally cannot use
+  this**, because the solver never exposes `R`. Template:
   `templates/user_python_residual/`.
 
-## ⚠ Honest routing caveat — read before choosing Path A *for sensitivities*
+## Assembling R is not the same as differentiating it
 
-Assembling `R` and **differentiating** `R` are different capabilities.
+For Path A, assembling `R` and **OTI-differentiating** `R` are different
+capabilities:
 
-| backend | assemble R | OTI-differentiate R |
+| backend | assemble R | OTI-differentiate R through the recipe |
 |---|---|---|
 | `solid_c3d8_*` (C3D8), `stress_driven_c3d8`, `truss2`, `beam2` | yes | **no** |
 | `nonlinear_spring1`, `nonlinear_bar1` | yes | yes |
 
-The solid kernels store into numpy **float** arrays (e.g. `core/voigt.py::isotropic_D`
-allocates `np.zeros((6,6), dtype=float)`), which cannot hold a hypercomplex number —
-it either raises or silently truncates to the real part, destroying the imaginary
-directions.
+The solid kernels store into NumPy **float** arrays (for example
+`core/voigt.py::isotropic_D` allocates `np.zeros((6,6), dtype=float)`), which
+cannot hold a hypercomplex number: they either raise or silently truncate to
+the real part, destroying the imaginary directions. So for a C3D8 model the
+recipe path can *assemble and verify* `R`, and `resasm run` **refuses** a
+sensitivity it cannot compute rather than emitting a plausible-looking wrong
+number.
 
-So **today**, for a C3D8 model you can *assemble and verify* `R` through Path A, but
-you cannot yet get OTI sensitivities through it. `resasm run` **refuses and says so**
-rather than emitting a plausible-looking wrong number. For sensitivities on such a
-model use **Path B**, or an **OTI-transformed UMAT** (the companion source-transformation
-project) once wired in. Making the solid kernels OTI-safe is a known engineering task,
-not a physics limit — see
-[assembly_minimum_information.md](assembly_minimum_information.md).
+Sensitivities of C3D8 models come from elsewhere:
 
-## ⚠ `residual.type: element` is NOT the assembly path
+- **with a UMAT:** the analysis replay (`resasm request`, `resasm history`),
+  which links the OTI-transformed provider and carries the derivative arrays
+  alongside the real ones, so the float kernels never have to hold an OTI
+  number;
+- **bounded finite-strain neo-Hookean:** `resasm sensitivity` with the example
+  configuration in [examples/finite_strain_c3d8](../examples/finite_strain_c3d8/README.md)
+  (first-order material parameters);
+- **a private solver:** Path B.
 
-Despite its name, `residual.type: element` is currently just an **alias for
-`python`**: it loads `residual.module` and calls a global
-`residual(u, params, state, time)`. No element-wise assembly happens.
+See [assembly_minimum_information.md](assembly_minimum_information.md) for the
+detail.
 
-If you want us to assemble from a mesh, use a **recipe** (`mesh:`), not
-`residual.type: element`.
+## `residual.type: element` is not the assembly path
 
-## Path-letter note
+Despite its name, `residual.type: element` is an **alias for `python`**: it
+loads `residual.module` and calls a global `residual(u, params, state, time)`.
+No element-wise assembly happens. To have the mesh assembled for you, use a
+**recipe** (`mesh:`), not `residual.type: element`.
 
-Some older pages use "Path A/B/C" for the three *provider kinds*
-(Python / executable / compiled). The canonical lettering is the one on this page:
-**A = assembly, B = black-box, C = direct residual.** When in doubt, the unambiguous
-identifiers are the config keys: `mesh:` (assembly) vs
+## Path letters
+
+The documentation uses one lettering throughout: **A = assembly, B =
+black-box, C = direct residual**; the analysis replay has no letter. Compiled
+C++ and Fortran providers are black-box providers (Path B). When in doubt, the
+unambiguous identifiers are the commands (`resasm request`, `resasm history`)
+and the configuration keys: `mesh:` (assembly) versus
 `residual.type: python | executable`.
 
 See [assembly_minimum_information.md](assembly_minimum_information.md) for the
 minimum inputs and [minimal_user_config.md](minimal_user_config.md) for the
-provider-config reference.
+provider configuration reference.

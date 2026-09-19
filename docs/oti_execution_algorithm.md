@@ -1,7 +1,12 @@
-# The OTI Execution Algorithm
+# The OTI execution algorithm
 
-This is the method, exactly as implemented in `resasm_user/oti_global.py`
-(`solve_python` for Paths A/C, `solve_executable` for the black-box Path B).
+This page gives the order-by-order OTI loop step by step, exactly as
+implemented in `resasm_user/oti_global.py`: `solve_python` for a Python
+residual (Path C) and `solve_executable` for a black-box executable (Path B).
+It is for users writing a provider and for reviewers checking the algorithm.
+The history replay of finite-element analyses uses a first-order,
+increment-by-increment variant described in
+[REPLAY_HISTORY.md](REPLAY_HISTORY.md).
 
 Nothing here is aspirational — every step below corresponds to code.
 
@@ -75,7 +80,7 @@ R_oti = list(residual_fn(u_star, seeded, state, time))
 ```
 
 This is the entire coupling to the user's model. The residual must be written in
-generic arithmetic so the OTI type survives (Path A). `state` and `time` are passed
+generic arithmetic so the OTI type survives. `state` and `time` are passed
 through unchanged.
 
 ### 5b. Extract the order-`p` coefficients
@@ -138,7 +143,8 @@ now the correct right-hand side.
 
 ### 6. Export
 `R^(p)` → `private/rhs_order<p>.npz` (both `residual` = `R^(p)` and `rhs` = `-R^(p)`),
-`U^(p)` → `private/solution_sensitivities_order<p>.npz` (key `U`), plus the tangent,
+`U^(p)` → `private/solution_sensitivities_order<p>.npz` (`U_coefficients`, `U_derivatives`;
+legacy key `U` = coefficients), plus the tangent,
 the maps, and the public report. See [output_objects.md](output_objects.md).
 
 ---
@@ -190,7 +196,7 @@ per order. The residual method pays once for `T` and then only for back-substitu
 
 ## Failure modes this algorithm is sensitive to
 
-- **The residual drops the OTI type** (Path A): a `float()` cast, or a numpy op that
+- **The residual drops the OTI type** (Python residual): a `float()` cast, or a numpy op that
   coerces to real, silently zeroes the imaginary directions → sensitivities come back
   as zeros or garbage. Write the residual in generic arithmetic.
 - **`u` is not converged**: the whole derivation assumes `R(u,a) = 0`.

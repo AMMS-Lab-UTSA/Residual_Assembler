@@ -1,5 +1,11 @@
 # User output contract
 
+This page is the short form of what a `resasm.yml` run writes and what may be
+shared. It is for users who want the essentials on one page;
+[output_objects.md](output_objects.md) specifies every key and
+[privacy_contract.md](privacy_contract.md) the sharing rules. The outputs of
+`resasm request` are in [REQUEST_INTERFACE.md](REQUEST_INTERFACE.md).
+
 Every run writes one directory (default `resasm_output/`) split into **private**
 (full numerical arrays, keep local) and **public** (safe to share).
 
@@ -13,8 +19,9 @@ resasm_output/
         tangent.npz                         T = dR/du
         rhs_order1.npz                      R^(1) and rhs^(1) = -R^(1)
         rhs_order2.npz                      R^(2) ... (per solved order)
-        solution_sensitivities_order1.npz   U^(1) = du/da
+        solution_sensitivities_order1.npz   U^(1) = du/da (coefficients and derivatives)
         solution_sensitivities_order2.npz   U^(2) ... (per solved order)
+        direction_map_order<p>.json         what each column means, with recovery factors
         validation_full.json                residual norm, FD check, diagnostics
 
     public/

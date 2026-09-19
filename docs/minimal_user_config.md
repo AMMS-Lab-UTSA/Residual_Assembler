@@ -1,9 +1,14 @@
 # Minimal user config (`resasm.yml`)
 
+This page gives the two smallest complete `resasm.yml` files, one for a Python
+residual and one for a black-box executable, and a table of every field. It is
+for users starting a configuration from scratch; the full reference is
+[simple_config_contract.md](simple_config_contract.md).
+
 The whole job is described by one small file. Schema:
 [`schemas/resasm_config_v1.schema.json`](../schemas/resasm_config_v1.schema.json).
 
-## Python residual (Path A)
+## Python residual (Path C)
 
 ```yaml
 problem:
@@ -31,7 +36,7 @@ sensitivity:
   backend: otilib
 ```
 
-## Black-box executable (Path C)
+## Black-box executable (Path B)
 
 ```yaml
 problem:
@@ -74,7 +79,7 @@ sensitivity:
 | `parameters` | yes | `name: value` design parameters (seeded) |
 | `solution.file` or `solution.values` | yes | converged `u` |
 | `sensitivity.order` | yes | derivative order (≥ 1) |
-| `sensitivity.backend` | no | `otilib` (default) or `dual1` (order 1) |
+| `sensitivity.backend` | no | `otilib` (default). The schema also lists `dual1`, but the run path always uses OTILib ([input_objects.md](input_objects.md#5-sensitivity-request)). |
 | `constraints.free` / `constraints.prescribed` | no | free/fixed DOF indices (default: all free) |
 | `state.file` / `time` | no | history/time passed to your residual |
 | `output.dir` | no | output folder (default `resasm_output`) |

@@ -1,7 +1,8 @@
-# Black-box residual template — ORDER 2 (coefficients, not derivatives)
+# Black-box residual template: order 2 (coefficients, not derivatives)
 
-Use this when you need **order ≥ 2** sensitivities from a private solver.
-For order-1-only jobs the simpler `user_blackbox_residual` template is enough.
+This template is the starting point for **order ≥ 2** sensitivities from a
+private solver (Path B). For order-1-only jobs the simpler
+`user_blackbox_residual` template is enough.
 
 ```
 resasm init --template blackbox-order2 --out my_case

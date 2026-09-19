@@ -1,24 +1,97 @@
-# Quickstart (users)
+# Quickstart
 
-You should not have to provide the global residual R. Abaqus never exposes it.
-Provide the ingredients — mesh, material, solution field, loads, BCs — and
-Residual_Assembler assembles R for you. Your model stays on your machine.
+This is a one-page guided first run for users. It walks through the three
+things Residual_Assembler does, in the order most users need them: sensitivities
+of a finished Abaqus analysis, a residual assembled from a model's ingredients,
+and sensitivities of a residual you already have. Installation is in
+[docs/INSTALL.md](docs/INSTALL.md), every command and option in
+[docs/CLI_GUIDE.md](docs/CLI_GUIDE.md), and the graphical interface in
+[docs/GUI_GUIDE.md](docs/GUI_GUIDE.md).
 
-**Install:** `pip install -e .` (exposes `resasm`). Assembly needs nothing else.
+Your model stays on your machine: none of these commands makes a network call.
 
-## The assembly path (start here)
+## 1. Sensitivities of a finished Abaqus analysis
+
+You need four files: the input deck `Analysis.inp`, its `Analysis.odb`, the
+material compiled as an OTI provider (`OTI_UMAT.obj` with its `Mapping.json`
+beside it, built by the companion UMAT-OTI with `umat-oti-provider build`) and
+a `sensitivity_request.json`. Then:
+
+```bash
+resasm request --model Analysis.inp --odb Analysis.odb \
+    --material OTI_UMAT.obj --request sensitivity_request.json --out results
+```
+
+A request names the outputs, parameters, region and increments you want:
+
+```json
+{
+  "outputs": [
+    {"name": "loaded_U1", "field": "U", "component": 1, "reduction": "mean"}
+  ],
+  "parameters": ["E", "SIGY0", "H"],
+  "domain": {"nodes": [2, 3, 6, 7]},
+  "increments": "LAST"
+}
+```
+
+Three files are written at the top of `results/`:
+`sensitivity_results.json` (values and derivatives), `sensitivity_tables.csv`
+(one row per output, increment and parameter) and `run_report.txt` (what was
+executed, what was checked, tolerances and limits). The history engine can add
+`sensitivity_shares.csv` and, when the request asks for full fields,
+`fields.npz`. Everything else (matrices, the linked provider library, the ODB
+export) stays in `results/private/`.
+
+`resasm request` handles one bounded J2 model itself and hands every other
+readable model (full-size meshes, prescribed displacements, many increments,
+any provider) to the history replay engine, `resasm history`, saying so in
+`run_report.txt`. Exporting the ODB needs a licensed Abaqus; the sensitivity
+computation does not.
+
+**Try it without Abaqus.** The repository ships a small Abaqus J2 beam whose
+ODB is already exported to `fields.npz`. From the Residual_Assembler root, with
+UMAT-OTI checked out beside it:
+
+```bash
+umat-oti-provider build ../UMAT_source_transformation/parameter_sensitivity/models/m3_j2/contract_v2.json \
+    --out provider_j2
+resasm history --model examples/replay_history/j2_beam/Analysis.inp \
+    --fields examples/replay_history/j2_beam/fields.npz \
+    --material provider_j2/umat_m3_j2_oti.obj \
+    --request examples/replay_history/j2_beam/sensitivity_request.json --out beam_results
+```
+
+It prints one summary line and writes the same files, plus
+`sensitivity_shares.csv`:
 
 ```
-resasm inspect model.inp                             # what do I have? what's missing?
+history replay: 10 increments, 768 integration points, 4 parameters; yes: max|R_free| = 1.288e-03 N at increment 10 (limit 1.609e-01 N there)
+```
+
+Next: the request format and the bounded engine are in
+[docs/REQUEST_INTERFACE.md](docs/REQUEST_INTERFACE.md); the history engine, its
+mathematics and tolerances in [docs/REPLAY_HISTORY.md](docs/REPLAY_HISTORY.md);
+two full-size models in [examples/cantilevers](examples/cantilevers/README.md).
+In the GUI this is the **Sensitivity Request** screen.
+
+## 2. Assemble a residual from a model's ingredients
+
+Abaqus never exposes its global residual `R`, but `R` is built from element
+residuals, materials, solution fields, loads and constraints. Give those and
+Residual_Assembler assembles `R`:
+
+```bash
+resasm inspect model.inp                             # what do I have? what is missing?
 resasm requirements model.inp --mode stress-driven   # the minimum missing item
 resasm init-assembly --model model.inp --solution U.npy
 resasm check resasm.yml
 resasm run   resasm.yml
 ```
 
-**`resasm inspect model.inp`** reads the mesh, picks an element backend, identifies
-the material, and names what it still needs. Real output on a model shipped in this
-repo (`sources/permissive/.../HCPnoTwin/Compression111.inp`):
+**`resasm inspect model.inp`** reads the mesh, picks an element backend,
+identifies the material and names what it still needs. Real output on a model
+shipped in this repository (`sources/permissive/.../HCPnoTwin/Compression111.inp`):
 
 ```
 Model inspection summary
@@ -39,17 +112,16 @@ Possible modes:
   - UEL-direct: not applicable
 ```
 
-**`resasm requirements model.inp --mode stress-driven`** names the *one* thing to
-provide next — never a generic checklist:
+**`resasm requirements model.inp --mode stress-driven`** names the one thing to
+provide next, never a generic checklist:
 
 ```
 Minimum missing input:
   provide integration-point stress field S, or an ODB/CSV export (...).
 ```
 
-**`resasm init-assembly --model model.inp`** writes the recipe and immediately tells
-you what it inferred, what is still missing, and — honestly — what it can and cannot
-do. Real output:
+**`resasm init-assembly --model model.inp`** writes the recipe and reports what
+it inferred, what is still missing and what it can and cannot do. Real output:
 
 ```
 Residual assembly recipe: assembly_job
@@ -83,16 +155,17 @@ Minimum missing input:
   [missing] parameters: which parameters to differentiate (e.g. 'MAT.E', 'spring.k')
 ```
 
-Read the **Capability** block. For C3D8 today: **R assembles, but R cannot be
-OTI-differentiated** — the element kernels use numpy float arrays. The tool refuses
-to pretend otherwise. See [README.md](README.md#status).
+Read the **Capability** block. Through this recipe, a C3D8 residual assembles
+but is not OTI-differentiated: the element kernels use NumPy float arrays, and
+the tool refuses to pretend otherwise. Sensitivities of C3D8 models with a UMAT
+come from section 1 instead.
 
-**`resasm check resasm.yml`** re-runs that report and stops at the first blocker.
-**`resasm run resasm.yml`** does the job.
+**`resasm check resasm.yml`** repeats that report and stops at the first
+blocker. **`resasm run resasm.yml`** does the job.
 
-To assemble R directly from an exported stress field, without the recipe:
+To assemble `R` directly from an exported stress field, without the recipe:
 
-```
+```bash
 abaqus python scripts/extract_odb_fields.py --odb my_job.odb --out fields.json
 resasm assemble model.inp --mode stress-driven --fields fields.json --out R.npy
 resasm verify   model.inp --fields fields.json     # ||R_free|| ~ 0 at equilibrium
@@ -100,15 +173,17 @@ resasm verify   model.inp --fields fields.json     # ||R_free|| ~ 0 at equilibri
 
 `fields.json` is `{"stress_ip": {"<eid>": [[s11,s22,s33,s12,s13,s23], ... per IP]}}`
 in Abaqus Voigt order. Other modes: `resasm modes`. Per-mode readiness:
-`resasm doctor model.inp`. Backend capabilities: `resasm backends`.
+`resasm doctor model.inp`. Backend capabilities: `resasm backends`. The
+details are in [docs/residual_assembly_recipe.md](docs/residual_assembly_recipe.md)
+and [docs/abaqus_user_path.md](docs/abaqus_user_path.md).
 
-## If you already have `R(u, params)`
+## 3. Sensitivities of a residual you already have
 
-Secondary path — the shortcut. Only usable if you can evaluate the *global* residual
-yourself (an Abaqus user cannot). It is also the smallest end-to-end example, and it
-is a working sensitivity route.
+If you can evaluate the global residual `R(u, params)` yourself (a Python
+model, a prototype, or a private solver that returns residual coefficients),
+start from a template:
 
-```
+```bash
 resasm init --template python --out my_case
 cd my_case
 resasm check resasm.yml
@@ -116,7 +191,7 @@ resasm run   resasm.yml
 resasm report resasm_output/
 ```
 
-`init` creates two files:
+`init` creates the residual module and its configuration:
 
 ```python
 # user_residual.py
@@ -139,15 +214,19 @@ sensitivity: { order: 2, backend: otilib }
 validation:  { rhs_finite_difference_check: true }
 ```
 
-`--template` is one of `python`, `blackbox`, `blackbox-order2`, `cpp`, `fortran`.
-For private code you cannot share, use `blackbox-order2`
-([docs/blackbox_order2_contract.md](docs/blackbox_order2_contract.md)) — that is the
-working sensitivity route today.
+With `u = 2`, `k = 2`, `f = 16` the run recovers `du/dk = -1/3` and
+`du/df = 1/24`, and at order 2 `d²u/dk² = 2/9`.
 
-`check` and `run` accept **either** dialect: a recipe that names a `mesh:` routes to
-the assembly path, a config that hands over a `residual:` routes to the direct path.
+`--template` is one of `python`, `blackbox`, `blackbox-order2`, `cpp`,
+`fortran`. For private code you cannot share, use `blackbox-order2`: your
+executable returns Taylor coefficients and the framework only solves the
+linear system ([docs/blackbox_order2_contract.md](docs/blackbox_order2_contract.md)).
 
-## What you get
+`check` and `run` accept either dialect: a recipe that names a `mesh:` goes to
+the assembly path, a configuration that names a `residual:` goes to the
+direct path.
+
+### What you get
 
 ```
 resasm_output/
@@ -157,17 +236,20 @@ resasm_output/
              validation_summary.json, timing.json                  <- safe to share
 ```
 
-`public/` holds only norms, rankings, status and timing — no source, no mesh, no full
-vectors, no state, no parameter *values* (names only).
+`public/` holds only norms, rankings, status and timing: no source, no mesh,
+no full vectors, no state and no parameter values (names only).
 
-**Coefficients vs derivatives (order ≥ 2):** OTI gives Taylor *coefficients*; the true
-derivative is `recovery_factor × coefficient` (1 at order 1, 2 for `d2/dk2`, …). Each
-`.npz` ships both — **just read `U_derivatives`.**
+**Coefficients and derivatives (order 2 and above).** OTI produces Taylor
+coefficients; the true derivative is `recovery_factor × coefficient` (1 at
+order 1, 2 for `d2/dk2`, and so on). Each `.npz` contains both, so read
+`U_derivatives`.
 
-## OTILib
+### OTILib
 
-The sensitivity paths need OTILib (GPLv3, external, not vendored):
-`bash scripts/setup_otilib.sh`. It does not build natively on Windows — use WSL
-(`bash scripts/run_otilib_tests_wsl.sh`). Do **not** `pip install pyoti` (unrelated
-package). Details:
+The direct Python path needs OTILib, an external GPLv3 library that is not
+vendored here: `bash scripts/setup_otilib.sh`, or the no-Conda procedure in
+[docs/OTILIB_VENV.md](docs/OTILIB_VENV.md). It does not build natively on
+Windows; use WSL (`bash scripts/run_otilib_tests_wsl.sh`). Do **not**
+`pip install pyoti`, which is an unrelated package. The black-box path does not
+need OTILib. Details:
 [residual_core/docs/otilib_integration.md](residual_core/docs/otilib_integration.md).

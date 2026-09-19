@@ -1,4 +1,12 @@
-# The Residual Assembly Recipe
+# The residual assembly recipe
+
+This page specifies the residual assembly recipe (Path A): the ingredients from
+which Residual_Assembler rebuilds a solver's global residual `R`, where each one
+comes from, what can be inferred, and what happens when one is missing. It is
+for users assembling a residual from an Abaqus model and for developers
+extending the assembler. Sensitivities of a finished Abaqus analysis use the
+analysis replay instead ([REQUEST_INTERFACE.md](REQUEST_INTERFACE.md)), which
+builds on the same C3D8 kernels.
 
 ## The reframe
 
@@ -49,14 +57,14 @@ current code there is no assembled constraint-force contribution — linear
 
 ---
 
-## Analogy with the UMAT source-transformation project
+## Analogy with UMAT-OTI
 
-That project's contract was a transformation JSON. This project's contract is an
-assembly recipe. Same idea, different ingredients:
+The companion UMAT-OTI's contract is a transformation JSON. This project's
+contract is an assembly recipe. Same idea, different ingredients:
 
 ```
-Old UMAT project:        source + seed + output + target + promote + replace
-New Residual_Assembler:  mesh + formulation + material + fields + stimuli + parameters
+UMAT-OTI transformation contract:  source + seed + output + target + promote + replace
+Residual_Assembler recipe:         mesh + formulation + material + fields + stimuli + parameters
 ```
 
 Both say: *give me the pieces and the rules; I will produce the differentiable
@@ -64,7 +72,11 @@ artifact.*
 
 ---
 
-## Three paths, in priority order
+## Three paths
+
+Besides the analysis replay (`resasm request`, `resasm history`), which is the
+main workflow for sensitivities of an Abaqus analysis, three paths work with a
+residual:
 
 | Path | What the user supplies | Where it lives in the code | Status |
 |---|---|---|---|
@@ -72,27 +84,26 @@ artifact.*
 | **B — black-box** | a private executable that returns residual *coefficients* per order | `resasm_user` — `resasm.yml` with `residual.type: executable`; contract in [blackbox_order2_contract.md](blackbox_order2_contract.md) | Working. The framework never sees the model. |
 | **C — direct residual** (shortcut/toy) | a Python `residual(u, params, state, time)` returning the global `R` | `resasm.yml` with `residual.type: python` | Working. **Not** the main story — a real solver cannot do this. |
 
-> **Naming warning.** The older docs in this folder
-> ([which_path_should_i_use.md](which_path_should_i_use.md),
-> [residual_provider_contract.md](residual_provider_contract.md)) letter these
-> differently: there, "Path A" is the *Python global residual* and "Path C" is the
-> *black-box executable*. This page uses the ingredient-first lettering above.
-> When in doubt, refer to the `residual.type` value (`python` / `executable` /
-> `element`) or to the assembly mode name — those are unambiguous and appear in
-> the code.
+The same lettering is used throughout the documentation
+([which_path_should_i_use.md](which_path_should_i_use.md)). When in doubt, refer
+to the `residual.type` value (`python` / `executable`) or to the assembly mode
+name; those are unambiguous and appear in the code.
 
 ### Which surface implements Path A
 
 Path A is implemented in **`residual_core`**, driven by the `resasm inspect /
 requirements / assemble / verify` commands and the `ResidualProblem` Python API.
 
-It is **not** reachable from `resasm.yml`. `residual.type: element` is accepted by
+From `resasm.yml` it is reached through the **recipe dialect**: a configuration
+that names a `mesh:` (and no `residual:`) is an assembly recipe
+(`resasm_user/recipe.py`); `resasm init-assembly` writes one, and `resasm check`
+and `resasm run` route it to `resasm_user/assembly_runner.py`.
+
+`residual.type: element` is **not** that path. It is accepted by
 `resasm_user/config.py`, but `resasm_user/runner.py` and `resasm_user/checks.py`
 treat `element` **identically to `python`**: they load `residual.module` and call
 a global `residual(u, params, state, time)`. No element-wise assembly happens on
-that path. (The prose in `which_path_should_i_use.md` and `user_input_contract.md`
-that says the framework "assembles element-by-element" for `residual.type: element`
-overstates what the runner does.)
+that path.
 
 ---
 
@@ -101,9 +112,12 @@ overstates what the runner does.)
 Eleven objects. For each: what it is, where it comes from, whether it can be
 inferred, and what happens if it is missing.
 
-> **There is no `recipe.yml` parser.** The recipe is a *specification* — the
-> checklist of ingredients. Today each object is expressed through one of four
-> concrete surfaces:
+> **The recipe below is a specification**, the checklist of ingredients, and it
+> is broader than any one file format. The `resasm.yml` recipe dialect
+> (`resasm_user/recipe.py`) reads the common subset (`mesh`, `fields.solution`,
+> `material`, `formulation`, `stimuli`, `state`, `time`, `constraints`,
+> `tangent`, `sensitivity`, `parameters`, `output`). Each object is also
+> expressed through one of four lower-level surfaces:
 >
 > | surface | file / call |
 > |---|---|
@@ -242,7 +256,7 @@ applied**. Use `load_factor` yourself if you need it.
 | Applied | Dirichlet `*Boundary`: numeric DOF ranges and symmetry keywords `XSYMM/YSYMM/ZSYMM/XASYMM/YASYMM/ZASYMM/ENCASTRE/PINNED` (`core/constraints.py::_SYMM_DOF`) |
 | Effect | free/prescribed partition; the assembled residual at prescribed DOFs is the reaction |
 | **Not applied** | linear `*Equation` / MPC (parsed into `model.equations`, never used); contact; tie constraints |
-| If missing | Everything is free. `||R_free||` then includes what should have been reaction DOFs, and no reaction can be reported. |
+| If missing | Everything is free. `\|\|R_free\|\|` then includes what should have been reaction DOFs, and no reaction can be reported. |
 
 Prescribed **values** are resolved (`dirichlet_dofs` returns `{dof: value}`) but
 nothing injects them into `u` — you must supply a `u` that already satisfies them.
@@ -286,7 +300,7 @@ approximate pending the Abaqus comparison (declared in the backend's own
 | Backends | `otilib` (production, arbitrary order — `core/oti_rhs_provider.py`) or `dual1` (legacy, order 1 only — `core/rhs_provider.py`) |
 | Method | seed all parameters simultaneously, then for `p = 1..q`: evaluate `R*` with OTI scalars, extract `R^(p)`, solve `T U^(p) = -R^(p)`, inject `U^(p)` back into `u*` |
 | Requires | an **OTI-safe** formulation, i.e. `Formulation.oti_differentiable == True` |
-| Platform | OTILib does not build on Windows. Verified in WSL (`scripts/run_otilib_tests_wsl.sh`); on Windows the OTI tests skip cleanly. |
+| Platform | OTILib does not build natively on Windows. Verified on Linux and in WSL (`scripts/run_otilib_tests_wsl.sh`); on Windows without WSL the OTI tests skip cleanly. |
 
 **`oti_differentiable` is `True` for exactly two backends today:**
 `nonlinear_spring1` and `nonlinear_bar1` (grep `oti_differentiable` — the base
@@ -301,7 +315,11 @@ hypercomplex scalar handed to those arrays is either rejected outright or
 truncated to its real part — either way the imaginary directions are destroyed.
 This is a **fixable engineering gap (make the kernels generic-arithmetic), not a
 physics limitation**; it is what `formulations/base.py::oti_differentiable`
-documents.
+documents. C3D8 sensitivities come from the analysis replay (`resasm request`,
+`resasm history`), which carries derivative arrays alongside the real ones, and
+from the bounded finite-strain neo-Hookean right-hand side
+(`formulations/finite_strain_sensitivity.py`); see
+[assembly_minimum_information.md](assembly_minimum_information.md).
 
 ---
 
@@ -433,4 +451,4 @@ Minimum inputs per mode, verbatim from `MODE_REQUIREMENTS`:
   exact limits.
 - [blackbox_order2_contract.md](blackbox_order2_contract.md) — Path B.
 - `residual_core/docs/limitations.md` — the backend-level limitation list.
-- `STATUS.md` — what is verified vs what is built-but-not-executed.
+- [STATUS.md](../STATUS.md) — what is verified, and how.
