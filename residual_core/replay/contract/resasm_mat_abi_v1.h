@@ -4,7 +4,7 @@
  *
  * This header is the STABLE, compiler-independent boundary between a
  * collaborator's residual/sensitivity tool and a material-model developer's
- * (e.g. JHU's) closed-source constitutive binary.
+ * closed-source constitutive binary.
  *
  * DESIGN RULES (do not violate; the whole privacy model depends on them):
  *   1. No OTI / dual / hypercomplex objects ever cross this boundary. The

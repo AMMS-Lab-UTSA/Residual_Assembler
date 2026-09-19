@@ -3,10 +3,10 @@
 This package is the collaborator's half of the two-stage, privacy-preserving
 sensitivity framework:
 
-    Stage 1 (elsewhere): run the production FE analysis with JHU's REGULAR
-        material binary; save a replay record.
-    Stage 2 (here):      replay that record through JHU's matched OTI-enabled
-        material binary -- called only through the stable C ABI in
+    Stage 1 (elsewhere): run the production FE analysis with the material
+        developer's REGULAR binary; save a replay record.
+    Stage 2 (here):      replay that record through the developer's matched
+        OTI-enabled material binary -- called only through the stable C ABI in
         ``contract/resasm_mat_abi_v1.h`` -- assemble R, K and R_,p, solve
         ``K du/dp = -R_,p``, and propagate to requested outputs dq/dp.
 
