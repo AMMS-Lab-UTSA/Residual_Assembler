@@ -1,10 +1,10 @@
 # Worked examples
 
-Seven complete examples, ordered from the smallest calculation to full-size
-Abaqus models. Each has a walkthrough that explains what it shows, gives the
-exact commands and the equivalent GUI steps, lists the files it writes, quotes
-the output measured on 2026-09-18, and says how the result is checked
-independently.
+Eight complete examples, ordered from the smallest calculation to full-size
+Abaqus models, followed by the black-box route. Each has a walkthrough that
+explains what it shows, gives the exact commands and the equivalent GUI steps,
+lists the files it writes, quotes the measured output (2026-09-18; Example 8
+2026-09-19), and says how the result is checked independently.
 
 | # | Example | What it shows | Needs Abaqus? | One-line command (from the repository root) |
 | --- | --- | --- | --- | --- |
@@ -15,6 +15,7 @@ independently.
 | 5 | [Full-size cantilevers](cantilevers/WALKTHROUGH.md) | J2 (1,536 C3D8, 40 increments) and FCC crystal plasticity (384 C3D8, 25 increments, 10 parameters); full-field von Mises sensitivities and per-increment weighted shares | Yes, once (to run the two analyses) | with `C` the work folder of the walkthrough: `resasm request --model "$C/j2/cantilever_j2_nominal.inp" --odb "$C/j2/cantilever_j2_nominal.odb" --material "$WORK/provider_j2/umat_m3_j2_oti.obj" --request examples/cantilevers/j2_request.json --out "$C/j2_results"` |
 | 6 | [Provider-to-sensitivity pipeline](bounded_j2_c3d8/WALKTHROUGH.md) | builds the compiled J2 material, solves a cyclic one-element history, verifies every derivative against whole-model finite differences | No | `python scripts/reproduce_connected_pipeline.py --skip-abaqus --out "$WORK/pipeline"` |
 | 7 | [Finite-strain neo-Hookean C3D8](finite_strain_c3d8/WALKTHROUGH.md) | finite-strain assembly with the exact tangent and OTILib parameter sensitivities, against nonlinear re-solves | No (needs OTILib) | `python examples/finite_strain_c3d8/benchmark.py --out "$WORK/finite"` |
+| 8 | [Second derivatives from your own solver](../templates/user_blackbox_order2_residual/WALKTHROUGH.md) | a black-box executable returns Taylor coefficients up to order 2; first and second derivatives against the closed form | No (no OTILib either) | `resasm init --template blackbox-order2 --out "$WORK/bb2" && resasm run "$WORK/bb2/resasm.yml"` |
 
 ## Before you run an example
 
@@ -51,6 +52,8 @@ independently.
   no OTILib, 10 s).
 - For the workflow on Abaqus results, read **Example 3**, then run
   **Example 4**, which needs no Abaqus, and finally **Example 5**.
+- If your solver must stay a black box, or OTILib is not available, run
+  **Example 8**.
 
 ## How each result is checked
 
@@ -63,13 +66,15 @@ independently.
 | 5 | ODB parity, homogeneity identity, whole-model finite differences at full size | identity 1.4e-12 (J2), 1.2e-13 (FCC); `SIGY0` finite differences 7.9e-9 or better where resolved |
 | 6 | whole-model finite differences of the ORIGINAL routine; an archived elastic Abaqus export | 9.7e-7 or better (tolerance 2e-6); Abaqus fixture passed |
 | 7 | first-Piola quadrature, tangent finite differences, nonlinear re-solves | 5.7e-16; 4.6e-11; 1.0e-10 |
+| 8 | closed form of `u = (f/k^2)^(1/3)`; finite differences of re-solved equilibria | 1.2e-16 (measured 2026-09-19); 3.4e-7 or better, the step's truncation error |
 
 ## Run times
 
 Measured on 2026-09-18 on a 24-core Linux workstation with Python 3.11:
 Example 1, 1 s; Example 2, 0.5 s per command; Example 3, 1.1 s (plus 5.5 s
 to build the provider); Example 4, 1 s; Example 5, 25 to 80 s per model and
-run; Example 6, 10 s; Example 7, 3 s.
+run; Example 6, 10 s; Example 7, 3 s. Example 8, measured on 2026-09-19, took
+under 1 s per command.
 
 ## More small models
 
