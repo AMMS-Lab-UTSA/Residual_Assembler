@@ -24,7 +24,7 @@ public interfaces may still change.
   branch (`--branch`) and adds the full-size J2 cantilever (`--cantilever`).
 - **Presentation claims** reproduced claim by claim (`verification/run_all.py`,
   `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
-- Shared transform generation re-frozen at `da1f183708c19072` with the two
+- Shared transform generation re-frozen at `16c9f305df378089` with the two
   current fixtures regenerated in Abaqus (`docs/evidence/final_refreeze.md`).
 - The `bridge` extra pins UMAT-OTI `09d661b`; CI checks the companion out at
   that commit beside this repository (`docs/COMPATIBILITY.md`).

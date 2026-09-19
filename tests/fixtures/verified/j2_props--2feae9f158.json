@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-18T22:39:23+00:00",
+ "generated": "2026-09-19T01:56:48+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "bundled__generic_ps/src/j2_props.f",
  "source_sha256": "4362e759c4642cb2f74e20c50b86a9472b1e80d6a7fef663bf8faa3dfa8de1c8",
  "repository": "bundled/generic_ps",
- "transform_fingerprint": "da1f183708c19072",
+ "transform_fingerprint": "16c9f305df378089",
  "deck_digest": "5bca9c51a7f5aab2",
  "material": {
   "provenance": "bundled__generic_ps/decks/j2.inp: j2.inp *MATERIAL J2: 4 constants, *DEPVAR 1 -- the two names agree on j2, which is a value the author varied rather than a word every file of this kind carries",
