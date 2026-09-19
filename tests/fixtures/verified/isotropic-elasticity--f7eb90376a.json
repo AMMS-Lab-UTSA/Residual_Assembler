@@ -1,11 +1,11 @@
 {
  "schema": "umat-oti/residual-fixture/1",
- "generated": "2026-09-19T01:56:00+00:00",
+ "generated": "2026-09-19T08:18:45+00:00",
  "what_this_is": "the ingredients one verified corpus case produced: the stress and state the ORIGINAL UMAT computed in Abaqus at one material point, and the tangent the OTI-CONVERTED build reported at the same increments. Both ran the same deck; their histories agreed; the tangent agreed with a finite difference of the original. Nothing here is a source file.",
  "source_id": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
  "source_sha256": "27cda337a45be53431149436fbad42bd19da0bb5ec2a68f6370c17b608326a86",
  "repository": "CAEAssistant-Group/UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine",
- "transform_fingerprint": "16c9f305df378089",
+ "transform_fingerprint": "dbe9f928191e1d43",
  "deck_digest": "148a9ba1eb9cc250",
  "material": {
   "provenance": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/UMATmodel.inp: UMATmodel.inp *MATERIAL Steel: 2 constants, *DEPVAR 0 -- a section in UMATmodel.inp attaches Steel to C3D8; the deck sits in the source's own directory",

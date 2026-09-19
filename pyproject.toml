@@ -25,7 +25,7 @@ gui = ["streamlit>=1.30"]
 # CI result depend on when it ran. Bump it deliberately when the contract moves,
 # and record the pair in the compatibility matrix.
 bridge = [
-	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@18470594b9e65f2fcb3885a3be063359b8a424df",
+	"umat-oti @ git+https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation.git@faa03605574c0bf96c7d1f83c3c9c02e83d2d11f",
 ]
 
 [project.scripts]

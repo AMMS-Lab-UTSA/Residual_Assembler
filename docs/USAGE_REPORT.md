@@ -327,7 +327,7 @@ measured value.
 ## 10. The current transform generation
 
 Evidence about a transformed material belongs to the transform code that
-produced it. The current transform generation is **`16c9f305df378089`**.
+produced it. The current transform generation is **`dbe9f928191e1d43`**.
 It is recorded once, in `schemas/transform_generation.json`, a file that is
 identical in both repositories. The two regression fixtures in
 `tests/fixtures/verified/` (isotropic elasticity and J2) were regenerated in
@@ -346,7 +346,7 @@ python -m pytest -q tests/contract/test_the_two_repositories_speak_one_contract.
     tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py
 ```
 
-Measured: both commands print `16c9f305df378089`, and the tests report
+Measured: both commands print `dbe9f928191e1d43`, and the tests report
 `26 passed`.
 
 ## 11. The clean-install gate

@@ -8,9 +8,9 @@ independently, connected by a versioned contract. Neither vendors the other.
 | Component | Version / commit |
 |---|---|
 | `residual-assembler` | 0.1.0 |
-| `umat-oti` | `18470594b9e65f2fcb3885a3be063359b8a424df` (extra `bridge`) |
+| `umat-oti` | `faa03605574c0bf96c7d1f83c3c9c02e83d2d11f` (extra `bridge`) |
 | Shared contract | version 3.0.0; `schemas/contract_lock.json` equals UMAT-OTI's byte for byte |
-| Transform generation | `16c9f305df378089` (`schemas/transform_generation.json`) |
+| Transform generation | `dbe9f928191e1d43` (`schemas/transform_generation.json`) |
 | Compiled provider ABI | `UMAT`, `UMAT_OTI_EVAL`, `UMAT_OTI_MARCH`, `UMAT_OTI_EVAL_TOTAL`, described by the completed contract (`Mapping.json`) |
 | Contract schema (driver path) | `resasm_umat_transform_v2` |
 | Material driver ABI | stdin property vector + strain path; stdout stress and state per increment |
