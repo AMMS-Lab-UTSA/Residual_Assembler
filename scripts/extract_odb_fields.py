@@ -1,4 +1,5 @@
-"""extract_odb_fields.py — export ODB fields to a solver-neutral JSON.
+# -*- coding: utf-8 -*-
+"""extract_odb_fields.py - export ODB fields to a solver-neutral JSON.
 
 Step 2 of the roadmap. Reads integration-point stress (S), reaction forces (RF),
 displacements (U) and state variables (SDV) from an Abaqus ODB and writes the
@@ -7,6 +8,9 @@ displacements (U) and state variables (SDV) from an Abaqus ODB and writes the
 
 Must be run with the **Abaqus Python** interpreter (it imports ``odbAccess``):
     abaqus python scripts/extract_odb_fields.py --odb my_job.odb --out fields.json
+
+It is written for both Python 2.7 (the Abaqus 2021 interpreter) and Python 3:
+keep it ASCII and free of annotations and f-strings.
 
 When ``odbAccess`` is unavailable (i.e. not inside Abaqus), it prints
 "Abaqus not available: validation pending" and exits 0.
@@ -21,7 +25,7 @@ Output schema (matches attach_results / neutral_model_io field_refs):
     }
 """
 
-from __future__ import annotations
+from __future__ import print_function
 
 import argparse
 import json
@@ -69,7 +73,7 @@ def extract(odb_path, step_name=None, frame_index=-1):
     return out
 
 
-def main(argv=None) -> int:
+def main(argv=None):
     p = argparse.ArgumentParser(description="Export ODB fields to JSON (skips w/o Abaqus)")
     p.add_argument("--odb", required=True)
     p.add_argument("--out", default="fields.json")
