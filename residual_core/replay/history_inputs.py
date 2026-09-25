@@ -154,7 +154,27 @@ def read_history_model(path) -> HistoryModel:
     # outside SUPPORTED_KEYWORDS, so that list carries no further information.
     step = model.steps[0]
     if step.nlgeom:
-        raise UnsupportedFeature("NLGEOM=YES: the history replay is small strain only")
+        # The operators a finite-strain replay needs now exist --
+        # replay.kinematics.deformation_gradients (F_bar, the volumetric part
+        # from the element centroid, which is what Abaqus's selectively
+        # reduced C3D8 hands the UMAT), spatial_operators (B_bar in the current
+        # configuration) and geometric_stiffness. What is not wired is the rest
+        # of the path: B has to be rebuilt every increment rather than once in
+        # __init__, and the material has to be driven through a
+        # gradient-seeded entry point, because a UMAT that reads DFGRD1 sees
+        # nothing through the DSTRAN-seeded one.
+        #
+        # Refusing is still the right answer until that is done. Both halves
+        # have to be corrected together: with the kinematics fixed and the
+        # assembly left on plain B, K came out 28% wrong on a 160-element
+        # cantilever while the stress agreed with the recording to 7e-05 and
+        # equilibrium sat inside Abaqus's own tolerance -- a half-correction
+        # looks more right than no correction.
+        raise UnsupportedFeature(
+            "NLGEOM=YES: the history replay is small strain only. The C3D8 "
+            "finite-strain operators are in replay.kinematics; the engine does "
+            "not yet rebuild them per increment and the provider must expose a "
+            "deformation-gradient entry point (UMAT_OTI_EVAL_TOTAL_F).")
     if step.procedure != "static":
         raise UnsupportedFeature("the step must be *Static")
     if not step.time_period or not np.isfinite(step.time_period) or step.time_period <= 0:

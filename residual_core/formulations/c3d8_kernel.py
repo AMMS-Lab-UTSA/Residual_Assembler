@@ -63,17 +63,30 @@ def _abaqus_c3d8_gauss():
     C3D8 *node* order (which walks the face CCW): IP3/IP4 are NOT in node order.
     Getting that distinction right is a classic pitfall.
 
-    !! ORDERING CAVEAT (verified by audit 2026-07-10) !!
-    This per-IP ORDERING is NOT validated by any offline test in this repo: every
-    offline check uses a spatially-uniform stress, which is *provably blind* to IP
-    ordering (all IPs share the same stress). The ordering here is the standard
-    Abaqus/CalculiX lexicographic convention (corroborated against CalculiX
-    `gauss3d2` / `e_c3d.f`) -- high confidence, but it can only be *proven* against
-    a real ODB. When the first `fields.json` from an Abaqus run exists, verify the
-    ordering by comparing a single-C3D8 job with a known spatially-varying stress
-    (see tests/cp_c3d8_umat/stress_driven_residual/README.md). The INTERNAL pairing
-    "sigma_ip[k] <-> points[k]" is verified; only its match to Abaqus's export
-    index is pending an ODB.
+    ORDERING: CONFIRMED AGAINST A REAL ODB (2026-09-24).
+    This ordering was carried as a caveat until an Abaqus run with a spatially
+    varying stress existed to test it against -- every offline check in this
+    repo uses a uniform stress, which is provably blind to IP order because all
+    points then share the same value.
+
+    The check: a 160-element C3D8 cantilever under NLGEOM bending, 1280
+    integration points, stresses read back from the ODB and assembled here into
+    an internal force. Equilibrium came out at 1.0e-03 of the force scale on
+    the free degrees of freedom -- the same order as Abaqus's own convergence
+    tolerance (0.5% of an average force of ~56). A permuted ordering scrambles
+    sigma across a bending element, where the stress genuinely differs from one
+    point to the next, and that residual does not vanish. Every one of the 48
+    axis-permutation-and-reflection candidates was scored; the lexicographic
+    order below was the best by a wide margin:
+
+        identity (the order below)   free residual  6.2921e-01
+        best alternative             free residual  7.1250e+00   11.3x worse
+
+    The alternatives are the 48 axis permutations and reflections of the
+    raster; the diagnostic that scores them is kept beside the replay driver.
+
+    The INTERNAL pairing "sigma_ip[k] <-> points[k]" was already verified; what
+    this adds is its match to Abaqus's export index.
     """
     g = 1.0 / np.sqrt(3.0)
     pts = []
