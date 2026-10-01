@@ -1,0 +1,31 @@
+# What a model -- local or hosted -- may read in this repository.
+#
+#   <glob> <open|internal|restricted> [owner=<name>] [reason=<text>]
+#
+# Enforced by `council_local.policy` in The-council; see
+# docs/LOCAL_COUNCIL.md. Unmatched paths default to "internal". Later lines
+# win, so a broad restriction can be narrowed by a grant below it.
+#
+# "restricted" means NO model may read it. A collaborator's no-AI condition
+# restricts analysis, not egress: running the weights locally does not satisfy
+# it.
+
+# --- third-party and derived material ---
+tests/fixtures/historical/ internal reason=frozen evidence derived from third-party sources
+**/*.odb restricted reason=binary solver output; may carry sponsor geometry
+**/*.inp internal reason=decks may carry collaborator geometry
+
+# --- collaborator and sponsor material ---
+**/jhu/** restricted owner=jhu reason=no AI-use grant on file
+**/nasa/** restricted owner=nasa reason=no AI-use grant on file
+**/*.pptx restricted reason=decks may carry sponsor or collaborator content
+**/.env restricted reason=credentials
+
+# --- this project's own work ---
+src/ open
+residual_core/ open
+tests/ open
+docs/ open
+examples/ open
+scripts/ open
+verification/ open
