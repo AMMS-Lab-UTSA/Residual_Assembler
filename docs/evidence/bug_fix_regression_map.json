@@ -199,6 +199,16 @@
     "tests/replay_history/test_history_report_verdicts.py::test_every_requested_check_that_fails_is_named_and_sets_exit_1",
     "tests/replay_history/test_history_report_verdicts.py::test_without_verification_nothing_is_claimed_verified"
    ]
+  },
+  {
+   "commit": "30a5ab4",
+   "bug": "The C3D8 history replay integrated a fully integrated first-order brick with the plain point deformation gradient and plain B, where Abaqus hands the material the centroid-volumetric F_bar and assembles with B_bar; the volumetric response, dR/dp and K were wrong for such elements under NLGEOM.",
+   "tests": [
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_volume_change_comes_from_the_centroid",
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_every_point_shares_the_centroid_volumetric_row",
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_initial_stress_term_is_symmetric",
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_an_inverted_element_is_refused_rather_than_integrated"
+   ]
   }
  ],
  "excluded": [
