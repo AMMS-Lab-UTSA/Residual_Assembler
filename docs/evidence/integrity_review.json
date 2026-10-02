@@ -413,6 +413,38 @@
     "generated",
     "transform_fingerprint"
    ]
+  },
+  "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:13ad9f85": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:ac59ce78": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:e35fcd45": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:ef0c4923": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/formulations/test_finite_strain_history_engine.py:_toolchain:call:skip:102b305f": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/formulations/test_finite_strain_history_engine.py:_toolchain:call:skip:1ad61637": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "skip:tests/replay_history/test_mean_dilatation_bounded_hyperelastic.py:test_an_oti_parameter_derivative_survives_the_mean_dilatation_path:call:skip:8eb742f5": {
+   "verdict": "justified",
+   "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
+  },
+  "broad_except:residual_core/corpus/provider.py:build_provider_for:except Exception:50492f9a": {
+   "verdict": "justified",
+   "reason": "A provider build failure is recorded as data: the message is kept, classified (provider_build_failed, undefined references, rank mismatch) and the case is reported unsupported with that reason; nothing is counted as verified."
   }
  }
 }
