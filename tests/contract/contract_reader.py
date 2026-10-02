@@ -39,7 +39,13 @@ from tristate import NOT_ESTABLISHED, Tri, all_true, read  # noqa: F401
 #: INTERNAL. A 2.x reader would have booked three of the producer's primal
 #: disagreements against somebody else's file and fallen through on the new
 #: state -- misreadings, not failures, so major.
-CONTRACT_VERSION = "3.0.0"
+#:
+#: 4.0.0: ``undefined_in_original`` joined the vocabulary (EXTERNAL): the
+#: published routine reads a value it never sets and its stress or tangent
+#: changes with how memory is initialised. A 3.x reader would have fallen
+#: through on it and booked a defect in somebody's file as the producer's own
+#: work -- a misreading, so major.
+CONTRACT_VERSION = "4.0.0"
 SPEAKER = "Residual_Assembler"
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -62,7 +68,8 @@ SEVENTH = "primal_difference_explained_by_a_measured_control"
 EXTERNAL_STATES = frozenset({
     "missing_material_data", "not_a_umat", "incomplete_or_corrupt_source",
     "external_dependency_unavailable",
-    "published_stub_no_constitutive_content", "waits_for_input"})
+    "published_stub_no_constitutive_content", "waits_for_input",
+    "undefined_in_original"})
 #: A limitation of the producing project. Every one of these is work there.
 #:
 #: ``primal_mismatch_explained`` is here and is INTERNAL: the primal results
