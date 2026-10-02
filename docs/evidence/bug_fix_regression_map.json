@@ -204,11 +204,25 @@
    "commit": "30a5ab4",
    "bug": "The C3D8 history replay integrated a fully integrated first-order brick with the plain point deformation gradient and plain B, where Abaqus hands the material the centroid-volumetric F_bar and assembles with B_bar; the volumetric response, dR/dp and K were wrong for such elements under NLGEOM.",
    "tests": [
-    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_volume_change_comes_from_the_centroid",
-    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_every_point_shares_the_centroid_volumetric_row",
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_volume_change_is_the_element_mean",
+    "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_every_point_shares_the_mean_volumetric_row",
     "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_initial_stress_term_is_symmetric",
     "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_an_inverted_element_is_refused_rather_than_integrated"
-   ]
+   ],
+   "note": "Tests renamed by 6b5357b when the operator moved from the centroid to the element-mean volume change Abaqus uses; they pin the same F_bar/B_bar operator structure."
+  },
+  {
+   "commit": "6b5357b",
+   "bug": "The C3D8 replay, the deck replay's NLGEOM STRAN/DSTRAN and the finite-strain solid used the centroid (or plain-F) volume change where Abaqus uses the element-average (mean dilatation); and the mean-dilatation path silently dropped Dual1 parameter derivatives.",
+   "tests": [
+    "tests/replay_history/test_mean_dilatation_abaqus_probe.py::test_deck_replay_dfgrd1_is_the_mean_dilatation_fbar",
+    "tests/replay_history/test_mean_dilatation_abaqus_probe.py::test_deck_replay_nlgeom_stran_is_abaqus_mean_dilatation_stran",
+    "tests/replay_history/test_mean_dilatation_abaqus_probe.py::test_the_plain_f_stran_reading_is_measurably_not_abaqus",
+    "tests/replay_history/test_mean_dilatation_bounded_hyperelastic.py::test_a_dual1_parameter_derivative_survives_the_mean_dilatation_path",
+    "tests/replay_history/test_mean_dilatation_bounded_hyperelastic.py::test_an_oti_parameter_derivative_survives_the_mean_dilatation_path",
+    "tests/framework/test_no_derivative_loss_on_oti_paths.py::test_every_derivative_losing_operation_on_the_oti_chain_is_reviewed"
+   ],
+   "selected_by": "manual"
   }
  ],
  "excluded": [
@@ -271,6 +285,14 @@
   {
    "commit": "acf7c20",
    "reason": "Ledger and evidence of the clean-clone run; 'failed' appears in the count of suite results ('none failed'), not as a corrected behaviour."
+  },
+  {
+   "commit": "c8d0b0a",
+   "reason": "Contract 4.0.0 adds a terminal state; 'defect' names a defect in a published source that the new state reports, not a corrected behaviour of this repository."
+  },
+  {
+   "commit": "7fcfa3f",
+   "reason": "New capability (corpus residual/global sensitivities, NLGEOM contract); 'fixed' appears in 'u and incoming state fixed', the quantity held constant."
   }
  ],
  "changelog_fixed": {}
