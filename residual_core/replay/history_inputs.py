@@ -155,10 +155,13 @@ def read_history_model(path) -> HistoryModel:
     step = model.steps[0]
     if step.nlgeom:
         # The operators a finite-strain replay needs now exist --
-        # replay.kinematics.deformation_gradients (F_bar, the volumetric part
-        # from the element centroid, which is what Abaqus's selectively
-        # reduced C3D8 hands the UMAT), spatial_operators (B_bar in the current
-        # configuration) and geometric_stiffness. What is not wired is the rest
+        # replay.kinematics.deformation_gradients (F_bar with the element's
+        # MEAN volume change -- what Abaqus's selectively reduced C3D8 hands
+        # the UMAT, matched to an Abaqus run on a distorted element to 4e-16),
+        # spatial_operators / internal_force (B_bar in the current
+        # configuration, weight w0 Jbar) and force_tangent_fixed_stress; the
+        # whole NLGEOM-with-history path, DROT included, is exercised by
+        # residual_core.corpus.engine. What is not wired here is the rest
         # of the path: B has to be rebuilt every increment rather than once in
         # __init__, and the material has to be driven through a
         # gradient-seeded entry point, because a UMAT that reads DFGRD1 sees
