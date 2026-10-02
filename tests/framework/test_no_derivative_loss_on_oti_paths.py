@@ -42,6 +42,8 @@ MODULES = {
     "residual_core/materials/neo_hookean.py": "evaluated with OTI PROPS",
     "residual_core/formulations/c3d8_kernel.py": "integrates OTI stress",
     "residual_core/formulations/c3d8_sensitivity.py": "assembles dR/dp, OTI-typed or real",
+    "residual_core/formulations/c3d8_nlgeom.py":
+        "mean-dilatation force/tangent of the finite-strain element, OTI stress by linearity",
     "residual_core/core/field_sensitivity.py": "real consumer: refuses live OTI",
     "residual_core/replay/j2_history.py": "real consumer: refuses live OTI",
 }
@@ -148,6 +150,58 @@ REVIEWED = {
     ("residual_core/formulations/c3d8_sensitivity.py", "solve_du_dp"): (
         {"dtype=float": 2, "real-only allocation": 2, "linear algebra": 3, "float()": 2},
         EXTRACTED),
+    ("residual_core/formulations/solid_c3d8_finite_strain.py",
+     "SolidC3D8FiniteStrain._eval_mean_dilatation"): (
+        {"dtype=float": 1, "linear algebra": 3, "real-only allocation": 1},
+        GEOMETRY + ": the coordinates, the positivity check det(Fbar) and the inverse "
+        "of the real Fbar1, and the empty history; stress and DDSDDE keep the "
+        "constants' dtype (object for Dual1/OTI) and are never cast"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "<module>"): (
+        {"real-only allocation": 2}, "identity constants"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.__init__"): (
+        {"dtype=float": 1, "real-only allocation": 1, "linear algebra": 2}, GEOMETRY),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.F"): (
+        {"dtype=float": 1}, "real displacements: geometry is not seeded"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.Fbar"): (
+        {"linear algebra": 1}, GEOMETRY + " (det F of real displacements)"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.dFbar"): (
+        {"dtype=float": 1, "linear algebra": 2},
+        GEOMETRY + ": real displacement directions, det/inv of the real F"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.geometry"): (
+        {"linear algebra": 2}, GEOMETRY + " (spatial gradients of the real F)"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "increment"): (
+        {"dtype=float": 2, "linear algebra": 2},
+        "increment kinematics of real F0/F1; the corpus engine seeds the UMAT "
+        "inputs AFTER this, never through it"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "increment_direction"): (
+        {"dtype=float": 2}, "real directions of the real increment kinematics"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.increment"): (
+        {"linear algebra": 3, "dtype=float": 2}, "increment kinematics of real displacements"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.increment_direction"): (
+        {"real-only allocation": 1, "dtype=float": 2},
+        "real displacement directions of the real increment kinematics"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom._stress_basis"): (
+        {"real-only allocation": 1}, "the real unit stresses the linear combination uses"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom._combine"): (
+        {"object array": 3},
+        "KEEPS derivatives: real coefficients times the Dual1/OTI stress in an "
+        "object array, no serialisation; extraction happens in the caller"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.force"): (
+        {"dtype=float": 1},
+        "reached only after the object-stress branch has returned: a non-real "
+        "stress is combined by linearity (_combine), the cast sees real stress only"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.dforce_fixed_stress"): (
+        {"object array": 1, "dtype=float": 2},
+        "object branch combines real unit-stress results with the live stress "
+        "(keeps derivatives); the casts below it see real stress and real directions"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.unit_directions"): (
+        {"real-only allocation": 1}, "real DOF unit directions"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.bbar"): (
+        {"real-only allocation": 1}, GEOMETRY + " (B-bar operator)"),
+    ("residual_core/formulations/c3d8_nlgeom.py", "C3D8Nlgeom.tangent_abaqus"): (
+        {"dtype=float": 2, "real-only allocation": 1},
+        "the real Abaqus-style comparison tangent; called only by the corpus "
+        "engine with extracted real stress and DDSDDE, never on the parameter-seeded path"),
     ("residual_core/core/field_sensitivity.py", "solve_field_sensitivities"): (
         {"dtype=float": 3, "linear algebra": 1}, REFUSES),
     ("residual_core/replay/j2_history.py", "real_array"): (

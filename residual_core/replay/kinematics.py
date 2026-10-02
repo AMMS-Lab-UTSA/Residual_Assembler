@@ -72,98 +72,92 @@ def bbar_b_matrices(coordinates):
 # small-strain replay and silently wrong for an Abaqus NLGEOM=YES analysis,
 # where the operators belong in the configuration the increment ends in.
 #
-# Two separate corrections are needed and BOTH have to be applied. Correcting
-# only the kinematics is the easy half, and the state it leaves is the one
-# hardest to notice, because the stress field then looks right.
+# The operators below delegate to residual_core.formulations.c3d8_nlgeom,
+# which holds the one implementation. What Abaqus 2021 does for a fully
+# integrated C3D8 ("selectively reduced") was established against an Abaqus
+# run on a DISTORTED element with an inhomogeneous rotating field (B2 probe,
+# corpus_campaign/batches/B2/noether/abaqus_probe): MEAN DILATATION --
+#
+#     Jbar  = sum_q w0_q J_q / sum_q w0_q          (= v / V)
+#     F_bar = (Jbar / J_q)^(1/3) F_q               DFGRD0/1 to 4e-16
+#     f_a   = sum_q w0_q Jbar [dev sigma_q g_qa + p_q gbar_a],
+#     gbar_a = sum_q w0_q J_q g_qa / sum_q w0_q J_q    reactions to 4.7e-8
+#
+# Commit 30a5ab4 took the volume change from the element CENTROID instead.
+# The two coincide where J is affine in the natural coordinates; on the
+# probe's element the centroid form is 2.4e-4 off in DFGRD and 2.1e-2 in the
+# reactions, and it fails the patch test on a distorted mesh (2e-5) which
+# mean dilatation passes to round-off. It stays available as
+# ``volume="centroid"`` / ``integration="centroid"``, labelled as the
+# comparison, never as the default.
+#
+# Two corrections are needed and BOTH have to be applied: the kinematics
+# (F_bar to the material) and the assembly (B_bar in the virtual work).
+# Keeping plain B while the material responds to F_bar drops the volumetric
+# coupling out of dsigma/du and makes the tangent non-symmetric besides.
 # ---------------------------------------------------------------------------
 
-def deformation_gradients(coordinates, displacement, fbar=True):
-    """F at every integration point, (ne, 8, 3, 3).
+_VOLUMES = {"mean": "mean_dilatation", "centroid": "centroid"}
 
-    With ``fbar`` the volumetric part is taken from the element centroid,
 
-        F_bar = (J_centroid / J_ip)^(1/3)  F_ip
+def _element(coordinates, integration):
+    from ..formulations.c3d8_nlgeom import C3D8Nlgeom
+    return C3D8Nlgeom(np.asarray(coordinates, dtype=float), integration)
 
-    which is what Abaqus's fully integrated first-order bricks hand the UMAT:
-    C3D8 uses selectively reduced integration, evaluating the volumetric
-    strain at the centroid so the element does not lock in near-incompressible
-    plasticity. Passing F_ip instead leaves the deviatoric response correct and
-    the volumetric response wrong, which is close to invisible -- measured on a
-    160-element cantilever, the shear components agreed with the recorded
-    stress to 0.4% while the stress as a whole was 26% out, by a near-uniform
-    hydrostatic offset. With F_bar the same comparison is 7.3e-05.
-    """
-    coordinates = np.asarray(coordinates, dtype=float)
-    displacement = np.asarray(displacement, dtype=float)
-    points = _k.ABAQUS_C3D8_GAUSS.points
-    centre = np.zeros(3)
-    out = np.empty(coordinates.shape[:1] + (len(points), 3, 3))
-    for e, (element, move) in enumerate(zip(coordinates, displacement)):
-        if fbar:
-            _, _, grad_c = _k._b_from_coords(element, centre)
-            centroid = np.linalg.det(np.eye(3) + move.T @ grad_c)
-        for q, point in enumerate(points):
-            _, _, grad = _k._b_from_coords(element, point)
-            F = np.eye(3) + move.T @ grad
-            if fbar:
-                F = F * (centroid / np.linalg.det(F)) ** (1.0 / 3.0)
-            out[e, q] = F
-    return out
+
+def deformation_gradients(coordinates, displacement, fbar=True, volume="mean"):
+    """F at every integration point, (ne, 8, 3, 3): what the UMAT is handed
+    as DFGRD1. With ``fbar`` the volume change is the element's
+    (``volume="mean"``: mean dilatation, Abaqus C3D8; ``"centroid"``: the
+    30a5ab4 comparison form), ``F_bar = (Jvol / J_q)^(1/3) F_q``."""
+    if volume not in _VOLUMES:
+        raise ValueError("volume must be one of %s" % sorted(_VOLUMES))
+    integration = _VOLUMES[volume] if fbar else "full"
+    return _element(coordinates, integration).Fbar(np.asarray(displacement, dtype=float))
 
 
 def spatial_operators(coordinates, displacement, integration="selective_reduced"):
-    """B and w*detJ in the CURRENT configuration, (ne,8,6,24) and (ne,8).
+    """B (or B_bar) in the CURRENT configuration and the integration weights,
+    (ne, 8, 6, 24) and (ne, 8), such that the internal force is
+    ``sum_q w_q B_q^T sigma_q``.
 
-    The companion of :func:`deformation_gradients`. If the material's strain
-    measure is the modified one, so is the virtual work:
-
-        internal force = integral( B_bar^T sigma )
-        dR/dp          = integral( B_bar^T dsigma/dp )
-        K              = integral( B_bar^T c B_bar ) + initial stress
-
-    Keeping plain B in the assembly while the material responds to F_bar drops
-    the centroid coupling out of dsigma/du and makes the tangent non-symmetric
-    besides. Measured against a central difference of R(u) on the same
-    cantilever: 2.78e-01 with plain B, 3.74e-04 with B_bar -- and at the point
-    where K was still 28% wrong the stress already matched the recording to
-    7e-05 and the equilibrium residual was already inside Abaqus's own
-    convergence tolerance. Neither of the checks one would naturally trust
-    caught it.
+    ``integration``: ``"selective_reduced"`` / ``"mean_dilatation"`` (Abaqus
+    C3D8: volumetric row the current-volume average, weight w0 Jbar),
+    ``"centroid"`` (the 30a5ab4 comparison form) or ``"full"``.
     """
-    if integration not in ("full", "selective_reduced"):
+    from ..formulations.c3d8_nlgeom import ALIASES, INTEGRATIONS
+    if ALIASES.get(integration, integration) not in INTEGRATIONS:
         raise ValueError(f"unsupported C3D8 integration: {integration}")
-    coordinates = np.asarray(coordinates, dtype=float)
-    displacement = np.asarray(displacement, dtype=float)
-    current = coordinates + displacement
-    matrices, weights = [], []
-    for element in current:
-        operators, determinants = zip(*[
-            _k.b_matrix_spatial(element, point)
-            for point in _k.ABAQUS_C3D8_GAUSS.points])
-        operators = np.array(operators)
-        weight = np.asarray(determinants) * _k.ABAQUS_C3D8_GAUSS.weights
-        if not np.all(np.isfinite(weight)) or np.any(weight <= 0):
-            raise ValueError("C3D8 requires finite positive Jacobians at every IP; "
-                             "a non-positive one means the element has inverted")
-        if integration == "selective_reduced":
-            # The volumetric row from the element centroid, matching the F_bar
-            # above. The mean-dilatation and centroid forms agree exactly for a
-            # parallelepiped and differ only for a distorted element.
-            centroid, _ = _k.b_matrix_spatial(element, np.zeros(3))
-            trace_c = centroid[:3].sum(axis=0)
-            volume_row = operators[:, :3, :].sum(axis=1)
-            operators[:, :3, :] += ((trace_c - volume_row) / 3)[:, None, :]
-        matrices.append(operators)
-        weights.append(weight)
-    return np.array(matrices), np.array(weights)
+    element = _element(coordinates, integration)
+    operators, weights, _ = element.bbar(np.asarray(displacement, dtype=float))
+    return operators, weights
+
+
+def internal_force(coordinates, displacement, stress, integration="selective_reduced"):
+    """(ne, 24) element internal force in the current configuration."""
+    return _element(coordinates, integration).force(np.asarray(displacement, dtype=float),
+                                                    np.asarray(stress, dtype=float))
+
+
+def force_tangent_fixed_stress(coordinates, displacement, stress,
+                               integration="selective_reduced"):
+    """(ne, 24, 24): the EXACT derivative of ``internal_force`` with the Cauchy
+    stress held -- spatial gradients, current volume and the volumetric
+    average all move with u. The exact K is this plus
+    sum_q w Bbar^T (dsigma/du)."""
+    element = _element(coordinates, integration)
+    ue = np.asarray(displacement, dtype=float)
+    return element.dforce_fixed_stress(ue, np.asarray(stress, dtype=float),
+                                       element.unit_directions(element.ne))
 
 
 def geometric_stiffness(coordinates, displacement, stress, weights=None):
-    """The initial-stress term, (ne, 24, 24).
-
-    It comes from differentiating the current-configuration integral, not from
-    the strain measure, so B_bar does not enter it: the unmodified spatial
-    gradients are the right ones here.
+    """The conventional initial-stress term, (ne, 24, 24),
+    ``sum_q w (g_a . sigma . g_b) delta_ik`` with the unmodified spatial
+    gradients -- what an Abaqus-style tangent adds to Bbar^T c Bbar. It is NOT
+    the exact fixed-stress derivative of the B-bar force (see
+    ``force_tangent_fixed_stress``); the two differ by the objective-rate terms
+    and the variation of the volumetric average.
     """
     coordinates = np.asarray(coordinates, dtype=float)
     displacement = np.asarray(displacement, dtype=float)

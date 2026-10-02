@@ -24,7 +24,11 @@ one as the other is exactly the mistake worth catching:
   Abaqus's ``STRAN`` to 8.3e-08 relative and the mid-point (Hughes-Winget)
   accumulation reproduces it to 2.2e-16, with the ``ln V`` discrepancy
   growing linearly in the increment count -- the signature of a per-increment
-  integration error rather than of a different tensor.
+  integration error rather than of a different tensor. For C3D8 the
+  increment is the element's mean-dilatation one (volumetric part of DSTRAN
+  averaged over the element, DFGRD1 = F_bar): on the B2 probe's distorted,
+  rotating element that reproduces Abaqus's STRAN to 4e-16, the plain-F
+  accumulation used before B3 to 1.1e-2 (of 0.139).
 
 All three are computed here from the same displacement field, and which one a
 deck means is read off its own ``*STEP`` rather than assumed.
@@ -186,58 +190,79 @@ def logarithmic_strain_at_points(Xe, Ue,
     return np.asarray(out, dtype=float)
 
 
-def deformation_gradients_at_points(Xe, Ue,
-                                    gauss=kernel.ABAQUS_C3D8_GAUSS) -> np.ndarray:
-    """``F = I + du/dX`` at each integration point: (n_ip, 3, 3)."""
+_NLGEOM_INTEGRATIONS = ("mean_dilatation", "full")
+
+
+def _nlgeom_element(Xe, gauss, integration):
+    """The shared Abaqus-contract C3D8 (residual_core.formulations.c3d8_nlgeom)."""
+    from residual_core.formulations.c3d8_nlgeom import C3D8Nlgeom
+    if integration not in _NLGEOM_INTEGRATIONS:
+        raise DeckReplayError(f"integration {integration!r} is not one of "
+                              f"{_NLGEOM_INTEGRATIONS}")
     Xe = np.asarray(Xe, dtype=float)
-    ue = np.asarray(Ue, dtype=float).reshape(-1, 3)
-    out = []
-    for point in gauss.points:
-        _N, _detJ, dNdX = kernel._b_from_coords(Xe, point)
-        out.append(np.eye(3) + ue.T @ dNdX)
-    return np.asarray(out, dtype=float)
+    if Xe.shape != (8, 3) or gauss is not kernel.ABAQUS_C3D8_GAUSS:
+        raise DeckReplayError("the NLGEOM reading is the Abaqus C3D8 contract: "
+                              "8 nodes and Abaqus's own 2x2x2 points")
+    return C3D8Nlgeom(Xe[None], integration)
+
+
+def deformation_gradients_at_points(Xe, Ue, gauss=kernel.ABAQUS_C3D8_GAUSS,
+                                    integration="mean_dilatation") -> np.ndarray:
+    """``DFGRD1`` at each integration point: (n_ip, 3, 3).
+
+    Abaqus's fully integrated C3D8 hands the UMAT ``F_bar = (Jbar/J_q)^(1/3)
+    F_q`` with the element's MEAN volume change Jbar = sum w0 J / sum w0 (B2
+    probe, distorted element: 4e-16). ``integration="full"`` returns the plain
+    ``F = I + du/dX`` -- a labelled comparison, not what Abaqus passes; the
+    two coincide only where J is uniform over the element.
+    """
+    el = _nlgeom_element(Xe, gauss, integration)
+    return el.Fbar(np.asarray(Ue, dtype=float).reshape(1, 8, 3))[0]
 
 
 def hughes_winget_strain_at_points(Xe, displacement_history,
-                                   gauss=kernel.ABAQUS_C3D8_GAUSS) -> np.ndarray:
+                                   gauss=kernel.ABAQUS_C3D8_GAUSS,
+                                   integration="mean_dilatation") -> np.ndarray:
     """Abaqus's NLGEOM ``STRAN``: the mid-point increment, accumulated.
 
-    Per increment, with ``F_mid = (F_n + F_(n+1)) / 2``::
+    Per increment, with ``F_mid = (F_n + F_(n+1)) / 2`` (unmodified F)::
 
         dL  = (F_(n+1) - F_n) F_mid^-1
-        de  = sym(dL),  dW = skew(dL)
-        dR  = (I - dW/2)^-1 (I + dW/2)
+        de  = sym(dL) with its trace replaced by the element's volume average
+              of tr dL weighted by w0 det F_mid   (mean dilatation, C3D8)
+        dW  = skew(dL),  dR = (I - dW/2)^-1 (I + dW/2)
         e_(n+1) = dR e_n dR^T + de
+
+    The increment is ``C3D8Nlgeom.increment`` (the B2 contract, DSTRAN/DROT
+    matched to Abaqus on a distorted element with an inhomogeneous rotating
+    field). Without the volumetric average (``integration="full"``, the
+    pre-B3 reading) the probe's STRAN is 2.1e-2 off (of 0.139) and its trace
+    varies over the element where Abaqus's does not.
 
     This is not ``ln V`` and the difference is not rounding: at 0.9%
     extension over nine increments ``ln V`` misses Abaqus's own ``STRAN`` by
-    8.3e-08 relative while this reproduces it to 2.2e-16. Reading one as the
-    other puts an error into every strain a finite-strain deck supplies, in
-    the eighth significant figure, where a single-step check would call it
-    round-off.
+    8.3e-08 relative while this reproduces it to 2.2e-16.
 
     ``displacement_history`` is the element displacement at the end of each
     increment from the first, starting from an undeformed state.
     """
-    Xe = np.asarray(Xe, dtype=float)
-    history = [np.zeros(3 * len(Xe))] + [np.asarray(u, dtype=float).reshape(-1)
-                                         for u in displacement_history]
-    n_ip = len(gauss.points)
-    accumulated = [np.zeros((3, 3)) for _ in range(n_ip)]
-    identity = np.eye(3)
+    el = _nlgeom_element(Xe, gauss, integration)
+    history = [np.zeros((1, 8, 3))] + [np.asarray(u, dtype=float).reshape(1, 8, 3)
+                                       for u in displacement_history]
+    accumulated = np.zeros((8, 3, 3))
     for previous, current in zip(history, history[1:]):
-        F_prev = deformation_gradients_at_points(Xe, previous, gauss)
-        F_curr = deformation_gradients_at_points(Xe, current, gauss)
-        for ip in range(n_ip):
-            F_mid = 0.5 * (F_prev[ip] + F_curr[ip])
-            dL = (F_curr[ip] - F_prev[ip]) @ np.linalg.inv(F_mid)
-            de = 0.5 * (dL + dL.T)
-            dW = 0.5 * (dL - dL.T)
-            dR = np.linalg.solve(identity - 0.5 * dW, identity + 0.5 * dW)
-            accumulated[ip] = dR @ accumulated[ip] @ dR.T + de
-    return np.asarray([[e[0, 0], e[1, 1], e[2, 2],
-                        2.0 * e[0, 1], 2.0 * e[0, 2], 2.0 * e[1, 2]]
-                       for e in accumulated], dtype=float)
+        inc = el.increment(previous, current)
+        dR = inc["drot"][0]
+        de = inc["dstran"][0]
+        de_t = np.empty((8, 3, 3))
+        de_t[:, 0, 0], de_t[:, 1, 1], de_t[:, 2, 2] = de[:, 0], de[:, 1], de[:, 2]
+        de_t[:, 0, 1] = de_t[:, 1, 0] = 0.5 * de[:, 3]
+        de_t[:, 0, 2] = de_t[:, 2, 0] = 0.5 * de[:, 4]
+        de_t[:, 1, 2] = de_t[:, 2, 1] = 0.5 * de[:, 5]
+        accumulated = dR @ accumulated @ np.swapaxes(dR, 1, 2) + de_t
+    e = accumulated
+    return np.stack([e[:, 0, 0], e[:, 1, 1], e[:, 2, 2],
+                     2.0 * e[:, 0, 1], 2.0 * e[:, 0, 2], 2.0 * e[:, 1, 2]], axis=1)
 
 
 def replay_deck(deck: str, *, step: int = 1,

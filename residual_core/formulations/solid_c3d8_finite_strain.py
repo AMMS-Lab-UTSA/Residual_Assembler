@@ -5,6 +5,16 @@ delta sigma = D:d + w sigma - sigma w - sigma tr(d).
 Linearizing spatial gradients and volume gives B.T c B + Kgeo with
 c:d = D:d - d sigma - sigma d. See docs/evidence/recovery_finite.md.
 History-dependent rotating materials are deliberately unsupported.
+
+Integration: ``options["integration"]`` is ``"full"`` (default; 2x2x2 Gauss,
+plain F and B -- what every published number of this formulation used) or
+``"mean_dilatation"`` (Abaqus C3D8: the material sees Fbar with the element's
+mean volume change and the force is the B-bar force with weight w0 Jbar,
+residual_core.formulations.c3d8_nlgeom; reproduces Abaqus 2021 reactions on a
+distorted element to 4.7e-8). With mean dilatation the tangent is the exact
+linearisation through Fbar: for l = dFbar Fbar^-1 = d + w,
+delta sigma = D:d - sigma tr(d) + w sigma - sigma w at every point, plus the
+fixed-stress derivative of the B-bar force.
 """
 
 from __future__ import annotations
@@ -94,6 +104,14 @@ class SolidC3D8FiniteStrain(Formulation):
                 or (material_state is not None and np.size(material_state))):
             raise ValueError("solid_c3d8_finite_strain does not support history state or DROT transport")
         pts = k.ABAQUS_C3D8_GAUSS.points
+        integration = options.get("integration", "full")
+        if integration in ("mean_dilatation", "selective_reduced"):
+            return self._eval_mean_dilatation(element_id, coords, u_e, u_prev, material,
+                                              binding, time, dtime, fields, options,
+                                              compute_tangent)
+        if integration != "full":
+            raise ValueError("solid_c3d8_finite_strain: integration must be 'full' or "
+                             "'mean_dilatation', got %r" % (integration,))
 
         sigma_ip = []
         D_ip = []
@@ -124,3 +142,57 @@ class SolidC3D8FiniteStrain(Formulation):
         return r, K, None, {"formulation": self.name, "n_ip": 8,
                     "tangent_measure": "exact_weak_linearization",
                     "history": "none", "rotation": "global isotropic total response"}
+
+    def _eval_mean_dilatation(self, element_id, coords, u_e, u_prev, material, binding,
+                              time, dtime, fields, options, compute_tangent):
+        """Mean-dilatation path. Geometry (coords, u, u_prev) is real -- refused
+        otherwise in ``eval_element`` -- so Fbar, its inverse and its
+        directional derivative are real. The stress and DDSDDE take the dtype
+        of the material constants: with Dual1/OTI constants they are object
+        arrays, never cast to float, and the force and tangent are assembled
+        from them by real-coefficient linear combinations (C3D8Nlgeom.force /
+        dforce_fixed_stress), so their parameter derivatives survive."""
+        from .c3d8_nlgeom import C3D8Nlgeom, voigt_eng
+        el = C3D8Nlgeom(np.asarray(coords, dtype=float)[None], "mean_dilatation")
+        U1 = u_e.reshape(1, 8, 3)
+        U0 = u_prev.reshape(1, 8, 3)
+        F1 = el.Fbar(U1)[0]
+        F0 = el.Fbar(U0)[0]
+        sigma_ip, D_ip = [], []
+        for ip in range(8):
+            if np.linalg.det(F1[ip]) <= 0 or np.linalg.det(F0[ip]) <= 0:
+                raise ValueError("finite-strain C3D8 requires positive Jacobians at element %s "
+                                 "IP %s" % (element_id, ip + 1))
+            kin = {"F0": F0[ip], "F1": F1[ip], "element": element_id, "ip": ip + 1}
+            sigma, D, s_new, _ = material.evaluate(kin, np.zeros(0), binding, time, dtime,
+                                                   fields, options)
+            if np.asarray(sigma).shape != (6,) or np.size(s_new):
+                raise ValueError("finite-strain material must return stress (6,) and no history state")
+            sigma_ip.append(np.asarray(sigma))
+            D_ip.append(None if D is None else np.asarray(D))
+        live = any(a.dtype == object for a in sigma_ip + [D for D in D_ip if D is not None])
+        number = object if live else np.result_type(*sigma_ip, float)
+        sigma_ip = np.array(sigma_ip, dtype=number)
+        r = el.force(U1, sigma_ip[None])[0]
+        K = None
+        if compute_tangent:
+            if any(D is None or D.shape != (6, 6) for D in D_ip):
+                raise ValueError("finite-strain tangent requires material DDSDDE (6,6)")
+            E = el.unit_directions(1)
+            dF = el.dFbar(U1, E)[0]                                   # (8, 24, 3, 3)
+            dsig = []
+            for q in range(8):
+                S = k.voigt_to_tensor(sigma_ip[q])
+                L = dF[q] @ np.linalg.inv(F1[q])                         # (24, 3, 3), real
+                d = 0.5 * (L + np.swapaxes(L, 1, 2))
+                w = 0.5 * (L - np.swapaxes(L, 1, 2))
+                dS = (w @ S - S @ w) - S[None] * np.trace(d, axis1=1, axis2=2)[:, None, None]
+                dsig.append(voigt_eng(d) @ np.asarray(D_ip[q], dtype=number).T
+                            + np.stack([dS[:, 0, 0], dS[:, 1, 1], dS[:, 2, 2], dS[:, 0, 1],
+                                        dS[:, 0, 2], dS[:, 1, 2]], axis=1))
+            dsig = np.array(dsig, dtype=number)                       # (8, 24, 6)
+            K = (el.dforce_fixed_stress(U1, sigma_ip[None], E) + el.force(U1, dsig[None]))[0]
+        return r, K, None, {"formulation": self.name, "n_ip": 8,
+                            "integration": "mean_dilatation",
+                            "tangent_measure": "exact_weak_linearization_through_fbar",
+                            "history": "none", "rotation": "global isotropic total response"}
