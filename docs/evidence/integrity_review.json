@@ -451,6 +451,76 @@
   "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:26c4e406": {
    "verdict": "justified",
    "reason": "Skips only when CORPUS_WORKSPACE, the folder holding the corpus data that lives outside both repositories, is unset, and names the variable; with it set the test runs, as in the campaign's runs."
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_declared_undefined_statev_is_excused_only_if_never_read:monkeypatch.setattr:db647752": {
+   "verdict": "justified",
+   "reason": "Fault injection: replaces the probe's two Fortran builds with Python routines whose STATEV(7) differs per build, one of which also READS it, to show the probe excuses the entry only when it is never read and trips otherwise; the live routine is tested separately in test_the_declared_undefined_statev_of_a_corpus_routine_is_unread.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "class _FakeLib:"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative:monkeypatch.setattr:ad43bd0c": {
+   "verdict": "justified",
+   "reason": "Fault injection: makes the global-sensitivity reference raise NewtonFailed, to show the record is unsupported with reason_class reference_solve_failed rather than failed; no numerical result is made to pass.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "def no_reference(*args, **kw):"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_analytic_and_reference_solves_share_the_finer_increments:monkeypatch.setattr:2d35b2b7": {
+   "verdict": "justified",
+   "reason": "Logic test of common_schedule: stand-in solves record which schedule, steering and cut-back each call receives; it checks the call order and arguments, not numbers.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "def fake_reference(provider, problem, props, kin, schedule, first=None, **kw):"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_analytic_and_reference_solves_share_the_finer_increments:monkeypatch.setattr:67f0f9ef": {
+   "verdict": "justified",
+   "reason": "Logic test of common_schedule: stand-in solves record which schedule, steering and cut-back each call receives; it checks the call order and arguments, not numbers.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "def fake_history(provider, problem, props, **kw):"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_analytic_and_reference_solves_share_the_finer_increments:monkeypatch.setattr:e93ede1d": {
+   "verdict": "justified",
+   "reason": "Logic test of common_schedule: when the reference needs no cut-back of its own the analytic run is returned unchanged; a stand-in reference returns the same increments.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "assert runner.common_schedule(None, None, [1.0], None, analytic) is analytic"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_newton_converges_at_the_roundoff_floor_and_stalls_without_it:monkeypatch.setattr:02c88a60": {
+   "verdict": "justified",
+   "reason": "Sets ROUNDOFF_FLOOR_FACTOR to 0 to show the live Newton solve fails without the round-off-floor criterion: it disables the fix under test, so the test fails without it; nothing is made to pass.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(engine, \"ROUNDOFF_FLOOR_FACTOR\", 0.0)"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_the_analytic_solve_falls_back_in_order_and_says_so:monkeypatch.setattr:7d84351a": {
+   "verdict": "justified",
+   "reason": "Logic test of analytic_solve: a stand-in run_history fails the first two strategies, to check the order of strategies and that the failed attempts are recorded; no numerical result is replaced in a verification.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "def fake(provider, problem, props, **kw):"
+    }
+   ]
   }
  }
 }
