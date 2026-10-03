@@ -497,7 +497,8 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
                 sensitivities: bool = False, newton_matrix: str = "auto",
                 tolerance: float = 1e-12, max_iterations: int = 40,
                 kinematics=None, keep_outputs: bool = False, cutbacks: int = 0,
-                schedule: Optional[List[dict]] = None) -> HistoryRun:
+                schedule: Optional[List[dict]] = None,
+                start_from: Optional[List[np.ndarray]] = None) -> HistoryRun:
     """Solve the load path; optionally carry the total parameter sensitivities.
 
     Convergence: ``|R_free|_inf <= tolerance * scale`` (``scale`` = max_dof
@@ -532,6 +533,11 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
 
     ``newton_matrix='ra_stalled_exact'``: the DDSDDE matrix, the exact one from
     the 8th iteration on -- what ``'auto'`` does for the original, for either build.
+
+    ``start_from``: per increment, the frame displacements Newton starts from
+    (e.g. the ORIGINAL's converged solution, to steer the analytic solve onto
+    the reference's equilibrium where it is not unique); the converged state
+    solves R = 0 with this build's own residual.
 
     ``material='regular'`` drives the ORIGINAL routine (reference runs). Its
     Newton iteration matrix is the DDSDDE tangent of the original's own
@@ -577,7 +583,8 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
             (U, V, R, out, inp, scale, floor, history, matrix, exact_from, backtracks,
              converged_by, k_inf) = _solve_increment(
                 asm, drv, material, props, problem, inc, kinc, frame, U_prev, V_prev, incoming,
-                amp, free, cons, newton_matrix, tolerance, max_iterations, extent, k_inf)
+                amp, free, cons, newton_matrix, tolerance, max_iterations, extent, k_inf,
+                None if start_from is None or index >= len(start_from) else start_from[index])
         except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
             if int(inc.get("cutback_depth", 0)) >= cutbacks:
                 raise
@@ -632,9 +639,11 @@ def _halves(inc: dict) -> List[dict]:
 
 def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_prev, V_prev,
                      incoming, amp, free, cons, newton_matrix, tolerance, max_iterations,
-                     extent, k_inf):
-    """Newton iteration of one increment (see run_history); nothing is committed."""
-    V = V_prev.copy()
+                     extent, k_inf, start=None):
+    """Newton iteration of one increment (see run_history); nothing is committed.
+    ``start``: the frame displacements Newton starts from (default: the last
+    converged ones with this increment's prescribed values)."""
+    V = V_prev.copy() if start is None else np.array(start, dtype=float, copy=True)
     V[cons] = inc["lambda"] * amp
     history, matrix, exact_from = [], newton_matrix, 0
     if matrix == "auto":

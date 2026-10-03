@@ -46,6 +46,9 @@ B9 (Vera's B8 review):
    (reference_on_another_equilibrium), never judged (B9: SeaShell, |dV| 0.66),
    but only while primal parity holds, and from the first departure on unless
    solution and incoming state both match again (Vera R-1).
+17. Where only the ORIGINAL converges (0e56ba3c: K_ff indefinite at increment
+   9), the analytic solve is started on the original's solution and, if it
+   converges there with its own residual, judged on that path.
 """
 from __future__ import annotations
 
@@ -71,6 +74,9 @@ FLAT_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Bod
 ARC_DOWN_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Body-Forces/"
                    "Examples-In-Section-3/ArcDown/Th01/PureGrowth.for",
                    "c5b21e39d4b10ebac1d3ea8ae592ff3df0dd4fc556f61b349ffcf43a97890cb8")
+Z2_SOURCE = ("Jeff97__Realization-of-planar-and-surface-conformal-mappings/"
+             "Mesh_Convergence_test/2D/Z2/10/Growth-Z2.for",
+             "b41f018c4396eab01dd9306aff57bd3978f79df9a3929aa5028319688af26cb1")
 ARC_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Body-Forces/"
               "Examples-In-Section-3/ArcUp/Th002/PureGrowth.for",
               "f7a30a6be5719b7ca68c4e6aa1197e6a7536c6fa49b64b125c3622c03a88b37a")
@@ -413,7 +419,7 @@ def built(tmp_path_factory):
     root = tmp_path_factory.mktemp("solver_robustness")
     out = {}
     for name, source in (("flat", FLAT_SOURCE), ("arc", ARC_SOURCE),
-                         ("arc_down", ARC_DOWN_SOURCE)):
+                         ("arc_down", ARC_DOWN_SOURCE), ("z2", Z2_SOURCE)):
         case = load_case(key_for_source(*source))
         record = build_provider_for(case, root / case.key, umat_repo=paths().umat_repo)
         out[name] = (case, CorpusProvider(record, case, root / case.key / "lib"), record, root)
@@ -578,3 +584,24 @@ def test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative(built, mon
         assert record["coords_contract"]["mixed_geometry"] is True
         assert record["coords_contract"]["mechanics"] == "probe brick"
         assert {"index": 1, "name": "C0"}.items() <= record["props_map"][0].items()
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_the_analytic_solve_is_steered_onto_the_originals_equilibrium(built):
+    from residual_core.corpus.engine import NewtonFailed, run_history
+    from residual_core.corpus.runner import default_problems, reference_solve, steered_analytic
+    case, provider, _, _ = built["z2"]
+    problem = [p for p in default_problems(case) if p.name.startswith("clamped_shear")][0]
+    ref = reference_solve(provider, problem, case.props, None, None, cutbacks=6)
+    with pytest.raises(NewtonFailed):        # unsteered, on the very same increments
+        run_history(provider, problem, case.props, material="oti", newton_matrix="exact",
+                    schedule=ref.schedule)
+    detail = {}
+    run = steered_analytic(provider, problem, case.props, None, ref, detail)
+    assert run is not None and len(run.U) == len(ref.U)
+    assert detail["steered_onto_reference"]["max_V_difference"] <= 1e-6 * float(
+        np.max(np.abs(np.array(ref.V))))
+    assert run.reference_steering == ref.newton_matrix_arg
+    assert len(run.du_dp) == len(ref.U)
