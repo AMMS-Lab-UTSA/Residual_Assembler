@@ -8,7 +8,9 @@ ladder and tagged ``outside_parameter_domain``, for every source alike (Vera,
 B8 review of f7be16bc).
 
 The props map is read from the source itself: an assignment ``NAME = PROPS(i)``
-whose NAME is in ``DECLARED`` gives slot i that name's domain. A slot no
+inside the entry routine (``SUBROUTINE UMAT``; a helper's own dummy called
+PROPS is another array) whose NAME is in ``DECLARED`` gives slot i that name's
+domain. A slot no
 declared name reaches has no declared domain and keeps its whole ladder. The
 map, with the source line each entry came from, goes into every record.
 """
@@ -30,18 +32,31 @@ DECLARED: Dict[str, Tuple[str, float, float]] = {
                              "BULK_MODULUS")},
 }
 
+_UNIT_START = re.compile(r"^\s*(?:[A-Za-z0-9_*()]+\s+)*?(SUBROUTINE|FUNCTION|PROGRAM)\s+([A-Za-z_][A-Za-z0-9_]*)",
+                         re.IGNORECASE)
+_UNIT_END = re.compile(r"^\s*END\s*(?:(?:SUBROUTINE|FUNCTION|PROGRAM)\b.*)?$", re.IGNORECASE)
 _ASSIGN = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*PROPS\s*\(\s*(\d+)\s*\)\s*(?:!.*)?$",
                      re.IGNORECASE)
 
 
-def props_map(source_text: str, source_form: str = "fixed") -> List[dict]:
-    """Every ``NAME = PROPS(i)`` assignment, with its line and, when NAME is
-    declared, its domain."""
+def props_map(source_text: str, source_form: str = "fixed", routine: str = "UMAT") -> List[dict]:
+    """Every ``NAME = PROPS(i)`` assignment inside the entry routine, with its
+    line and, when NAME is declared, its domain."""
     out = []
+    unit = None
     for number, line in enumerate(source_text.splitlines(), start=1):
         if source_form == "fixed" and line[:1] in ("c", "C", "*", "!"):
             continue
         if source_form != "fixed" and line.lstrip().startswith("!"):
+            continue
+        start = _UNIT_START.match(line)
+        if start:
+            unit = start.group(2).upper()
+            continue
+        if _UNIT_END.match(line):
+            unit = None
+            continue
+        if unit != routine.upper():
             continue
         match = _ASSIGN.match(line)
         if not match:
