@@ -4,8 +4,11 @@ Nothing here is invented. The registry says which cases reached
 ``fully_verified``; the pass that verified them (``store_verification.jsonl``)
 carries the manifest Abaqus ran -- PROPS, NSTATV, kinematics -- read from the
 author's own deck; the reviewed family classification names the material
-family. Paths default to the workspace layout and can be redirected with
-``CORPUS_WORKSPACE``.
+family. All of it lives outside this repository, in the workspace named by the
+environment variable ``CORPUS_WORKSPACE`` -- the folder holding ``final-umat/``
+(or set ``UMAT_OTI_REPO``), ``corpus_run/`` and ``discovery_cache/``. There is
+no default: reading corpus data with the variable unset raises
+:class:`CorpusWorkspaceUnset`.
 """
 from __future__ import annotations
 
@@ -16,39 +19,68 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-__all__ = ["CorpusCase", "CorpusPaths", "key_for_source", "load_case", "verified_keys", "paths"]
+__all__ = ["CORPUS_WORKSPACE_ENV", "CorpusCase", "CorpusPaths", "CorpusWorkspaceUnset",
+           "key_for_source", "load_case", "verified_keys", "paths"]
+
+CORPUS_WORKSPACE_ENV = "CORPUS_WORKSPACE"
+
+
+class CorpusWorkspaceUnset(RuntimeError):
+    """Corpus data was needed and ``CORPUS_WORKSPACE`` does not name a folder."""
+
+
+def _unset(what: str) -> CorpusWorkspaceUnset:
+    return CorpusWorkspaceUnset(
+        "%s is outside this repository; set %s to the workspace folder that holds "
+        "final-umat/, corpus_run/ and discovery_cache/" % (what, CORPUS_WORKSPACE_ENV))
 
 
 @dataclass(frozen=True)
 class CorpusPaths:
-    workspace: Path
+    workspace: Optional[Path]
+
+    def _root(self, what: str) -> Path:
+        if self.workspace is None:
+            raise _unset(what)
+        return self.workspace
 
     @property
     def registry(self) -> Path:
-        return self.workspace / "final-umat" / "paper_results" / "corpus" / "corpus_registry.json"
+        return self._root("the corpus registry") / "final-umat" / "paper_results" / "corpus" / "corpus_registry.json"
 
     @property
     def verification(self) -> Path:
-        return self.workspace / "corpus_run" / "pass16" / "results" / "store_verification.jsonl"
+        return self._root("the corpus verification records") / "corpus_run" / "pass16" / "results" / "store_verification.jsonl"
 
     @property
     def families(self) -> Path:
-        return self.workspace / "corpus_run" / "material_families_checked_E.json"
+        return self._root("the corpus family classification") / "corpus_run" / "material_families_checked_E.json"
 
     @property
     def discovery(self) -> Path:
-        return self.workspace / "discovery_cache"
+        return self._root("the corpus acquisition cache") / "discovery_cache"
 
     @property
     def umat_repo(self) -> Path:
-        return Path(os.environ.get("UMAT_OTI_REPO", str(self.workspace / "final-umat")))
+        explicit = os.environ.get("UMAT_OTI_REPO", "").strip()
+        if explicit:
+            return Path(explicit).expanduser()
+        if self.workspace is None:
+            raise CorpusWorkspaceUnset(
+                "the UMAT-OTI checkout is unknown; set UMAT_OTI_REPO, or %s to the workspace "
+                "folder that holds final-umat/" % CORPUS_WORKSPACE_ENV)
+        return self.workspace / "final-umat"
 
     def available(self) -> bool:
+        if self.workspace is None:
+            return False
         return self.registry.is_file() and self.verification.is_file() and self.discovery.is_dir()
 
 
 def paths() -> CorpusPaths:
-    return CorpusPaths(Path(os.environ.get("CORPUS_WORKSPACE", "/home/ammslab3/softwarex_work")))
+    """The corpus workspace from ``CORPUS_WORKSPACE`` (``workspace`` is None when unset)."""
+    value = os.environ.get(CORPUS_WORKSPACE_ENV, "").strip()
+    return CorpusPaths(Path(value).expanduser() if value else None)
 
 
 @dataclass
@@ -137,7 +169,8 @@ def load_case(key: str, where: Optional[CorpusPaths] = None) -> CorpusCase:
     # that run, so read the manifest there, not in a fixed older pass.
     verification = where.verification
     if record.get("verification_source"):
-        verification = where.workspace / "corpus_run" / record["verification_source"]
+        verification = (where._root("the corpus verification records") / "corpus_run"
+                        / record["verification_source"])
     run = _verification(str(verification)).get(key)
     if run is None:
         raise KeyError("%s has no record in %s" % (key, verification))
