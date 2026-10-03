@@ -396,22 +396,24 @@
   },
   "reference_data:tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json": {
    "verdict": "justified",
-   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time and the transform fingerprint changed (checked field by field).",
-   "quote": "Every number in them is unchanged; only the generation time and the fingerprint differ.",
-   "quote_source": "ea1ed80",
+   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time, the transform fingerprint and the verifier's new evidence field primal_decided_by (declared by contract 4.1.0) changed (checked field by field).",
+   "quote": "Every number is unchanged; only the generation time, the fingerprint and the verifier's new evidence field primal_decided_by differ.",
+   "quote_source": "82a7d3b",
    "json_only_changed": [
     "generated",
-    "transform_fingerprint"
+    "transform_fingerprint",
+    "finite_history.evidence.primal_decided_by"
    ]
   },
   "reference_data:tests/fixtures/verified/j2_props--2feae9f158.json": {
    "verdict": "justified",
-   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time and the transform fingerprint changed (checked field by field).",
-   "quote": "Every number in them is unchanged; only the generation time and the fingerprint differ.",
-   "quote_source": "ea1ed80",
+   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time, the transform fingerprint and the verifier's new evidence field primal_decided_by (declared by contract 4.1.0) changed (checked field by field).",
+   "quote": "Every number is unchanged; only the generation time, the fingerprint and the verifier's new evidence field primal_decided_by differ.",
+   "quote_source": "82a7d3b",
    "json_only_changed": [
     "generated",
-    "transform_fingerprint"
+    "transform_fingerprint",
+    "finite_history.evidence.primal_decided_by"
    ]
   },
   "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:13ad9f85": {
