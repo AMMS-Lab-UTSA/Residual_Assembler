@@ -89,6 +89,11 @@ class Problem:
     #: optional proper orthogonal Q per increment (superposed rigid rotation,
     #: x = Q (X + V)); None = no rotation. See engine.Frame.
     rotations: Optional[List[np.ndarray]] = None
+    #: optional (8, 3) corner coordinates (Abaqus C3D8 node order) of one
+    #: element of the AUTHOR's mesh: COORDS handed to the routine are the probe
+    #: points mapped into that element (``material_coordinates``); the
+    #: mechanics stay on ``mesh``. None = COORDS are the probe's own positions.
+    material_element: Optional[np.ndarray] = None
 
     @property
     def constrained(self) -> np.ndarray:
@@ -104,12 +109,13 @@ class Problem:
     def schedule(self) -> List[dict]:
         """Increments: lambda at end, step time, total time at start, dtime."""
         out, start, total = [], 0.0, 0.0
-        for end, count in self.path:
+        for segment, (end, count) in enumerate(self.path):
             dtime = self.segment_period / count
             for m in range(1, count + 1):
                 out.append({"lambda_start": start + (end - start) * (m - 1) / count,
                             "lambda": start + (end - start) * m / count,
-                            "dtime": dtime, "time_start": total})
+                            "dtime": dtime, "time_start": total,
+                            "segment": segment, "segment_end": m == count})
                 total += dtime
             start = end
         return out
@@ -243,3 +249,31 @@ def with_superposed_rotation(problem: Problem, axis=(1.0, 2.0, 3.0), angle: floa
     rotated = dataclasses.replace(problem, path=tuple(path), rotations=rotations,
                                   name=problem.name + "_rotated")
     return plain, rotated
+
+
+#: Abaqus C3D8 corner order in the parent cube [-1, 1]^3
+_CORNERS = np.array([[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+                     [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], dtype=float)
+
+
+def material_coordinates(points: np.ndarray, mesh: Mesh, element: np.ndarray) -> np.ndarray:
+    """Map probe positions ``points`` (reference configuration of ``mesh``)
+    into the hexahedron ``element`` (8 corners, Abaqus order): the probe box
+    [lo, lo + size] is the parent cube, the map the trilinear isoparametric one.
+    """
+    points = np.asarray(points, dtype=float)
+    element = np.asarray(element, dtype=float).reshape(8, 3)
+    lo = mesh.coords.min(axis=0)
+    size = np.asarray(mesh.coords.max(axis=0) - lo, dtype=float)
+    xi = 2.0 * (points - lo) / size - 1.0                              # (..., 3) in [-1, 1]
+    N = np.prod(1.0 + xi[..., None, :] * _CORNERS, axis=-1) / 8.0      # (..., 8)
+    return N @ element
+
+
+def author_element(case) -> Optional[np.ndarray]:
+    """(8, 3) corners of the author's element recorded by the verification run
+    (``manifest.node_coordinates``: [label, x, y, z] rows), or None."""
+    rows = (getattr(case, "extra", None) or {}).get("node_coordinates") or []
+    if len(rows) != 8:
+        return None
+    return np.array([[float(v) for v in row[-3:]] for row in rows])

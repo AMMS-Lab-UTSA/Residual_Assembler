@@ -56,7 +56,7 @@ from residual_core.formulations import c3d8_kernel as kernel
 from residual_core.formulations import c3d8_nlgeom as nl
 from residual_core.formulations.c3d8_sensitivity import element_dR_dp
 
-from .mesh import Problem
+from .mesh import Problem, material_coordinates
 from .provider import CorpusProvider, MaterialCallError
 
 __all__ = ["Assembly", "HistoryRun", "NewtonFailed", "run_history", "Kinematics",
@@ -64,6 +64,11 @@ __all__ = ["Assembly", "HistoryRun", "NewtonFailed", "run_history", "Kinematics"
 
 _GAUSS = kernel.ABAQUS_C3D8_GAUSS
 _EYE = np.eye(3)
+
+
+_EPS = float(np.finfo(float).eps)
+#: multiple of eps * |K_ff|_inf * L accepted as converged (see run_history)
+ROUNDOFF_FLOOR_FACTOR = 8.0
 
 
 class NewtonFailed(RuntimeError):
@@ -134,6 +139,10 @@ class Assembly:
         self.edofs = (3 * mesh.conn[:, :, None] + np.arange(3)).reshape(ne, 24)
         self.el = nl.C3D8Nlgeom(self.Xe, self.kin.integration if self.finite else "full")
         self.coords = self.el.coordinates().reshape(self.n, 3)
+        if getattr(problem, "material_element", None) is not None:
+            # the routine caches its point's position: hand it positions inside
+            # the author's own element (mechanics unchanged; see mesh.Problem)
+            self.coords = material_coordinates(self.coords, mesh, problem.material_element)
         celent = np.array([float(np.prod(x.max(axis=0) - x.min(axis=0))) ** (1.0 / 3.0)
                            for x in self.Xe])
         self.celent = np.repeat(celent, 8)
@@ -384,7 +393,20 @@ class HistoryRun:
     outgoing: List[IncrementState] = field(default_factory=list)
     newton: List[List[float]] = field(default_factory=list)
     newton_matrix: List[str] = field(default_factory=list)
+    #: per increment: 'tolerance' (|R_free| <= tolerance * force scale) or
+    #: 'roundoff_floor' (|R_free| <= the round-off floor of R, see run_history)
+    converged_by: List[str] = field(default_factory=list)
+    roundoff_floor: List[float] = field(default_factory=list)
+    #: per increment: index into ``newton`` from which the iteration matrix was
+    #: the exact one (0 unless newton_matrix='ra_then_exact' switched later)
+    exact_from: List[int] = field(default_factory=list)
     backtracks: List[int] = field(default_factory=list)
+    #: the ``newton_matrix`` argument the run was made with
+    newton_matrix_arg: str = "auto"
+    #: the increments actually solved (problem.schedule() unless cut back)
+    schedule: List[dict] = field(default_factory=list)
+    #: every cut-back: increment, depth, load-factor span, why
+    cutbacks: List[dict] = field(default_factory=list)
     force_scale: List[float] = field(default_factory=list)
     du_dp: List[np.ndarray] = field(default_factory=list)
     dstress_dp: List[np.ndarray] = field(default_factory=list)
@@ -474,8 +496,39 @@ class Driver:
 def run_history(provider: CorpusProvider, problem: Problem, props, *, material: str = "oti",
                 sensitivities: bool = False, newton_matrix: str = "auto",
                 tolerance: float = 1e-12, max_iterations: int = 40,
-                kinematics=None, keep_outputs: bool = False) -> HistoryRun:
+                kinematics=None, keep_outputs: bool = False, cutbacks: int = 0,
+                schedule: Optional[List[dict]] = None) -> HistoryRun:
     """Solve the load path; optionally carry the total parameter sensitivities.
+
+    Convergence: ``|R_free|_inf <= tolerance * scale`` (``scale`` = max_dof
+    sum_e |f_e|), OR ``|R_free|_inf <= ROUNDOFF_FLOOR_FACTOR * eps * |K_ff|_inf * L``:
+    the residual cannot be evaluated more accurately than that. Under finite
+    strain the routine sees F = I + grad u, whose entries carry an absolute
+    round-off of eps, i.e. a nodal position uncertainty of eps * L (L the mesh
+    extent); the iteration matrix maps it to a residual uncertainty of
+    |K_ff|_inf * eps * L. Small strain: L is max |u| (no identity is added).
+    A nearly incompressible material (bulk/shear ~ 5e3) sits above the 1e-12
+    relative tolerance at that floor: without it, Newton stalls there and fails
+    with a relative residual of ~4e-12 (Jeff97, B2). The floor uses the last
+    iteration matrix assembled (none yet: the floor is not used); which
+    criterion ended each increment is recorded in ``converged_by``.
+
+    ``newton_matrix='ra_then_exact'``: the DDSDDE matrix until the relative
+    free residual is below 1e-6 (or 8 iterations), then the exact one -- the
+    fallback when the exact matrix alone does not converge from the increment's
+    start (nearly incompressible material between clamps: Jeff97, B8). The
+    matrix only steers the iteration; the converged state solves R = 0.
+
+    Increment cut-back (``cutbacks`` > 0), as Abaqus/Standard's automatic
+    incrementation does: an increment whose Newton iteration fails, or whose
+    routine cannot be evaluated or asks for it (PNEWDT < 1), is split into two
+    halves in load factor AND time, down to ``cutbacks`` halvings. The increments
+    actually solved are ``run.schedule``; a re-solve that must be comparable
+    increment by increment (finite differences at p +/- h) passes that list as
+    ``schedule`` with ``cutbacks=0``, so both sides use the same increments.
+
+    ``newton_matrix='ra_stalled_exact'``: the DDSDDE matrix, the exact one from
+    the 8th iteration on -- what ``'auto'`` does for the original, for either build.
 
     ``material='regular'`` drives the ORIGINAL routine (reference runs). Its
     Newton iteration matrix is the DDSDDE tangent of the original's own
@@ -505,70 +558,36 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
     frame_prev = Frame(asm.mesh.coords, None)
     d_in = dict(dstress=np.zeros((n, nt, npar)), dstate=np.zeros((n, ns, npar)),
                 dstran=np.zeros((n, nt, npar)), du=np.zeros((asm.ndof, npar)))
-    for index, inc in enumerate(problem.schedule()):
+    extent = float(np.max(np.ptp(asm.mesh.coords, axis=0))) if asm.finite else 0.0
+    k_inf = None                         # |K_ff|_inf of the last iteration matrix
+    run.newton_matrix_arg = newton_matrix
+    plan = [dict(inc) for inc in (schedule if schedule is not None else problem.schedule())]
+    if cutbacks and rotations is not None:
+        raise ValueError("increment cut-back with a superposed rotation is not supported")
+    while plan:
+        inc = plan.pop(0)
+        index = len(run.schedule)
         kinc = index + 1
         frame = Frame(asm.mesh.coords, None if rotations is None else rotations[index])
         U_prev = frame_prev.actual(V_prev)
-        V = V_prev.copy()
-        V[cons] = inc["lambda"] * amp
-        history, matrix = [], newton_matrix
-        if matrix == "auto":
-            matrix = "exact" if material == "oti" else "ra"
-        out = inp = None
-        last = None                      # (V, delta, rfree) of the last accepted Newton step
-        alpha, backtracks, iteration = 1.0, 0, 0
-        while True:
-            U = frame.actual(V)
-            try:
-                inp = asm.inputs(U_prev, U, incoming)
-                if material == "oti":
-                    out = drv.oti(props, U_prev, U, incoming, inc, kinc, inp=inp)
-                else:
-                    out = drv.regular(props, U_prev, U, incoming, inc, kinc, inp=inp)
-                R_act, scale = asm.residual(U, out["stress"], with_scale=True)
-                R = frame.to_frame(R_act)
-                scale = max(scale, 1e-300)
-                rfree = float(np.max(np.abs(R[free]))) if free.size else 0.0
-            except (MaterialCallError, nl.InvertedElement) as error:
-                # a trial state the routine (or the element: det F <= 0) cannot
-                # evaluate: a rejected step, halved
-                if last is None or alpha <= 1.0 / 256.0:
-                    if isinstance(error, nl.InvertedElement):
-                        raise MaterialCallError(str(error))
-                    raise
-                alpha *= 0.5
-                backtracks += 1
-                V = last[0].copy()
-                V[free] += alpha * last[1]
-                continue
-            if rfree <= tolerance * scale or rfree == 0.0:
-                history.append(rfree / scale)
-                break
-            if last is not None and rfree > last[2] and alpha > 1.0 / 256.0:
-                alpha *= 0.5
-                backtracks += 1
-                V = last[0].copy()
-                V[free] += alpha * last[1]
-                continue
-            history.append(rfree / scale)
-            if iteration == max_iterations:
-                raise NewtonFailed("increment %d: free residual %.3e of %.3e after %d iterations "
-                                   "(%s matrix, %d backtracks)"
-                                   % (kinc, rfree, scale, iteration, matrix, backtracks))
-            iteration += 1
-            if matrix == "ra":
-                K = asm.tangent_ra(U, out["stress"], out["ddsdde"])
-            else:
-                base = out if material == "oti" else drv.oti(props, U_prev, U, incoming, inc,
-                                                              kinc, inp=inp)
-                K = drv.exact_tangent(props, U_prev, U, incoming, inc, kinc, base, inp)
-            K = frame.matrix(K)
-            delta = np.linalg.solve(K[np.ix_(free, free)], -R[free])
-            last, alpha = (V.copy(), delta, rfree), 1.0
-            V[free] += delta
-            if material == "regular" and matrix == "ra" and iteration >= 8:
-                matrix = "exact+ra_stalled"
+        try:
+            (U, V, R, out, inp, scale, floor, history, matrix, exact_from, backtracks,
+             converged_by, k_inf) = _solve_increment(
+                asm, drv, material, props, problem, inc, kinc, frame, U_prev, V_prev, incoming,
+                amp, free, cons, newton_matrix, tolerance, max_iterations, extent, k_inf)
+        except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
+            if int(inc.get("cutback_depth", 0)) >= cutbacks:
+                raise
+            plan[:0] = _halves(inc)
+            run.cutbacks.append({"increment": kinc, "depth": int(inc.get("cutback_depth", 0)) + 1,
+                                 "lambda": [inc["lambda_start"], inc["lambda"]],
+                                 "reason": "%s: %s" % (type(error).__name__, error)})
+            continue
+        run.schedule.append(inc)
         run.backtracks.append(backtracks)
+        run.converged_by.append(converged_by)
+        run.exact_from.append(exact_from if matrix != "ra" else len(history))
+        run.roundoff_floor.append(floor)
         run.force_scale.append(scale)
         run.newton.append(history)
         run.newton_matrix.append(matrix)
@@ -594,6 +613,98 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
     run.seconds = _time.time() - started
     return run
 
+
+
+def _halves(inc: dict) -> List[dict]:
+    """Two increments covering ``inc``: half the load-factor change, half the time."""
+    mid = 0.5 * (inc["lambda_start"] + inc["lambda"])
+    half = 0.5 * inc["dtime"]
+    depth = int(inc.get("cutback_depth", 0)) + 1
+    first = dict(inc, **{"lambda": mid, "dtime": half, "cutback_depth": depth,
+                         "segment_end": False})
+    second = dict(inc, **{"lambda_start": mid, "dtime": half, "cutback_depth": depth,
+                          "time_start": inc["time_start"] + half})
+    return [first, second]
+
+
+def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_prev, V_prev,
+                     incoming, amp, free, cons, newton_matrix, tolerance, max_iterations,
+                     extent, k_inf):
+    """Newton iteration of one increment (see run_history); nothing is committed."""
+    V = V_prev.copy()
+    V[cons] = inc["lambda"] * amp
+    history, matrix, exact_from = [], newton_matrix, 0
+    if matrix == "auto":
+        matrix = "exact" if material == "oti" else "ra"
+    elif matrix in ("ra_then_exact", "ra_stalled_exact"):
+        matrix = "ra"            # the exact matrix once close / stalled (see below)
+    out = inp = None
+    last = None                      # (V, delta, rfree) of the last accepted Newton step
+    alpha, backtracks, iteration = 1.0, 0, 0
+    while True:
+        U = frame.actual(V)
+        try:
+            inp = asm.inputs(U_prev, U, incoming)
+            if material == "oti":
+                out = drv.oti(props, U_prev, U, incoming, inc, kinc, inp=inp)
+            else:
+                out = drv.regular(props, U_prev, U, incoming, inc, kinc, inp=inp)
+            R_act, scale = asm.residual(U, out["stress"], with_scale=True)
+            R = frame.to_frame(R_act)
+            scale = max(scale, 1e-300)
+            rfree = float(np.max(np.abs(R[free]))) if free.size else 0.0
+        except (MaterialCallError, nl.InvertedElement) as error:
+            # a trial state the routine (or the element: det F <= 0) cannot
+            # evaluate: a rejected step, halved
+            if last is None or alpha <= 1.0 / 256.0:
+                if isinstance(error, nl.InvertedElement):
+                    raise MaterialCallError(str(error))
+                raise
+            alpha *= 0.5
+            backtracks += 1
+            V = last[0].copy()
+            V[free] += alpha * last[1]
+            continue
+        length = extent if asm.finite else float(np.max(np.abs(V))) if V.size else 0.0
+        floor = None if k_inf is None else ROUNDOFF_FLOOR_FACTOR * _EPS * k_inf * length
+        if rfree <= tolerance * scale or rfree == 0.0 or (floor is not None and rfree <= floor):
+            history.append(rfree / scale)
+            converged_by = "tolerance" if (rfree <= tolerance * scale or rfree == 0.0) \
+                else "roundoff_floor"
+            break
+        if last is not None and rfree > last[2] and alpha > 1.0 / 256.0:
+            alpha *= 0.5
+            backtracks += 1
+            V = last[0].copy()
+            V[free] += alpha * last[1]
+            continue
+        history.append(rfree / scale)
+        if iteration == max_iterations:
+            raise NewtonFailed("increment %d: free residual %.3e of %.3e after %d iterations "
+                               "(%s matrix, %d backtracks)"
+                               % (kinc, rfree, scale, iteration, matrix, backtracks))
+        iteration += 1
+        if matrix == "ra":
+            K = asm.tangent_ra(U, out["stress"], out["ddsdde"])
+        else:
+            base = out if material == "oti" else drv.oti(props, U_prev, U, incoming, inc,
+                                                          kinc, inp=inp)
+            K = drv.exact_tangent(props, U_prev, U, incoming, inc, kinc, base, inp)
+        K = frame.matrix(K)
+        Kff = K[np.ix_(free, free)]
+        k_inf = float(np.max(np.sum(np.abs(Kff), axis=1))) if free.size else 0.0
+        delta = np.linalg.solve(Kff, -R[free])
+        last, alpha = (V.copy(), delta, rfree), 1.0
+        V[free] += delta
+        if matrix == "ra" and iteration >= 8 and (
+                newton_matrix == "ra_stalled_exact"
+                or (material == "regular" and newton_matrix in ("auto", "ra_then_exact"))):
+            matrix = "exact+ra_stalled"
+        elif newton_matrix == "ra_then_exact" and matrix == "ra" and \
+                (rfree <= 1e-6 * scale or iteration >= 8):
+            matrix, exact_from = "ra_then_exact", len(history)
+    return (U, V, R, out, inp, scale, floor, history, matrix, exact_from, backtracks,
+            converged_by, k_inf)
 
 def _sensitivity_step(run, asm, drv, props, U_prev, U, incoming, inc, kinc, d_in, free, inp,
                       frame):
@@ -623,10 +734,18 @@ def _sensitivity_step(run, asm, drv, props, U_prev, U, incoming, inc, kinc, d_in
     run.sensitivity_equilibrium.append(float(np.max(np.abs(total[free]))) / scale if free.size else 0.0)
     run.du_dp.append(dV)
     run.dstress_dp.append(full["dstress_dp"])
-    run.dstate_dp.append(full["dstate_dp"])
+    dstate = full["dstate_dp"]
+    undefined = [i - 1 for i in (drv.provider.case.extra or {}).get("undefined_statev", ())
+                 if 1 <= i <= dstate.shape[1]]
+    if undefined:
+        # declared undefined in the original and (hidden-state probe) never read:
+        # nothing downstream depends on them, so neither does their derivative
+        dstate = np.array(dstate, copy=True)
+        dstate[:, undefined] = 0.0
+    run.dstate_dp.append(dstate)
     run.total_dR_dp.append(total)
     d_in["dstress"] = full["dstress_dp"]
-    d_in["dstate"] = full["dstate_dp"]
+    d_in["dstate"] = dstate
     d_in["dstran"] = (0.0 if sF["stran_dp"] is None else sF["stran_dp"]) + sF["dstran_dp"]
     d_in["du"] = du
 

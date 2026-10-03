@@ -25,7 +25,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
@@ -112,31 +112,93 @@ def build_probe(record: dict, case, out_dir: Path, which: str):
     return _ProbeProvider(record, case, out_dir, out_dir / ("probe_%s.so" % which)), commands
 
 
-def probe(record: dict, case, out_dir: Path, calls: List[Dict]) -> dict:
+def _masked(out: Dict, undefined_statev: Sequence[int]) -> Dict:
+    """``out`` with the declared-undefined STATEV entries set to zero."""
+    if not undefined_statev or "state" not in out:
+        return out
+    out = dict(out)
+    state = np.array(out["state"], copy=True)
+    state[..., [i - 1 for i in undefined_statev]] = 0.0
+    out["state"] = state
+    return out
+
+
+def _call(lib, kw):
+    try:
+        return lib.regular(**kw)
+    except MaterialCallError as error:
+        return {"error": np.frombuffer(str(error).encode(), dtype=np.uint8)}
+
+
+def _differing(a: Dict, b: Dict) -> List[str]:
+    out = []
+    for name in sorted(set(a) | set(b)):
+        x, y = a.get(name), b.get(name)
+        if x is None or y is None or np.ascontiguousarray(x).tobytes() != np.ascontiguousarray(y).tobytes():
+            out.append(name)
+    return out
+
+
+#: two incoming values written into a declared-undefined STATEV entry to show
+#: the routine never reads it (the outputs must not move by a single bit)
+UNREAD_PROBE_VALUES = (0.0, -1.2345e30)
+
+
+def probe(record: dict, case, out_dir: Path, calls: List[Dict],
+          undefined_statev: Sequence[int] = ()) -> dict:
     """Run ``calls`` (keyword dicts for ``CorpusProvider.regular``) through the
-    snan- and zero-initialised builds; compare every output bit for bit."""
+    snan- and zero-initialised builds; compare every output bit for bit.
+
+    ``undefined_statev``: STATEV entries (1-based) the upstream verification
+    run established as undefined in the original (its zero/snan/inf init builds
+    differ there and in no STRESS or DDSDDE entry). Those entries are left out
+    of the comparison ONLY IF a second check shows the routine never reads them:
+    every call is repeated on the zero build with each value of
+    ``UNREAD_PROBE_VALUES`` written into those incoming entries, and every other
+    output must stay bit-identical. Otherwise the source trips as before.
+    """
+    undefined_statev = sorted(int(i) for i in undefined_statev
+                              if 1 <= int(i) <= int(getattr(case, "nstatv", 0) or 0))
     try:
         snan, commands = build_probe(record, case, out_dir, "snan")
         zero, _ = build_probe(record, case, out_dir, "zero")
     except RuntimeError as error:
         return {"status": "not_run", "reason": str(error)}
-    differing = []
+    differing, masked_only, read = [], 0, []
     for index, kw in enumerate(calls):
-        outs = []
-        for lib in (snan, zero):
-            try:
-                outs.append(lib.regular(**kw))
-            except MaterialCallError as error:
-                outs.append({"error": np.frombuffer(str(error).encode(), dtype=np.uint8)})
-        for name in sorted(set(outs[0]) | set(outs[1])):
-            a, b = outs[0].get(name), outs[1].get(name)
-            if a is None or b is None or np.ascontiguousarray(a).tobytes() != np.ascontiguousarray(b).tobytes():
-                differing.append({"call": index, "output": name})
-        if len(differing) > 20:
+        a, b = _call(snan, kw), _call(zero, kw)
+        names = _differing(a, b)
+        if names and undefined_statev:
+            confined = _differing(_masked(a, undefined_statev), _masked(b, undefined_statev))
+            if not confined:
+                masked_only += 1
+            names = confined
+        differing.extend({"call": index, "output": name} for name in names)
+        if undefined_statev:
+            ref = _masked(b, undefined_statev)
+            for value in UNREAD_PROBE_VALUES:
+                state = np.array(kw["state"], dtype=float, copy=True)
+                state[..., [i - 1 for i in undefined_statev]] = value
+                moved = _differing(ref, _masked(_call(zero, dict(kw, state=state)), undefined_statev))
+                read.extend({"call": index, "output": name, "incoming_value": value}
+                            for name in moved)
+        if len(differing) + len(read) > 20:
             break
-    return {"status": "trip" if differing else "clean", "calls": len(calls),
+    trip = bool(differing or read)
+    statement = ("the original routine rebuilt with opposite initialisation of every local "
+                 "returns %s outputs on the same %d calls"
+                 % ("DIFFERENT" if differing else "bit-identical", len(calls)))
+    if undefined_statev:
+        statement += ("%s STATEV%s (declared undefined in the original by the verification run) "
+                      "%s" % (" except" if not differing else "; ", undefined_statev,
+                              "is READ by the routine: changing its incoming value moves "
+                              "other outputs" if read else
+                              "is never read: writing %s into it moves no other output by a bit"
+                              % (list(UNREAD_PROBE_VALUES),)))
+    return {"status": "trip" if trip else "clean", "calls": len(calls),
             "differences": differing[:20],
+            "declared_undefined_statev": undefined_statev,
+            "calls_differing_only_in_declared_undefined": masked_only,
+            "declared_undefined_read": read[:20],
             "flags": {k: _BASE + v for k, v in FLAG_SETS.items()},
-            "statement": "the original routine rebuilt with opposite initialisation of every "
-                         "local returns %s outputs on the same %d calls"
-                         % ("DIFFERENT" if differing else "bit-identical", len(calls))}
+            "statement": statement}
