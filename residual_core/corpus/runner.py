@@ -507,16 +507,25 @@ QUANTITY = {"residual_sens": "dR/dp: assembled nodal residual R(u_n) of the C3D8
                              "every increment, differentiated w.r.t. each PROPS slot",
             "global_sens": "du_n/dp (every DOF, every increment) and dQoI/dp for the reaction and "
                            "displacement QoIs, differentiated w.r.t. each PROPS slot"}
-_ROOTS = (("campaign", "/home/ammslab3/softwarex_work/corpus_campaign"),
-          ("ra", "/home/ammslab3/softwarex_work/final-ra"),
-          ("corpus_run", "/home/ammslab3/softwarex_work/corpus_run"),
-          ("umat", "/home/ammslab3/softwarex_work/final-umat"))
+_RA_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _roots():
+    """Named roots for manifest locators: this repository always; the workspace
+    folders only when ``CORPUS_WORKSPACE`` (and so the corpus) is configured."""
+    roots = [("ra", _RA_ROOT)]
+    where = paths()
+    if where.workspace is not None:
+        roots += [("campaign", where.workspace / "corpus_campaign"),
+                  ("corpus_run", where.workspace / "corpus_run"),
+                  ("umat", where.umat_repo)]
+    return [(name, str(base.resolve())) for name, base in roots]
 
 
 def locator(path) -> str:
     """``<root>:<relative>`` for the manifest contract (absolute if under no root)."""
     text = str(Path(path).resolve()) if path else ""
-    for root, base in _ROOTS:
+    for root, base in _roots():
         if text.startswith(base + "/"):
             return "%s:%s" % (root, text[len(base) + 1:])
     return text

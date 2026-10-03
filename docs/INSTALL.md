@@ -238,6 +238,14 @@ tests (`tests/replay_history/`) and the verification tests (`tests/verification/
 read the UMAT models from that checkout, and a wheel does not contain them.
 With the `-e` install of section 3 they find the checkout themselves.
 
+The corpus tests (`tests/corpus/`) and `tools/run_corpus_residual.py` read the
+verified web-collected UMATs, which are not in either repository. Set
+`export CORPUS_WORKSPACE=/path/to/workspace`, the folder that holds
+`final-umat/` (the UMAT-OTI checkout, unless `UMAT_OTI_REPO` names another),
+`corpus_run/` and `discovery_cache/`. There is no default: without it the live
+corpus tests are skipped by name, and the tool stops with an error that names
+the variable.
+
 The full suite was not re-run for this guide. The tests that exercise the
 examples were: `tests/integration/test_presentation_request.py -k "real_archived
 or compiled_offline"` (2 passed) and `tests/replay_history/test_history_example.py`

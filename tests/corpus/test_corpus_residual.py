@@ -194,6 +194,9 @@ def _live():
         pytest.skip("gfortran not on PATH (environmental blocker)")
     from residual_core.corpus.sources import paths
     where = paths()
+    if where.workspace is None:
+        pytest.skip("CORPUS_WORKSPACE is unset; set it to the workspace folder that holds "
+                    "final-umat/, corpus_run/ and discovery_cache/ (environmental blocker)")
     if not where.available():
         pytest.skip("corpus registry / verification records / acquisition cache not present "
                     "under CORPUS_WORKSPACE=%s" % where.workspace)

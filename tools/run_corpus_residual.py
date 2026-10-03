@@ -6,10 +6,12 @@ every call, takes down or floods only its own process, whose stdout is kept in
 ``<out>/logs/<key>.log``. Records (one per UMAT x feature x problem) are
 appended to ``<out>/records.jsonl``; evidence JSON under ``<out>/evidence``.
 
-    PYTHONPATH=/home/ammslab3/softwarex_work/final-umat/src \\
-    UMAT_OTI_REPO=/home/ammslab3/softwarex_work/final-umat \\
+    export CORPUS_WORKSPACE=/path/to/workspace   # holds final-umat/, corpus_run/,
+                                                 # discovery_cache/ (required)
+    export UMAT_OTI_REPO=$CORPUS_WORKSPACE/final-umat   # optional; this is the default
+    PYTHONPATH=$UMAT_OTI_REPO/src \\
     python tools/run_corpus_residual.py --keys c7bf17b21519e33da0b7bbb1 \\
-        --out /home/ammslab3/softwarex_work/corpus_campaign/batches/B1/noether
+        --out $CORPUS_WORKSPACE/corpus_campaign/batches/B1/noether
 
     --control sweep_j2_bilinear   a labelled NON-corpus plastic control
     --quick                       single element, 3 increments
@@ -107,6 +109,15 @@ def main(argv=None) -> int:
     if args.summarise:
         print(summarise_ledger(Path(args.out) / "records.jsonl"))
         return 0
+    from residual_core.corpus.sources import CorpusWorkspaceUnset, paths
+    try:
+        if args.keys or args.all_verified:
+            paths().registry  # corpus cases need the workspace; say so before any subprocess
+        if args.control:
+            paths().umat_repo
+    except CorpusWorkspaceUnset as exc:
+        print("run_corpus_residual: %s" % exc, file=sys.stderr)
+        return 2
     out = Path(args.out)
     (out / "logs").mkdir(parents=True, exist_ok=True)
     keys = list(args.keys) + ["control_" + c for c in args.control]
