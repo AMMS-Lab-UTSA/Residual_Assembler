@@ -239,6 +239,9 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
     return comparisons, {"force_scale": force, "h0_replays_bit_exact": replays, "eps_eval": eps}
 
 
+#: largest max|V_ref - V_analytic| / max|V| at which the nominal reference is
+#: taken to sit on the analytic solve's equilibrium
+BRANCH_TOL = 1e-6
 #: iteration matrices tried, in order, for a reference solve of the ORIGINAL
 REFERENCE_MATRICES = ("auto", "exact", "ra_then_exact")
 #: (iteration matrix, cut-backs) tried, in order, for the analytic (OTI) solve;
@@ -345,6 +348,12 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
     Q0 = base.qoi(problem)
     force = max(base.force_scale) or 1.0
     uscale = float(np.max(np.abs(V0))) or 1.0
+    # the reference must sit on the equilibrium the analytic solve found: where
+    # the equilibrium is not unique (K_ff indefinite past a bifurcation), the
+    # original's Newton can land on another branch, and a difference around it
+    # says nothing about the analytic derivative (B9: SeaShell, |dV| = 0.66)
+    branch = [float(np.max(np.abs(V0[n] - analytic.V[n]))) / uscale for n in range(len(V0))]
+    elsewhere = {n for n, d in enumerate(branch) if d > BRANCH_TOL}
     dQ = analytic.qoi_dp(problem)                      # (ninc, nq, npar)
     comparisons, matrices, failures = [], set(), []
     achieved = [max(h[-1] for h in base.newton)]       # final relative free residuals
@@ -381,6 +390,15 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                                 "reason": "no step of the ladder could be re-solved"})
             continue
         for n in range(len(analytic.V)):
+            if n in elsewhere:
+                for quantity in ["u"] + [q["name"] for q in problem.qois]:
+                    comparisons.append({
+                        "verdict": "unresolved", "parameter": "P%d" % slot, "increment": n + 1,
+                        "quantity": quantity, "max_abs": None, "max_rel": None,
+                        "reason": "reference_on_another_equilibrium: the ORIGINAL's nominal "
+                                  "solve differs from the analytic solution by %.3g of |V| "
+                                  "at this increment" % branch[n]})
+                continue
             c = adjudicate(analytic.du_dp[n][:, j], {s: Vp[s][n] for s in Vp},
                            {s: Vm[s][n] for s in Vm}, V0[n], hs, rtol=RTOL_GLOBAL,
                            atol=ATOL_FACTOR * uscale / _scale(value),
@@ -407,6 +425,8 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
             raise HiddenStateTrip("nominal ORIGINAL history re-run after the perturbed re-solves "
                                   "differs at increment %d in %s" % (n + 1, bad))
     return comparisons, {"force_scale": force, "u_scale": uscale, "eps_eval": eps,
+                         "reference_vs_analytic_V_rel": branch,
+                         "reference_on_another_equilibrium": sorted(n + 1 for n in elsewhere),
                          "resolve_residual_achieved_max": max(achieved),
                          "reference_newton_matrices": sorted(matrices),
                          "reference_resolve_failures": failures,
@@ -950,6 +970,7 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
                     qoi_status=qoi["status"], qoi_max_rel=qoi.get("max_rel"),
                     reference_newton=info.get("reference_newton_matrices"),
                     reference_resolve_failures=len(info.get("reference_resolve_failures", [])),
+                    reference_on_another_equilibrium=info.get("reference_on_another_equilibrium"),
                     nominal_rerun_bit_exact=info.get("nominal_rerun_bit_exact"),
                     sensitivity_equilibrium_max=max(analytic.sensitivity_equilibrium),
                     **({"failure_class": parity_note["failure_class_if_failed"]}
