@@ -31,6 +31,15 @@ and the fixes (B8). Each test fails without its fix.
 12. Analytic and original builds agree to round-off, yet at a hard increment
    Newton may converge for one and not the other: ``runner.common_schedule``
    gives both one set of increments.
+
+B9 (Vera's B8 review):
+13. A ladder step whose p +/- h leaves the slot's declared domain (Poisson's
+   ratio in (-1, 1/2), moduli > 0, read from the source's NAME = PROPS(i)) is
+   dropped and tagged ``outside_parameter_domain``; the zero-within-resolution
+   bound is taken over the kept steps only (f7be16bc, nu = 0.499).
+14. A floor acceptance needs one confirming Newton step on the floor.
+15. The unread check writes 0, -1.2345e30, +1.2345e30 and NaN; every problem
+   is probed; records name COORDS as held fixed and disclose the mixed geometry.
 """
 from __future__ import annotations
 
@@ -219,6 +228,59 @@ def test_the_routine_verified_sources_are_read_from_the_manifest(tmp_path, monke
     assert routine_verified_keys(paths()) == ["a" * 24, "d" * 24]
 
 
+POISSON_SOURCE = """      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
+C     PROPS(2) - NU
+        EMOD=PROPS(1)
+        ENU=PROPS(2)
+        ETA = PROPS(3) ! a viscosity, no declared domain
+      END
+"""
+
+
+def test_the_props_map_reads_declared_domains_from_the_source():
+    from residual_core.corpus import parameters as P
+    mapping = P.props_map(POISSON_SOURCE, "fixed")
+    assert [(m["index"], m["name"]) for m in mapping] == [(1, "EMOD"), (2, "ENU"), (3, "ETA")]
+    assert P.domain_of(mapping, 2)[:2] == (-1.0, 0.5)
+    assert P.domain_of(mapping, 1)[:2] == (0.0, float("inf"))
+    assert P.domain_of(mapping, 3) is None
+
+
+def test_a_step_across_nu_one_half_is_dropped_and_the_zero_bound_uses_the_kept_steps(tmp_path):
+    """f7be16bc: nu = 0.499, the steps 0.1 ... 3e-3 cross nu = 1/2 where the
+    routine evaluates another material. Here q = c nu below 1/2 and its mirror
+    above: every difference sits inside its round-off bound, and with the full
+    ladder the zero bound comes from a crossing step and FAILS a right A = c."""
+    from residual_core.corpus import runner
+    from residual_core.corpus.verify import adjudicate
+    source = tmp_path / "u.for"
+    source.write_text(POISSON_SOURCE)
+    case = _case()
+    case.source_path, case.props = source, [906512.0, 0.499, 1.0]
+    nu, c, big = 0.499, 1000.0, 1e16
+
+    def q(v):
+        return np.array([c * v if v < 0.5 else c * (1.0 - v)])
+    full = runner._steps(nu)
+    kept, note = runner._ladder(case, 2, nu)
+    assert set(full) - set(kept) == {0.1, 0.03, 0.01, 0.003}
+    assert {d["reason"] for d in note["dropped_steps"]} == {"outside_parameter_domain"}
+    assert note["parameter_domain"]["open_interval"] == [-1.0, 0.5]
+
+    def judge(hs):
+        return adjudicate(np.array([c]), {s: q(nu + h) for s, h in hs.items()},
+                          {s: q(nu - h) for s, h in hs.items()}, q(nu), hs, rtol=1e-6,
+                          atol=0.0, value_scale=big)
+    assert judge(full)["verdict"] == "failed"
+    kept_verdict = judge(kept)
+    assert kept_verdict["verdict"] != "failed"
+    assert kept_verdict["counts"]["zero_within_resolution"] == 1
+    # E has a domain (> 0) that no step of its ladder leaves: nothing dropped
+    assert runner._ladder(case, 1, 906512.0)[1]["dropped_steps"] == []
+    # no declared domain: the whole ladder
+    assert runner._ladder(case, 3, 1.0)[0] == runner._steps(1.0)
+
+
 class _FakeLib:
     """``regular`` of a one-point routine: STRESS from F, STATEV(7) garbage
     (differs per build); ``reads`` makes STRESS depend on incoming STATEV(7)."""
@@ -252,6 +314,7 @@ def test_a_declared_undefined_statev_is_excused_only_if_never_read(monkeypatch, 
         assert result["status"] == "clean", result
         assert result["calls_differing_only_in_declared_undefined"] == len(calls)
         assert "never read" in result["statement"]
+        assert "nan" in result["statement"] and "1.2345e+30" in result["statement"]
 
 
 # --------------------------------------------------------------------------- #
@@ -283,6 +346,13 @@ def test_newton_converges_at_the_roundoff_floor_and_stalls_without_it(built, mon
     problem = default_problems(case, quick=True)[0]
     run = engine.run_history(provider, problem, case.props, material="regular")
     assert "roundoff_floor" in run.converged_by
+    for how, h, floor, scale in zip(run.converged_by, run.newton, run.roundoff_floor,
+                                    run.force_scale):
+        if how == "roundoff_floor":       # accepted only after a confirming Newton step
+            first = next(i for i, r in enumerate(h) if r * scale <= floor * 1.001)
+            assert len(h) >= first + 2, "the confirming step is in the history"
+            assert h[first + 1] >= 0.5 * h[first] or h[first + 1] * scale <= floor * 1.001
+            assert h[-1] == min(h[first], h[first + 1])
     worst = max(h[-1] for h in run.newton)
     assert 1e-12 < worst < 1e-9          # above the tolerance, at the floor
     monkeypatch.setattr(engine, "ROUNDOFF_FLOOR_FACTOR", 0.0)
@@ -402,8 +472,25 @@ def test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative(built, mon
     def no_reference(*args, **kw):
         raise NewtonFailed("increment 1: stand-in for a reference that does not converge")
     monkeypatch.setattr(runner, "global_sensitivity", no_reference)
-    problem = runner.default_problems(case, quick=True)[0]
-    records = runner.run_case(case, root / "run", problems=[problem], features=("global_sens",))
-    (record,) = [r for r in records if r["feature"] == "global_sens"]
-    assert record["status"] == "unsupported"
-    assert record["reason_class"] == "reference_solve_failed"
+    probed = []
+    real_probe = runner.hidden_state.probe
+
+    def spy(record, case, out, calls, **kw):
+        probed.append(len(calls))
+        return real_probe(record, case, out, calls, **kw)
+    monkeypatch.setattr(runner.hidden_state, "probe", spy)
+    problems = runner.default_problems(case, quick=True)
+    second = M.clamped_shear(M.brick((1, 1, 1)), 0.1, path=((1.0, 2),))
+    second.material_element = problems[0].material_element
+    records = runner.run_case(case, root / "run", problems=problems + [second],
+                              features=("global_sens",))
+    assert len(probed) == 2, "every problem is probed"
+    records = [r for r in records if r["feature"] == "global_sens"]
+    assert len(records) == 2
+    for record in records:
+        assert record["status"] == "unsupported"
+        assert record["reason_class"] == "reference_solve_failed"
+        assert "COORDS" in record["held_fixed"]
+        assert record["coords_contract"]["mixed_geometry"] is True
+        assert record["coords_contract"]["mechanics"] == "probe brick"
+        assert {"index": 1, "name": "C0"}.items() <= record["props_map"][0].items()

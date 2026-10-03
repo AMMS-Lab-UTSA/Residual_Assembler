@@ -28,6 +28,7 @@ from .provider import (CorpusProvider, MaterialCallError, ProviderBuildFailed,
 from .sources import CorpusCase, load_case, paths
 from .verify import EPS32, EPS64, PLATEAU, STEPS, adjudicate, summarise
 from . import hidden_state
+from . import parameters as P
 
 __all__ = ["SCHEMA", "control_case", "default_problems", "run_case", "unsupported_records"]
 
@@ -51,9 +52,10 @@ WHAT = {
 HELD = {
     "residual_sens": "u_n and u_{n-1} (hence DSTRAN, DFGRD0, DFGRD1, DROT), incoming "
                      "STRESS/STATEV/STRAN at every point (before the host's pre-rotation), "
-                     "TIME/DTIME/KINC, geometry -- local, one increment",
+                     "TIME/DTIME/KINC, geometry, COORDS (the positions handed to the routine; "
+                     "see coords_contract) -- local, one increment",
     "global_sens": "prescribed displacements as functions of the load factor, load schedule "
-                   "and time, geometry, initial STATEV -- total: history propagated through "
+                   "and time, geometry, COORDS (see coords_contract), initial STATEV -- total: history propagated through "
                    "STRESS, STATEV, STRAN, F0 increment to increment; equilibrium re-converged",
 }
 REFERENCE = {
@@ -62,7 +64,8 @@ REFERENCE = {
                      "bit-exact); relative steps %s; entrywise FD-only plateau >=%d steps, "
                      "tolerance atol + rtol|D_e| + 2 u_e" % (list(STEPS), PLATEAU),
     "global_sens": "centred FD of complete nonlinear re-solves of the whole load history with "
-                   "the ORIGINAL UMAT at p+/-h (Newton to 1e-12 relative free residual; "
+                   "the ORIGINAL UMAT at p+/-h (Newton to 1e-12 relative free residual, or to the "
+                   "residual's round-off floor confirmed by one further Newton step; "
                    "nominal re-run bit-exact); relative steps %s; entrywise FD-only plateau "
                    ">=%d steps, tolerance atol + rtol|D_e| + 2 u_e" % (list(STEPS), PLATEAU),
 }
@@ -126,6 +129,36 @@ def _scale(p):
     return abs(p) if p != 0.0 else 1.0
 
 
+def case_props_map(case: CorpusCase) -> List[dict]:
+    """The source's PROPS assignments and their declared domains (cached)."""
+    if "props_map" not in case.extra:
+        try:
+            text = Path(case.source_path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            text = ""
+        case.extra["props_map"] = P.props_map(text, case.source_form)
+    return case.extra["props_map"]
+
+
+def _ladder(case: CorpusCase, slot: int, value: float):
+    """The FD steps of PROPS(slot) whose p +/- h stays inside the slot's declared
+    domain; the dropped ones are tagged ``outside_parameter_domain``. A nominal
+    value already outside its declared domain says the declaration does not fit
+    this source: the whole ladder is kept and that is stated."""
+    hs = _steps(value)
+    domain = P.domain_of(case_props_map(case), slot)
+    note = {"parameter_domain": None if domain is None else
+            {"open_interval": [domain[0], domain[1]], "basis": domain[2]}}
+    if domain is None:
+        return hs, dict(note, dropped_steps=[])
+    if not P.inside(value, domain):
+        note["parameter_domain"]["nominal_outside"] = True
+        return hs, dict(note, dropped_steps=[])
+    kept = {s: h for s, h in hs.items() if P.inside(value + h, domain) and P.inside(value - h, domain)}
+    dropped = [{"step": s, "reason": "outside_parameter_domain"} for s in hs if s not in kept]
+    return kept, dict(note, dropped_steps=dropped)
+
+
 def _steps(value):
     return {s: s * _scale(value) for s in STEPS}
 
@@ -182,7 +215,7 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
     comparisons, replays = [], 0
     for j, slot in enumerate(provider.slots):
         value = props[slot - 1]
-        hs = _steps(value)
+        hs, ladder = _ladder(case, slot, value)
         atol = ATOL_FACTOR * force / _scale(value)
         for n in range(len(analytic.U)):
             plus, minus = {}, {}
@@ -201,7 +234,7 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
                                       "ladder differs in %s" % (n + 1, slot, bad))
             c = adjudicate(analytic.local_dR_dp[n][:, j], plus, minus, base[n], hs,
                            rtol=RTOL_LOCAL, atol=atol, value_scale=vscale[n], eps_eval=eps)
-            c.update(parameter="P%d" % slot, increment=n + 1)
+            c.update(parameter="P%d" % slot, increment=n + 1, **ladder)
             comparisons.append(c)
     return comparisons, {"force_scale": force, "h0_replays_bit_exact": replays, "eps_eval": eps}
 
@@ -317,7 +350,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
     achieved = [max(h[-1] for h in base.newton)]       # final relative free residuals
     for j, slot in enumerate(provider.slots):
         value = props[slot - 1]
-        hs = _steps(value)
+        hs, ladder = _ladder(case, slot, value)
         Vp, Vm, Qp, Qm, levels = {}, {}, {}, {}, {}
         for s, h in hs.items():
             pp, pm = props.copy(), props.copy()
@@ -353,7 +386,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                            atol=ATOL_FACTOR * uscale / _scale(value),
                            value_scale=uscale, eps_eval=eps,
                            step_level={s: levels[s][n] for s in levels})
-            c.update(parameter="P%d" % slot, increment=n + 1, quantity="u")
+            c.update(parameter="P%d" % slot, increment=n + 1, quantity="u", **ladder)
             comparisons.append(c)
             for k, q in enumerate(problem.qois):
                 qscale = force if q["kind"] == "reaction" else uscale
@@ -362,7 +395,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                                rtol=RTOL_GLOBAL, atol=ATOL_FACTOR * qscale / _scale(value),
                                value_scale=force if q["kind"] == "reaction" else uscale,
                                eps_eval=eps, step_level={s: levels[s][n] for s in levels})
-                c.update(parameter="P%d" % slot, increment=n + 1, quantity=q["name"])
+                c.update(parameter="P%d" % slot, increment=n + 1, quantity=q["name"], **ladder)
                 comparisons.append(c)
     # nominal re-run after every perturbed history: all outputs bit-identical
     again = run_history(provider, problem, props, material="regular", kinematics=kinematics,
@@ -720,8 +753,27 @@ def _record(case, problem, feature, provider_record, summary, evidence, kin, ext
     if single:
         rec["single_precision_declarations"] = single[:5]
         rec["fd_roundoff_model"] = "float32 (the original computes in single precision)"
+    if feature in ("residual_sens", "global_sens"):
+        rec["props_map"] = case_props_map(case)
+        rec["coords_contract"] = coords_contract(case, problem)
     rec.update(extra or {})
     return rec
+
+
+def coords_contract(case: CorpusCase, problem) -> dict:
+    """Where COORDS come from and where the mechanics happen (disclosure)."""
+    element = getattr(problem, "material_element", None)
+    if element is None:
+        return {"coords": "probe_reference_positions", "mechanics": "probe brick",
+                "mixed_geometry": False,
+                "statement": "COORDS are the probe integration points' reference positions"}
+    return {"coords": "author_element_mapped", "mechanics": "probe brick",
+            "mixed_geometry": True,
+            "author_element_corners": np.asarray(element).tolist(),
+            "provenance": case.extra.get("node_provenance", ""),
+            "statement": "COORDS are the probe integration points mapped (trilinear) into one "
+                         "element of the author's mesh; the mechanics -- geometry, strains, "
+                         "residual -- stay on the probe brick. COORDS do not move with u."}
 
 
 def unsupported_records(case: CorpusCase, failure: ProviderBuildFailed, problems, kin,
@@ -825,16 +877,16 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
         if analytic.cutbacks:
             analytic = common_schedule(provider, problem, case.props, kin, analytic, detail)
         # uninitialised-memory probe, once per source, on the first solved history
-        if probe_result is None:
-            probe_result = hidden_state.probe(record, case, provider_dir,
-                                              _history_calls(provider, problem, analytic, kin),
-                                              undefined_statev=case.extra.get("undefined_statev") or ())
-            detail["hidden_state_probe"] = probe_result
-            if probe_result["status"] == "trip":
-                evidence.write_text(json.dumps(detail, indent=1, default=_json_default), encoding="utf-8")
-                return _not_attempted(case, problems, record, kin, evidence,
-                                      "uninitialised-memory probe: %s" % probe_result["statement"],
-                                      probe_result)
+        # every problem is probed, on its own solved history (Vera, B8 review)
+        probe_result = hidden_state.probe(record, case, provider_dir,
+                                          _history_calls(provider, problem, analytic, kin),
+                                          undefined_statev=case.extra.get("undefined_statev") or ())
+        detail["hidden_state_probe"] = probe_result
+        if probe_result["status"] == "trip":
+            evidence.write_text(json.dumps(detail, indent=1, default=_json_default), encoding="utf-8")
+            return _not_attempted(case, problems, record, kin, evidence,
+                                  "uninitialised-memory probe: %s" % probe_result["statement"],
+                                  probe_result)
         defined = [k for k in range(case.nstatv)
                    if k + 1 not in (case.extra.get("undefined_statev") or ())]
         moved = [float(np.max(np.abs(o.state[:, defined] - i.state[:, defined])))
