@@ -16,7 +16,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-__all__ = ["CorpusCase", "CorpusPaths", "load_case", "verified_keys", "paths"]
+__all__ = ["CorpusCase", "CorpusPaths", "key_for_source", "load_case", "verified_keys", "paths"]
 
 
 @dataclass(frozen=True)
@@ -110,15 +110,37 @@ def verified_keys(where: Optional[CorpusPaths] = None) -> List[str]:
                   if record.get("terminal_state") == "fully_verified")
 
 
+def key_for_source(source_id: str, sha256: str,
+                   where: Optional[CorpusPaths] = None) -> str:
+    """The registry key of the source with this id and content.
+
+    A store key is derived from the transform fingerprint, so every re-freeze
+    renames it. The source id and the sha256 of the acquired file do not
+    change, so a caller that means one particular material names it by those.
+    """
+    where = where or paths()
+    keys = [key for key, record in _registry(str(where.registry)).items()
+            if record.get("source_id") == source_id and record.get("sha256") == sha256]
+    if len(keys) != 1:
+        raise KeyError("expected one registry record for %s at sha256 %s, found %d"
+                       % (source_id, sha256, len(keys)))
+    return keys[0]
+
+
 def load_case(key: str, where: Optional[CorpusPaths] = None) -> CorpusCase:
     where = where or paths()
     registry = _registry(str(where.registry))
     if key not in registry:
         raise KeyError("no registry record with key %s" % key)
     record = registry[key]
-    run = _verification(str(where.verification)).get(key)
+    # The registry names the run its verdict came from; keys are only valid in
+    # that run, so read the manifest there, not in a fixed older pass.
+    verification = where.verification
+    if record.get("verification_source"):
+        verification = where.workspace / "corpus_run" / record["verification_source"]
+    run = _verification(str(verification)).get(key)
     if run is None:
-        raise KeyError("%s has no record in %s" % (key, where.verification))
+        raise KeyError("%s has no record in %s" % (key, verification))
     manifest = run["manifest"]
     source = where.discovery / record["cache_path"]
     if not source.is_file():

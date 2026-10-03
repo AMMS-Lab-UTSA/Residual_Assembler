@@ -36,7 +36,10 @@ sys.path.insert(0, str(ROOT))
 from residual_core.corpus.provider import ProviderBuildFailed, adapt_source  # noqa: E402
 from residual_core.corpus.verify import adjudicate, summarise  # noqa: E402
 
-ELASTIC_KEY = "c7bf17b21519e33da0b7bbb1"   # CAEAssistant isotropic elasticity, fully_verified
+#: Materials are named by source id and the sha256 of the acquired file. Their
+#: registry keys derive from the transform fingerprint and change at every freeze.
+ELASTIC_SOURCE = ("CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
+                  "27cda337a45be53431149436fbad42bd19da0bb5ec2a68f6370c17b608326a86")
 
 
 # --------------------------------------------------------------------------- #
@@ -214,8 +217,8 @@ def out_root(tmp_path_factory):
 def test_a_verified_elastic_umat_gives_a_residual_derivative_a_difference_agrees_with(out_root):
     _live()
     from residual_core.corpus.runner import run_case
-    from residual_core.corpus.sources import load_case
-    case = load_case(ELASTIC_KEY)
+    from residual_core.corpus.sources import key_for_source, load_case
+    case = load_case(key_for_source(*ELASTIC_SOURCE))
     assert case.terminal_state == "fully_verified"
     records = run_case(case, out_root, quick=True)
     by_feature = {r["feature"]: r for r in records}
@@ -261,8 +264,12 @@ def test_a_plastic_control_through_load_unload_reload_holds_on_the_whole_path(ou
     assert by_feature["global_sens"]["qoi_status"] == "verified"
 
 
-AREA_STRETCH_KEY = "ab1e97bc5a8101203a562d5e"   # mholla growth, finite strain, 6 state variables
-HYPOELASTIC_KEY = "6c8ad0dfb0b64a98955acbae"    # irfancn umat_elastic: integrates the incoming stress
+# mholla growth, finite strain, 6 state variables
+AREA_STRETCH_SOURCE = ("mholla__growth/umats/umat_area_stretch.f",
+                       "869907d36a7efc5b7594c2fd35eb9c8e802ef839ac8749a6665e772fd23240e8")
+# irfancn umat_elastic: integrates the incoming stress
+HYPOELASTIC_SOURCE = ("irfancn__Abaqus-UMAT-elastic/umat_elastic.for",
+                      "5e500764da04aaabba279113de51697b41641f62f5912ba5e44144e4fff31572")
 
 
 @pytest.mark.integration
@@ -273,8 +280,8 @@ def test_a_finite_strain_corpus_umat_with_state_verifies_under_the_abaqus_contra
     local and total derivatives against the original, K, objectivity."""
     _live()
     from residual_core.corpus.runner import run_case
-    from residual_core.corpus.sources import load_case
-    case = load_case(AREA_STRETCH_KEY)
+    from residual_core.corpus.sources import key_for_source, load_case
+    case = load_case(key_for_source(*AREA_STRETCH_SOURCE))
     assert case.finite and case.nstatv > 0
     records = run_case(case, out_root, quick=True)
     by_feature = {r["feature"]: r for r in records}
@@ -294,8 +301,8 @@ def test_the_hypoelastic_corpus_umat_is_objective_only_with_drot(out_root):
     from residual_core.corpus import mesh as M
     from residual_core.corpus.provider import CorpusProvider, build_provider_for
     from residual_core.corpus.runner import objectivity_check
-    from residual_core.corpus.sources import load_case, paths
-    case = load_case(HYPOELASTIC_KEY)
+    from residual_core.corpus.sources import key_for_source, load_case, paths
+    case = load_case(key_for_source(*HYPOELASTIC_SOURCE))
     record = build_provider_for(case, out_root / "providers" / case.key,
                                 umat_repo=paths().umat_repo)
     provider = CorpusProvider(record, case, out_root / "providers" / case.key / "lib")
