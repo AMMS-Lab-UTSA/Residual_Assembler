@@ -513,9 +513,13 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
     with a relative residual of ~4e-12 (Jeff97, B2). The floor uses the last
     iteration matrix assembled (none yet: the floor is not used); which
     criterion ended each increment is recorded in ``converged_by``. A floor
-    acceptance needs one confirming full Newton step: it must not halve the
-    residual (else the iterate was passing through the floor and Newton goes
-    on); the better of the two states is kept and both appear in ``newton``.
+    acceptance needs one confirming full Newton step from the state first found
+    on the floor. The increment is accepted if that step lands under the floor
+    again -- whether or not it halved the residual -- or if it does not halve
+    it (the residual has stopped falling); the better of the two states is
+    kept, and both appear in ``newton``. Only a step that halves the residual
+    and leaves the floor (possible when the floor estimate itself moves) sends
+    Newton on.
 
     ``newton_matrix='ra_then_exact'``: the DDSDDE matrix until the relative
     free residual is below 1e-6 (or 8 iterations), then the exact one -- the
@@ -694,10 +698,10 @@ def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_pre
             converged_by = "tolerance"
             break
         if candidate is not None:
-            # the confirming step (Vera, B8 review): the floor is accepted only
-            # if one further full Newton step does not halve the residual, i.e.
-            # the residual has stopped falling; the better of the two states is
-            # kept. A residual that still falls was passing through the floor.
+            # the confirming step (Vera, B8 review): accepted when it lands under
+            # the floor again (halved or not) or does not halve the residual
+            # (it has stopped falling); the better of the two states is kept.
+            # Only a halving step that leaves the floor sends Newton on.
             if rfree >= 0.5 * candidate[6] or at_floor:
                 if candidate[6] < rfree:
                     history.append(rfree / scale)

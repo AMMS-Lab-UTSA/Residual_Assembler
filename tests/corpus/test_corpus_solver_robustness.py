@@ -37,7 +37,9 @@ B9 (Vera's B8 review):
    ratio in (-1, 1/2), moduli > 0, read from the source's NAME = PROPS(i)) is
    dropped and tagged ``outside_parameter_domain``; the zero-within-resolution
    bound is taken over the kept steps only (f7be16bc, nu = 0.499).
-14. A floor acceptance needs one confirming Newton step on the floor.
+14. A floor acceptance needs one confirming Newton step; a step that halves
+   the residual and stays under the floor is accepted, as is one that does
+   not halve it; the better state is kept.
 15. The unread check writes 0, -1.2345e30, +1.2345e30 and NaN; every problem
    is probed; records name COORDS as held fixed and disclose the mixed geometry.
 16. Past a bifurcation (K_ff indefinite) the ORIGINAL's nominal solve can land
@@ -438,7 +440,8 @@ def test_newton_converges_at_the_roundoff_floor_and_stalls_without_it(built, mon
     assert "roundoff_floor" in run.converged_by
     for how, h, floor, scale in zip(run.converged_by, run.newton, run.roundoff_floor,
                                     run.force_scale):
-        if how == "roundoff_floor":       # accepted only after a confirming Newton step
+        if how == "roundoff_floor":       # accepted after one confirming Newton step:
+            # under the floor again (halved or not) or not halved
             first = next(i for i, r in enumerate(h) if r * scale <= floor * 1.001)
             assert len(h) >= first + 2, "the confirming step is in the history"
             assert h[first + 1] >= 0.5 * h[first] or h[first + 1] * scale <= floor * 1.001
