@@ -204,9 +204,16 @@ class VerifiedFixture:
 
     def describe(self) -> str:
         return (f"{self.source_id} ({self.repository}), {self.element_type}, "
-                f"NTENS={self.ntens}, {self.kinematics}; verified: "
-                f"{self.verification.get('states_agreeing')} of "
-                f"{self.verification.get('states_checked')} tangent states")
+                f"NTENS={self.ntens}, {self.kinematics}; verified: " + self._tangent_count())
+
+    def _tangent_count(self) -> str:
+        agreeing = self.verification.get("states_agreeing")
+        checked = self.verification.get("states_checked")
+        if agreeing is None:
+            # the producer's entrywise tangent gate (UMAT-OTI D-4) judges every
+            # entry of each chosen state and records no separate agreeing count
+            return f"{checked} tangent states judged entrywise"
+        return f"{agreeing} of {checked} tangent states"
 
 
 def _point(record: dict, ntens: int) -> Point:

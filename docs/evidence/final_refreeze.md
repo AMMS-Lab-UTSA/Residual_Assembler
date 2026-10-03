@@ -183,3 +183,36 @@ was redone:
 The run directories, with `jobs.json`, `verification.json` and `hashes.json`, are
 outside the repository at
 `softwarex_work/corpus_campaign/batches/B6/noether/refreeze_a4f0ea8c/`.
+
+## Fixtures re-frozen at `830e5ee95ce99cd2` (2026-10-03)
+
+UMAT-OTI b95f066 recorded transform generation `830e5ee95ce99cd2`. The
+contract stays at 4.1.0; the combined lock digest is
+`a60065a977f5aab6217a6a57ceaecff02cbbc063b6d98dc9bd29c2813b8323ea`, and
+`transform_generation.json` has sha256 `6521ad2f2378f7dfd38c0837107ca79f2818d97455759ba960a1e9675a0c904a`.
+Only step 6 was redone, from a clean UMAT-OTI tree at b95f066:
+
+- `schemas/transform_generation.json` and `schemas/contract_lock.json` were copied
+  byte for byte from UMAT-OTI. `verify_lock()` passes, and `transform_fingerprint()`
+  prints `830e5ee95ce99cd2`.
+- `scripts/regenerate_recovery_fixture.py` ran for both fixtures with the same
+  arguments as before: six Abaqus 2021.HF5 jobs, run one after another. Both
+  were verified.
+- Diff against the `a4f0ea8c9d124f18` fixtures:
+  - Unchanged: every number.
+  - Changed, as expected: `generated`, `transform_fingerprint`.
+  - Changed by the producer's entrywise tangent gate (UMAT-OTI D-4), which
+    now chooses and judges the states:
+    - `verification.states_agreeing` is null; that gate records no agreeing count.
+    - `verification.tangent` now reads "4 of 4 chosen states judged and every
+      entry agrees (entrywise, FD-only plateau >= 3)".
+    - J2's `states_checked` is 4, not 2. Two unloading states are now judged.
+      Each has 18 entries that pass and 18 that pass as zero.
+- `verified_fixture.Fixture.describe()` says "judged entrywise" when
+  `states_agreeing` is null. The fixture test requires the gate's statement in
+  that case.
+- `residual_core.core.fixture_residual_check` is unchanged: elasticity 1 held /
+  2 not established, and J2 32 held / 3 not established.
+
+The run directories are outside the repository, at
+`softwarex_work/corpus_campaign/batches/B9/noether/refreeze_830e5ee9/`.

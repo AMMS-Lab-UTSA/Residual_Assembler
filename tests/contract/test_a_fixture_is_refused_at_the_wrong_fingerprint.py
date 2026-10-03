@@ -123,7 +123,16 @@ def test_current_operational_fixtures_carry_independent_verification():
             assert payload[field] == archived[field], (path.name, field)
         assert len(payload["original"]) == len(archived["original"])
         assert fixture.verification["states_checked"] > 0
-        assert fixture.verification["states_agreeing"] > 0
+        agreeing = fixture.verification["states_agreeing"]
+        if agreeing is None:
+            # the entrywise tangent gate (UMAT-OTI D-4) records no agreeing count;
+            # its verdict is the tangent statement, every chosen state judged
+            checked = fixture.verification["states_checked"]
+            assert fixture.verification["tangent"].startswith(
+                "%d of %d chosen states judged and every entry agrees" % (checked, checked))
+            assert "tangent states judged entrywise" in fixture.describe()
+        else:
+            assert agreeing > 0
         for side in ("original", "transformed"):
             scan = payload["finite_history"]["whole_history"][side]
             assert scan["values_scanned"] > 0
