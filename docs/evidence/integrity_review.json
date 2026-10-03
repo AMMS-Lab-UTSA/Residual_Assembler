@@ -447,6 +447,10 @@
   "broad_except:residual_core/corpus/provider.py:build_provider_for:except Exception:50492f9a": {
    "verdict": "justified",
    "reason": "A provider build failure is recorded as data: the message is kept, classified (provider_build_failed, undefined references, rank mismatch) and the case is reported unsupported with that reason; nothing is counted as verified."
+  },
+  "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:26c4e406": {
+   "verdict": "justified",
+   "reason": "Skips only when CORPUS_WORKSPACE, the folder holding the corpus data that lives outside both repositories, is unset, and names the variable; with it set the test runs, as in the campaign's runs."
   }
  }
 }

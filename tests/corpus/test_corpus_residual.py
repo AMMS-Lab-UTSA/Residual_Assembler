@@ -186,6 +186,25 @@ def test_partial_coverage_is_never_verified():
         == "unsupported"
 
 
+@pytest.mark.unit
+def test_corpus_data_with_no_workspace_named_raises_and_names_the_variable(monkeypatch, tmp_path):
+    from residual_core.corpus import runner
+    from residual_core.corpus.sources import CorpusWorkspaceUnset, load_case, paths
+    monkeypatch.delenv("CORPUS_WORKSPACE", raising=False)
+    monkeypatch.delenv("UMAT_OTI_REPO", raising=False)
+    where = paths()
+    assert where.workspace is None and not where.available()
+    for read in (lambda: where.registry, lambda: where.umat_repo,
+                 lambda: load_case("0" * 24)):
+        with pytest.raises(CorpusWorkspaceUnset, match="CORPUS_WORKSPACE"):
+            read()
+    # locators still name this checkout, and nothing else, without a workspace
+    assert runner.locator(ROOT / "docs" / "INSTALL.md") == "ra:docs/INSTALL.md"
+    monkeypatch.setenv("CORPUS_WORKSPACE", str(tmp_path))
+    assert runner.locator(tmp_path / "corpus_run" / "p" / "r.json") == "corpus_run:p/r.json"
+    assert runner.locator(tmp_path / "final-umat" / "src") == "umat:src"
+
+
 # --------------------------------------------------------------------------- #
 # live corpus UMAT
 # --------------------------------------------------------------------------- #
