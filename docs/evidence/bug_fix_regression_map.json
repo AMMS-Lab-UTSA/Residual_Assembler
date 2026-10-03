@@ -264,6 +264,19 @@
     "tests/corpus/test_corpus_solver_robustness.py::test_analytic_and_reference_solves_share_the_finer_increments"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "748ca60",
+   "bug": "FD ladder steps whose p +/- h left the parameter's declared domain (nu crossing 1/2) stayed in the ladder and set the zero-within-resolution bound, failing a derivative the FD cannot see (f7be16bc); a round-off-floor acceptance was not confirmed by a further Newton step; the hidden-state unread check wrote only two values and probed only the first problem; records did not name COORDS as held fixed nor disclose the mixed geometry.",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_props_map_reads_declared_domains_from_the_source",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_step_across_nu_one_half_is_dropped_and_the_zero_bound_uses_the_kept_steps",
+    "tests/corpus/test_corpus_solver_robustness.py::test_newton_converges_at_the_roundoff_floor_and_stalls_without_it",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_declared_undefined_statev_is_excused_only_if_never_read",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_solve_is_not_lost_to_the_originals_own_iteration_matrix"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [

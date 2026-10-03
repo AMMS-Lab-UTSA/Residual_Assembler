@@ -521,6 +521,16 @@
      "text": "def fake(provider, problem, props, **kw):"
     }
    ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative:monkeypatch.setattr:dec4ce57": {
+   "verdict": "justified",
+   "reason": "A spy: wraps hidden_state.probe to count the calls and passes every call through to the real probe unchanged, to show every problem is probed; nothing is replaced.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "return real_probe(record, case, out, calls, **kw)"
+    }
+   ]
   }
  }
 }
