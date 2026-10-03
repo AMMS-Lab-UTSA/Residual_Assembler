@@ -241,6 +241,29 @@
     "tests/corpus/test_corpus_residual.py::test_corpus_data_with_no_workspace_named_raises_and_names_the_variable"
    ],
    "selected_by": "manual"
+  },
+  {
+   "commit": "ffd986e",
+   "bug": "The corpus residual run could not solve most routine-verified sources for RA-side reasons: Newton stalled at the residual's round-off floor above the 1e-12 tolerance (nearly incompressible material); COORDS came from the [0,1]^3 probe brick, not the author's element, for routines that cache position; the probe ran 3x past the verification run's analysis time; the hidden-state probe tripped on a STATEV entry already declared undefined in the original and never read; there was no increment cut-back and one iteration matrix per build; the reference re-solves could not share the analytic solve's increments; an unsolvable reference was booked as a failed derivative; the FD ladder stopped before a plateau for nu near 1/2; the objectivity check divided round-off by round-off for a dV/dp that is zero in exact arithmetic.",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_newton_converges_at_the_roundoff_floor_and_stalls_without_it",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_position_caching_growth_law_solves_only_inside_the_authors_element",
+    "tests/corpus/test_corpus_solver_robustness.py::test_probe_points_map_into_the_authors_element_corner_to_corner",
+    "tests/corpus/test_corpus_solver_robustness.py::test_an_authors_element_sets_coords_on_every_problem",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_probe_spans_the_analysis_time_of_the_verification_runs_loading",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_declared_undefined_statev_is_excused_only_if_never_read",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_declared_undefined_statev_of_a_corpus_routine_is_unread",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_ddsdde_matrix_steers_where_the_exact_one_alone_diverges",
+    "tests/corpus/test_corpus_solver_robustness.py::test_objectivity_of_a_derivative_that_is_zero_in_exact_arithmetic",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_cut_back_halves_load_factor_and_time_and_keeps_the_segment_end_last",
+    "tests/corpus/test_corpus_solver_robustness.py::test_an_increment_cut_back_solves_the_path_and_the_re_solves_replay_it",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_solve_is_not_lost_to_the_originals_own_iteration_matrix",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_poisson_ratio_near_one_half_is_resolved_by_the_ladder",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_that_cannot_be_solved_is_not_a_failed_derivative",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_analytic_solve_falls_back_in_order_and_says_so",
+    "tests/corpus/test_corpus_solver_robustness.py::test_analytic_and_reference_solves_share_the_finer_increments"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [
