@@ -314,6 +314,38 @@ def common_schedule(provider, problem, props, kinematics, analytic, detail=None)
     return again
 
 
+def steered_analytic(provider, problem, props, kinematics, reference, detail=None):
+    """The analytic solve started, increment by increment, from the ORIGINAL's
+    converged solution on the ORIGINAL's increments; None if it does not
+    converge there.
+
+    Where the equilibrium is not unique, the two builds -- equal to round-off --
+    may each converge only into a basin of their own (0e56ba3c: K_ff indefinite
+    at increment 9). Started on the original's solution, the analytic solve
+    still solves R = 0 with its OWN residual; accepted, it sits on the
+    reference's equilibrium, and the comparisons there are meaningful (the
+    branch gate in global_sensitivity checks that it stayed there)."""
+    for matrix in ("exact", "ra_then_exact"):
+        try:
+            run = run_history(provider, problem, props, material="oti", sensitivities=True,
+                              kinematics=kinematics, newton_matrix=matrix,
+                              schedule=reference.schedule, start_from=reference.V)
+        except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
+            if detail is not None:
+                detail.setdefault("steering_attempts", []).append(
+                    {"newton_matrix": matrix, "error": "%s: %s" % (type(error).__name__, error)})
+            continue
+        if detail is not None:
+            detail["steered_onto_reference"] = {
+                "newton_matrix": matrix, "increments": len(reference.schedule),
+                "reference_newton_matrix": reference.newton_matrix_arg,
+                "max_V_difference": max(float(np.max(np.abs(a - b)))
+                                        for a, b in zip(run.V, reference.V))}
+        run.reference_steering = reference.newton_matrix_arg
+        return run
+    return None
+
+
 def reference_solve(provider, problem, props, kinematics, schedule, first=None, **kw):
     """Solve the ORIGINAL on exactly ``schedule``. The iteration matrix only
     steers Newton (the converged state solves R_original = 0 whichever matrix
@@ -376,7 +408,8 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
     # every reference solve uses the increments the analytic solve used (cut-backs
     # included), so the histories compare increment by increment
     schedule = analytic.schedule or None
-    first = _SAME_STEERING.get(analytic.newton_matrix_arg)
+    first = getattr(analytic, "reference_steering", None) or \
+        _SAME_STEERING.get(analytic.newton_matrix_arg)
     base = reference_solve(provider, problem, props, kinematics, schedule, first=first,
                            keep_outputs=True)
     V0 = np.array(base.V)
@@ -916,12 +949,15 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
             analytic = analytic_solve(provider, problem, case.props, kin, detail)
         except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
             reason = "%s: %s" % (type(error).__name__, error)
+            analytic = None
             try:
-                reference_solve(provider, problem, case.props, kin, None, cutbacks=CUTBACKS)
+                ref = reference_solve(provider, problem, case.props, kin, None, cutbacks=CUTBACKS)
+                analytic = steered_analytic(provider, problem, case.props, kin, ref, detail)
                 status, failure = "failed", "oti_primal_solve_failed_original_succeeds"
             except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as again:
                 status, failure = "unsupported", "generic_problem_inadmissible"
                 reason += " | ORIGINAL on the same path: %s: %s" % (type(again).__name__, again)
+        if analytic is None:
             for feature in ("residual_sens", "global_sens"):
                 records.append(_record(case, problem, feature, record,
                                        {"status": status}, evidence, kin,
