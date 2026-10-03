@@ -251,6 +251,28 @@ C     PROPS(2) - NU
 """
 
 
+HELPER_FIRST = """      SUBROUTINE HELPER(PROPS, N)
+      DIMENSION PROPS(N)
+      XNU = PROPS(1)
+      END SUBROUTINE HELPER
+      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
+        EMOD=PROPS(1)
+      ENDIF
+      END
+      REAL FUNCTION G(PROPS)
+      ANU = PROPS(2)
+      END
+"""
+
+
+def test_the_props_map_reads_only_the_entry_routine():
+    """Vera hardening: a helper's own PROPS dummy is another array."""
+    from residual_core.corpus import parameters as P
+    mapping = P.props_map(HELPER_FIRST, "fixed")
+    assert [(m["index"], m["name"]) for m in mapping] == [(1, "EMOD")]
+    assert P.domain_of(mapping, 1)[:2] == (0.0, float("inf"))
+
+
 def test_the_props_map_reads_declared_domains_from_the_source():
     from residual_core.corpus import parameters as P
     mapping = P.props_map(POISSON_SOURCE, "fixed")
