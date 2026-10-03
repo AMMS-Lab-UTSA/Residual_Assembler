@@ -366,12 +366,12 @@ measured value.
 ## 10. The current transform generation
 
 Evidence about a transformed material belongs to the transform code that
-produced it. The current transform generation is **`a4f0ea8c9d124f18`**.
+produced it. The current transform generation is **`830e5ee95ce99cd2`**.
 It is recorded once, in `schemas/transform_generation.json`, a file that is
 identical in both repositories. The two regression fixtures in
 `tests/fixtures/verified/` (isotropic elasticity and J2) were regenerated in
-Abaqus at this generation. Their tangents agree over a step-size plateau to
-1.1e-14 and 8.3e-11. Older fixtures, under `tests/fixtures/historical/`, are
+Abaqus at this generation. UMAT-OTI's entrywise tangent gate (D-4: every entry, FD-only plateau of at least
+3 steps) judged 4 of 4 chosen states of each, and every entry agrees. Older fixtures, under `tests/fixtures/historical/`, are
 kept as history and refused as regression baselines. How the re-freeze was
 done: [evidence/final_refreeze.md](evidence/final_refreeze.md).
 
@@ -385,8 +385,8 @@ python -m pytest -q tests/contract/test_the_two_repositories_speak_one_contract.
     tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py
 ```
 
-Measured: both commands print `a4f0ea8c9d124f18`, and the tests report
-`26 passed`.
+Measured: both commands print `830e5ee95ce99cd2`, and the tests report
+`27 passed`.
 
 ## 11. The clean-install gate
 
