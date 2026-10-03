@@ -511,7 +511,10 @@ def run_history(provider: CorpusProvider, problem: Problem, props, *, material: 
     relative tolerance at that floor: without it, Newton stalls there and fails
     with a relative residual of ~4e-12 (Jeff97, B2). The floor uses the last
     iteration matrix assembled (none yet: the floor is not used); which
-    criterion ended each increment is recorded in ``converged_by``.
+    criterion ended each increment is recorded in ``converged_by``. A floor
+    acceptance needs one confirming full Newton step: it must not halve the
+    residual (else the iterate was passing through the floor and Newton goes
+    on); the better of the two states is kept and both appear in ``newton``.
 
     ``newton_matrix='ra_then_exact'``: the DDSDDE matrix until the relative
     free residual is below 1e-6 (or 8 iterations), then the exact one -- the
@@ -641,6 +644,7 @@ def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_pre
     out = inp = None
     last = None                      # (V, delta, rfree) of the last accepted Newton step
     alpha, backtracks, iteration = 1.0, 0, 0
+    candidate = None                 # the state first found at the round-off floor
     while True:
         U = frame.actual(V)
         try:
@@ -654,6 +658,13 @@ def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_pre
             scale = max(scale, 1e-300)
             rfree = float(np.max(np.abs(R[free]))) if free.size else 0.0
         except (MaterialCallError, nl.InvertedElement) as error:
+            if candidate is not None:
+                # the confirming step left what the routine can evaluate: the
+                # floor state stands (no further progress is possible from it)
+                U, V, R, out, inp, scale, rfree, floor = candidate
+                history.append(rfree / scale)
+                converged_by = "roundoff_floor"
+                break
             # a trial state the routine (or the element: det F <= 0) cannot
             # evaluate: a rejected step, halved
             if last is None or alpha <= 1.0 / 256.0:
@@ -667,19 +678,35 @@ def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_pre
             continue
         length = extent if asm.finite else float(np.max(np.abs(V))) if V.size else 0.0
         floor = None if k_inf is None else ROUNDOFF_FLOOR_FACTOR * _EPS * k_inf * length
-        if rfree <= tolerance * scale or rfree == 0.0 or (floor is not None and rfree <= floor):
+        at_tolerance = rfree <= tolerance * scale or rfree == 0.0
+        at_floor = floor is not None and rfree <= floor
+        if at_tolerance:
             history.append(rfree / scale)
-            converged_by = "tolerance" if (rfree <= tolerance * scale or rfree == 0.0) \
-                else "roundoff_floor"
+            converged_by = "tolerance"
             break
-        if last is not None and rfree > last[2] and alpha > 1.0 / 256.0:
+        if candidate is not None:
+            # the confirming step (Vera, B8 review): the floor is accepted only
+            # if one further full Newton step does not halve the residual, i.e.
+            # the residual has stopped falling; the better of the two states is
+            # kept. A residual that still falls was passing through the floor.
+            if rfree >= 0.5 * candidate[6] or at_floor:
+                if candidate[6] < rfree:
+                    history.append(rfree / scale)
+                    U, V, R, out, inp, scale, rfree, floor = candidate
+                history.append(rfree / scale)
+                converged_by = "roundoff_floor"
+                break
+            candidate = None
+        if at_floor:
+            candidate = (U, V.copy(), R, out, inp, scale, rfree, floor)
+        elif last is not None and rfree > last[2] and alpha > 1.0 / 256.0:
             alpha *= 0.5
             backtracks += 1
             V = last[0].copy()
             V[free] += alpha * last[1]
             continue
         history.append(rfree / scale)
-        if iteration == max_iterations:
+        if iteration >= max_iterations and candidate is None:   # the confirming step is extra
             raise NewtonFailed("increment %d: free residual %.3e of %.3e after %d iterations "
                                "(%s matrix, %d backtracks)"
                                % (kinc, rfree, scale, iteration, matrix, backtracks))

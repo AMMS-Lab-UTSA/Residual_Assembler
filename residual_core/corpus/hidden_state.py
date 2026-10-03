@@ -141,7 +141,7 @@ def _differing(a: Dict, b: Dict) -> List[str]:
 
 #: two incoming values written into a declared-undefined STATEV entry to show
 #: the routine never reads it (the outputs must not move by a single bit)
-UNREAD_PROBE_VALUES = (0.0, -1.2345e30)
+UNREAD_PROBE_VALUES = (0.0, -1.2345e30, 1.2345e30, float("nan"))
 
 
 def probe(record: dict, case, out_dir: Path, calls: List[Dict],
