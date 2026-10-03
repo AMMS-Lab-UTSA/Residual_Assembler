@@ -531,6 +531,26 @@
      "text": "return real_probe(record, case, out, calls, **kw)"
     }
    ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_on_another_equilibrium_is_not_judged:monkeypatch.setattr:1fd2df9e": {
+   "verdict": "justified",
+   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "class _Branch:"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_on_another_equilibrium_is_not_judged:monkeypatch.setattr:eecb494c": {
+   "verdict": "justified",
+   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
+    }
+   ]
   }
  }
 }

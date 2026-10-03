@@ -277,6 +277,15 @@
     "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_solve_is_not_lost_to_the_originals_own_iteration_matrix"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "a5faf5c",
+   "bug": "global_sensitivity judged the analytic derivative against FD around the ORIGINAL's nominal equilibrium without checking it was the analytic solve's equilibrium; past a bifurcation (K_ff indefinite) the two differ and a correct derivative was reported FAILED (SeaShell d0e4297c, clamped shear, increments 5-6).",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_on_another_equilibrium_is_not_judged",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_held_fixed_texts_name_coords"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [
