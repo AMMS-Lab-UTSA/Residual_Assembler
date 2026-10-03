@@ -41,7 +41,14 @@ import numpy as np
 
 __all__ = ["STEPS", "PLATEAU", "EPS64", "EPS32", "adjudicate", "summarise"]
 
-STEPS: Sequence[float] = (1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5, 3e-6, 1e-6, 1e-7)
+#: relative steps h/|p|. The three below 1e-7 (B8) resolve a parameter close to
+#: a singular limit -- Poisson's ratio 0.4995 sits 1e-3 |p| from nu = 1/2, where
+#: the truncation error (h / (1/2 - nu))^2 exceeds rtol down to h/|p| ~ 3e-7, so
+#: the old ladder ended before any 3-step plateau. A step only joins a plateau
+#: when its round-off bound is below 1e-3 |D| (``_plateaus``), so the added
+#: steps add evidence and never relax the rule.
+STEPS: Sequence[float] = (1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5, 3e-6, 1e-6, 1e-7,
+                          3e-8, 1e-8, 3e-9)
 PLATEAU = 3
 EPS64 = float(np.finfo(np.float64).eps)
 EPS32 = float(np.finfo(np.float32).eps)

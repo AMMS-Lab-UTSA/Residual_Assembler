@@ -13,6 +13,7 @@ appended to ``<out>/records.jsonl``; evidence JSON under ``<out>/evidence``.
     python tools/run_corpus_residual.py --keys c7bf17b21519e33da0b7bbb1 \\
         --out $CORPUS_WORKSPACE/corpus_campaign/batches/B1/noether
 
+    --routine-verified            every routine-level-verified source (109 of 238)
     --control sweep_j2_bilinear   a labelled NON-corpus plastic control
     --quick                       single element, 3 increments
 """
@@ -89,7 +90,11 @@ def main(argv=None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--keys", nargs="*", default=[])
     parser.add_argument("--control", nargs="*", default=[])
-    parser.add_argument("--all-verified", action="store_true")
+    parser.add_argument("--all-verified", action="store_true",
+                        help="every registry record in terminal state fully_verified")
+    parser.add_argument("--routine-verified", action="store_true",
+                        help="every routine-level-verified source (D-8: eligible, DDSDDE "
+                             "verified in the corpus manifest) -- the 109 of 238")
     parser.add_argument("--out", required=True)
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--features", default="residual_sens,global_sens,assembly")
@@ -111,7 +116,7 @@ def main(argv=None) -> int:
         return 0
     from residual_core.corpus.sources import CorpusWorkspaceUnset, paths
     try:
-        if args.keys or args.all_verified:
+        if args.keys or args.all_verified or args.routine_verified:
             paths().registry  # corpus cases need the workspace; say so before any subprocess
         if args.control:
             paths().umat_repo
@@ -124,6 +129,9 @@ def main(argv=None) -> int:
     if args.all_verified:
         from residual_core.corpus.sources import verified_keys
         keys += [k for k in verified_keys() if k not in keys]
+    if args.routine_verified:
+        from residual_core.corpus.sources import routine_verified_keys
+        keys += [k for k in routine_verified_keys() if k not in keys]
     ledger = out / "records.jsonl"
     for key in keys:
         partial = out / "logs" / ("%s.records.jsonl" % key)

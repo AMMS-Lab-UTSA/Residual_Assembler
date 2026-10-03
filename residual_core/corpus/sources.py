@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 __all__ = ["CORPUS_WORKSPACE_ENV", "CorpusCase", "CorpusPaths", "CorpusWorkspaceUnset",
-           "key_for_source", "load_case", "verified_keys", "paths"]
+           "key_for_source", "load_case", "routine_verified_keys", "verified_keys", "paths"]
 
 CORPUS_WORKSPACE_ENV = "CORPUS_WORKSPACE"
 
@@ -47,6 +47,10 @@ class CorpusPaths:
     @property
     def registry(self) -> Path:
         return self._root("the corpus registry") / "final-umat" / "paper_results" / "corpus" / "corpus_registry.json"
+
+    @property
+    def manifest(self) -> Path:
+        return self.umat_repo / "paper_results" / "corpus" / "manifest" / "corpus_manifest.json"
 
     @property
     def verification(self) -> Path:
@@ -122,9 +126,11 @@ def _verification(path: str) -> Dict[str, Dict[str, Any]]:
                 continue
             record = json.loads(line)
             if record.get("key"):
+                undefined = (record.get("undefined_in_original") or {}).get("undefined") or {}
                 out[record["key"]] = {"manifest": record.get("manifest", {}),
                                       "kinematics": record.get("kinematics"),
-                                      "fingerprint": record.get("fingerprint")}
+                                      "fingerprint": record.get("fingerprint"),
+                                      "undefined": undefined}
     return out
 
 
@@ -136,10 +142,28 @@ def _families(path: str) -> Dict[str, str]:
     return {row["source_id"]: row.get("family", "") for row in rows}
 
 
+def _undefined_statev(undefined: Dict[str, Any]) -> List[int]:
+    if undefined.get("STRESS") or undefined.get("DDSDDE"):
+        return []
+    return sorted(int(i) for i in undefined.get("STATEV") or [])
+
+
 def verified_keys(where: Optional[CorpusPaths] = None) -> List[str]:
     where = where or paths()
     return sorted(key for key, record in _registry(str(where.registry)).items()
                   if record.get("terminal_state") == "fully_verified")
+
+
+def routine_verified_keys(where: Optional[CorpusPaths] = None) -> List[str]:
+    """Registry keys of the routine-level-verified sources (D-8): eligible, with
+    the DDSDDE cell verified in the corpus manifest. Every one is a candidate
+    for the residual run, whatever its registry terminal state."""
+    where = where or paths()
+    rows = json.loads(where.manifest.read_text(encoding="utf-8"))["rows"]
+    return sorted(row["registry"]["key"] for row in rows
+                  if (row.get("pipeline") or {}).get("eligible", {}).get("status") == "verified"
+                  and (row.get("features") or {}).get("ddsdde", {}).get("status") == "verified"
+                  and (row.get("registry") or {}).get("key"))
 
 
 def key_for_source(source_id: str, sha256: str,
@@ -196,4 +220,16 @@ def load_case(key: str, where: Optional[CorpusPaths] = None) -> CorpusCase:
                    manifest.get("initial_state_from_user_subroutine")),
                "isothermal_temperature": manifest.get("isothermal_temperature"),
                "bundle": manifest.get("bundle", []),
+               # STATEV entries the verification run found undefined in the
+               # ORIGINAL (its gfortran zero/snan/inf init builds differ there
+               # and nowhere else); only when STRESS and DDSDDE are all defined
+               "undefined_statev": _undefined_statev(run.get("undefined") or {}),
+               # one element of the author's own mesh, recorded because the
+               # routine caches its point's position (COORDS)
+               "node_coordinates": manifest.get("node_coordinates") or [],
+               # analysis time the verification run's loading spans (sum of its
+               # segment periods); None when the manifest states none
+               "loading_period_total": (sum(float(seg.get("period") or 0.0)
+                                            for seg in manifest.get("loading") or []) or None),
+               "node_provenance": manifest.get("node_provenance", ""),
                "deck": record.get("deck", "")})

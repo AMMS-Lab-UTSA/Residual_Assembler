@@ -552,12 +552,19 @@ class CorpusProvider:
                 "dstate_ddstran": np.ascontiguousarray(np.transpose(dstv_de, (0, 2, 1))),
                 "pnewdt": pnewdt}
 
-    @staticmethod
-    def _check(pnewdt, a, which):
+    def _check(self, pnewdt, a, which):
         bad = (~np.isfinite(pnewdt)) | (pnewdt < 1.0)
         if np.any(bad):
             raise MaterialCallError("%s UMAT requested a time cut-back (PNEWDT<1) at %d points"
                                     % (which, int(bad.sum())))
+        # STATEV entries the verification run found undefined in the original
+        # (sources.load_case) may hold anything, NaN included; whether the
+        # routine reads them is the hidden-state probe's question, not this one's
+        undefined = [i - 1 for i in (getattr(self.case, "extra", None) or {}).get(
+            "undefined_statev", ()) if 1 <= i <= a["state"].shape[-1]]
         for name in ("stress", "state"):
-            if not np.all(np.isfinite(a[name])):
+            value = a[name]
+            if name == "state" and undefined:
+                value = np.delete(value, undefined, axis=-1)
+            if not np.all(np.isfinite(value)):
                 raise MaterialCallError("%s UMAT returned a non-finite %s" % (which, name))

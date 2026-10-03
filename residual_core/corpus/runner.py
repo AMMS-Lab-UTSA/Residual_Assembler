@@ -88,6 +88,10 @@ def control_case(model: str) -> CorpusCase:
         material_provenance="contract_v2.json validation.props_values", element_type="C3D8")
 
 
+#: halvings of one planned increment the analytic solve may take (1/64 of it)
+CUTBACKS = 6
+
+
 def default_problems(case: CorpusCase, *, quick: bool = False) -> List[M.Problem]:
     amplitude = 0.1 if case.finite else 0.01
     if case.key.startswith("control_"):
@@ -95,9 +99,27 @@ def default_problems(case: CorpusCase, *, quick: bool = False) -> List[M.Problem
     single = M.uniaxial(M.brick((1, 1, 1)), amplitude)
     if quick:
         single.path = ((1.0, 2), (0.5, 1))
-        return [single]
-    return [single, M.clamped_shear(M.brick((2, 2, 2)), amplitude),
-            M.clamped_tension(M.brick((2, 2, 2)), amplitude)]
+        problems = [single]
+    else:
+        problems = [single, M.clamped_shear(M.brick((2, 2, 2)), amplitude),
+                    M.clamped_tension(M.brick((2, 2, 2)), amplitude)]
+    total = case.extra.get("loading_period_total")
+    if total:
+        # the probe spans the analysis time the verification run's loading spans
+        # (a routine that normalises its clock -- e.g. growth by TIME/TOTALT --
+        # is driven over the history its author designed, not 3x past it)
+        for problem in problems:
+            problem.segment_period = float(total) / len(problem.path)
+            problem.description += "; analysis time %g (the verification run's loading)" % total
+    element = M.author_element(case)
+    if element is not None:
+        # the verification run recorded one element of the author's mesh because
+        # the routine caches its point's position: COORDS come from there
+        for problem in problems:
+            problem.material_element = element
+            problem.description += ("; COORDS: probe points mapped (trilinear) into the "
+                                    "author's element (%s)" % case.extra.get("node_provenance", "")[:60])
+    return problems
 
 
 def _scale(p):
@@ -119,8 +141,12 @@ def eps_eval_for(case: CorpusCase) -> float:
     return EPS32 if single_precision_declarations(case) else EPS64
 
 
-def _same_bits(a: dict, b: dict) -> List[str]:
-    """Names of the outputs that are not bit-identical."""
+def _same_bits(a: dict, b: dict, undefined_statev=()) -> List[str]:
+    """Names of the outputs that are not bit-identical; STATEV entries in
+    ``undefined_statev`` (declared undefined in the original AND shown unread by
+    the hidden-state probe) are left out."""
+    if undefined_statev:
+        a, b = hidden_state._masked(a, undefined_statev), hidden_state._masked(b, undefined_statev)
     bad = []
     for k in sorted(set(a) | set(b)):
         x, y = a.get(k), b.get(k)
@@ -146,7 +172,7 @@ def _regular_at(drv: Driver, props, run, n, schedule):
 def residual_sensitivity(provider, case, problem, analytic, kinematics):
     asm = Assembly(problem, provider.finite, kinematics)
     drv = Driver(provider, asm)
-    schedule = problem.schedule()
+    schedule = analytic.schedule or problem.schedule()
     props = np.asarray(case.props, dtype=float)
     eps = eps_eval_for(case)
     first = [_regular_at(drv, props, analytic, n, schedule) for n in range(len(analytic.U))]
@@ -169,7 +195,7 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
             # h = 0 replay after the perturbed calls: every output bit-identical
             again = _regular_at(drv, props, analytic, n, schedule)
             replays += 1
-            bad = _same_bits(first[n], again)
+            bad = _same_bits(first[n], again, case.extra.get("undefined_statev") or ())
             if bad:
                 raise HiddenStateTrip("h=0 replay of the ORIGINAL at increment %d after the P%d "
                                       "ladder differs in %s" % (n + 1, slot, bad))
@@ -180,11 +206,108 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
     return comparisons, {"force_scale": force, "h0_replays_bit_exact": replays, "eps_eval": eps}
 
 
+#: iteration matrices tried, in order, for a reference solve of the ORIGINAL
+REFERENCE_MATRICES = ("auto", "exact", "ra_then_exact")
+#: (iteration matrix, cut-backs) tried, in order, for the analytic (OTI) solve;
+#: the first is the B2 behaviour
+ANALYTIC_STRATEGIES = (("exact", 0), ("ra_then_exact", 0), ("ra_stalled_exact", None),
+                       ("exact", None))
+#: the reference matrix that steers the original as the analytic matrix steered OTI
+#: (an analytic solve with the exact matrix keeps the B2 reference order)
+_SAME_STEERING = {"ra_then_exact": "ra_then_exact", "ra_stalled_exact": "auto"}
+
+
+def analytic_solve(provider, problem, props, kinematics, detail=None):
+    """The OTI history with sensitivities, under the first strategy of
+    ``ANALYTIC_STRATEGIES`` that converges (``None`` cut-backs = ``CUTBACKS``).
+    Failed attempts are listed in ``detail['solve_attempts']``; the last error
+    is raised when none converges."""
+    attempts, error = [], None
+    for matrix, cut in ANALYTIC_STRATEGIES:
+        cut = CUTBACKS if cut is None else cut
+        try:
+            run = run_history(provider, problem, props, material="oti", sensitivities=True,
+                              kinematics=kinematics, newton_matrix=matrix, cutbacks=cut)
+        except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as failed:
+            attempts.append({"newton_matrix": matrix, "cutbacks": cut,
+                             "error": "%s: %s" % (type(failed).__name__, failed)})
+            error = failed
+            continue
+        if detail is not None:
+            detail["solve_attempts"] = attempts
+        return run
+    if detail is not None:
+        detail["solve_attempts"] = attempts
+    raise error
+
+
+def common_schedule(provider, problem, props, kinematics, analytic, detail=None):
+    """One set of increments for the analytic solve and every reference solve.
+
+    The analytic solve cut back; the ORIGINAL at the nominal PROPS is solved on
+    those increments, itself allowed to cut any of them back (the two builds
+    agree to round-off, but at a hard increment Newton may converge for one and
+    not the other). If it had to, the analytic solve is repeated on the finer
+    increments without cut-backs of its own, and that run is returned; when it
+    does not converge there, the first analytic run is kept (its reference
+    solves then fail, an unsupported global cell)."""
+    first = _SAME_STEERING.get(analytic.newton_matrix_arg)
+    try:
+        ref = reference_solve(provider, problem, props, kinematics, analytic.schedule,
+                              first=first, cutbacks=CUTBACKS)
+    except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
+        if detail is not None:
+            detail["common_schedule"] = "reference not solved: %s: %s" % (
+                type(error).__name__, error)
+        return analytic
+    if len(ref.schedule) == len(analytic.schedule):
+        return analytic
+    try:
+        again = run_history(provider, problem, props, material="oti", sensitivities=True,
+                            kinematics=kinematics, newton_matrix=analytic.newton_matrix_arg,
+                            schedule=ref.schedule)
+    except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
+        if detail is not None:
+            detail["common_schedule"] = "analytic not solved on the reference's %d increments: " \
+                "%s: %s" % (len(ref.schedule), type(error).__name__, error)
+        return analytic
+    again.cutbacks = analytic.cutbacks + [dict(c, by="reference") for c in ref.cutbacks]
+    if detail is not None:
+        detail["common_schedule"] = "analytic re-solved on the reference's %d increments" \
+            % len(ref.schedule)
+    return again
+
+
+def reference_solve(provider, problem, props, kinematics, schedule, first=None, **kw):
+    """Solve the ORIGINAL on exactly ``schedule``. The iteration matrix only
+    steers Newton (the converged state solves R_original = 0 whichever matrix
+    led there), so when the original's own DDSDDE matrix does not converge the
+    exact and the mixed matrices are tried; ``first`` is tried before them (the
+    steering of the analytic solve). The matrix used is recorded."""
+    error = None
+    order = ([first] if first else []) + [m for m in REFERENCE_MATRICES if m != first]
+    for matrix in order:
+        try:
+            return run_history(provider, problem, props, material="regular",
+                               kinematics=kinematics, schedule=schedule, newton_matrix=matrix,
+                               **kw)
+        except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as failed:
+            error = error or failed
+            if isinstance(failed, MaterialCallError) and "PNEWDT" not in str(failed) \
+                    and "inverted" not in str(failed):
+                raise                       # the routine itself cannot be evaluated
+    raise error
+
+
 def global_sensitivity(provider, case, problem, analytic, kinematics):
     props = np.asarray(case.props, dtype=float)
     eps = eps_eval_for(case)
-    base = run_history(provider, problem, props, material="regular", kinematics=kinematics,
-                       keep_outputs=True)
+    # every reference solve uses the increments the analytic solve used (cut-backs
+    # included), so the histories compare increment by increment
+    schedule = analytic.schedule or None
+    first = _SAME_STEERING.get(analytic.newton_matrix_arg)
+    base = reference_solve(provider, problem, props, kinematics, schedule, first=first,
+                           keep_outputs=True)
     V0 = np.array(base.V)
     Q0 = base.qoi(problem)
     force = max(base.force_scale) or 1.0
@@ -201,8 +324,8 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
             pp[slot - 1] += h
             pm[slot - 1] -= h
             try:
-                rp = run_history(provider, problem, pp, material="regular", kinematics=kinematics)
-                rm = run_history(provider, problem, pm, material="regular", kinematics=kinematics)
+                rp = reference_solve(provider, problem, pp, kinematics, schedule, first=first)
+                rm = reference_solve(provider, problem, pm, kinematics, schedule, first=first)
             except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
                 # the ORIGINAL cannot be re-solved at p +/- h (e.g. a viscosity of 0
                 # perturbed negative): that step is missing from the ladder
@@ -243,9 +366,10 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                 comparisons.append(c)
     # nominal re-run after every perturbed history: all outputs bit-identical
     again = run_history(provider, problem, props, material="regular", kinematics=kinematics,
-                        keep_outputs=True)
+                        keep_outputs=True, schedule=schedule,
+                        newton_matrix=base.newton_matrix_arg)
     for n, (o1, o2) in enumerate(zip(base.outputs, again.outputs)):
-        bad = _same_bits(o1, o2) + (["U"] if base.U[n].tobytes() != again.U[n].tobytes() else [])
+        bad = _same_bits(o1, o2, case.extra.get("undefined_statev") or ()) + (["U"] if base.U[n].tobytes() != again.U[n].tobytes() else [])
         if bad:
             raise HiddenStateTrip("nominal ORIGINAL history re-run after the perturbed re-solves "
                                   "differs at increment %d in %s" % (n + 1, bad))
@@ -257,8 +381,10 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                          "reference_newton_iterations_max": max(len(h) for h in base.newton)}
 
 
-def check_increments(problem) -> List[int]:
+def check_increments(problem, schedule=None) -> List[int]:
     """0-based increments where K is checked: the end of every path segment."""
+    if schedule:
+        return [n for n, inc in enumerate(schedule) if inc.get("segment_end")]
     out, count = [], 0
     for _, n in problem.path:
         count += n
@@ -271,14 +397,14 @@ def tangent_check(provider, case, problem, analytic, kinematics, increments=None
     (ORIGINAL routine) at converged states, incoming state of that increment held."""
     asm = Assembly(problem, provider.finite, kinematics)
     drv = Driver(provider, asm)
-    schedule = problem.schedule()
+    schedule = analytic.schedule or problem.schedule()
     props = np.asarray(case.props, dtype=float)
     # FD in u: no parameter-derived single-precision constant moves with u; the
     # tolerance uses the measured plateau spread, so the model only decides
     # which steps can resolve an entry, never whether it passes
     eps = EPS64
     results = []
-    for n in (increments if increments is not None else check_increments(problem)):
+    for n in (increments if increments is not None else check_increments(problem, schedule)):
         inc = schedule[n]
         U_prev = analytic.U[n - 1] if n else np.zeros(asm.ndof)
         U = analytic.U[n]
@@ -324,7 +450,11 @@ def tangent_check(provider, case, problem, analytic, kinematics, increments=None
 def newton_rates(run) -> dict:
     """Observed convergence order of the analytic (OTI, exact-K) Newton solves."""
     orders, worst_iterations = [], 0
-    for history in run.newton:
+    starts = getattr(run, "exact_from", None) or [0] * len(run.newton)
+    for history, start in zip(run.newton, starts):
+        # only the iterations taken with the exact matrix (ra_then_exact starts
+        # with the DDSDDE one)
+        history = history[start:]
         worst_iterations = max(worst_iterations, len(history))
         for a, b in zip(history[1:-1], history[2:]):
             if 1e-14 < b and a < 1e-2 and a > 1e-13:
@@ -360,8 +490,13 @@ def objectivity_check(provider, case, problem, kinematics) -> dict:
                                    - np.linalg.norm(y.reshape(-1, 3), axis=1))))
                for x, y in zip(a.reactions, b.reactions)) / fs
     dq_a, dq_b = a.qoi_dp(plain), b.qoi_dp(rotated)
-    dv = max(float(np.max(np.abs(x - y))) for x, y in zip(a.du_dp, b.du_dp)) / \
-        max(max(float(np.max(np.abs(x))) for x in a.du_dp), 1e-300)
+    # yardstick per parameter: max(|dV/dp_j|, |V|/|p_j|) -- a derivative that is
+    # zero in exact arithmetic (displacement control, a stiffness that scales the
+    # whole response) is round-off on both sides, and round-off over round-off
+    # is no measure of objectivity
+    pscale = np.array([_scale(case.props[slot - 1]) for slot in provider.slots])
+    dv_scale = np.maximum(np.max(np.abs(np.array(a.du_dp)), axis=(0, 1)), us / pscale)
+    dv = max(float(np.max(np.abs(x - y) / dv_scale)) for x, y in zip(a.du_dp, b.du_dp))
     metrics = {
         "reaction_frame_max_rel": max(float(np.max(np.abs(x - y))) for x, y in zip(a.reactions, b.reactions)) / fs,
         "reaction_magnitude_max_rel": mags,
@@ -408,6 +543,7 @@ def patch_check(provider, case, kinematics) -> dict:
     gradient *= 0.05 if provider.finite else 1e-3
     mesh = M.brick((3, 3, 3), distort=0.15)
     problem = M.patch_test(mesh, gradient)
+    problem.material_element = M.author_element(case)
     run = run_history(provider, problem, case.props, material="oti", kinematics=kinematics)
     U = run.U[-1].reshape(-1, 3)
     exact = mesh.coords @ gradient.T
@@ -437,6 +573,9 @@ def material_is_homogeneous(provider, case, gradient) -> bool:
                     gradient[0, 2] + gradient[2, 0], gradient[1, 2] + gradient[2, 1]])
     state = np.zeros((2, provider.nstatv))
     coords = np.array([[0.11, 0.23, 0.37], [0.83, 0.61, 0.71]])
+    element = M.author_element(case)
+    if element is not None:       # the positions the probes hand this routine
+        coords = M.material_coordinates(coords, M.brick((1, 1, 1)), element)
     noel, npt = np.array([1, 7]), np.array([1, 5])
     initial = case.extra.get("initial_statev") or []
     if initial:
@@ -613,7 +752,7 @@ def _history_calls(provider, problem, run, kinematics) -> List[dict]:
     asm = Assembly(problem, provider.finite, kinematics)
     drv = Driver(provider, asm)
     calls = []
-    for n, inc in enumerate(problem.schedule()):
+    for n, inc in enumerate(run.schedule or problem.schedule()):
         U_prev = run.U[n - 1] if n else np.zeros(asm.ndof)
         inp = asm.inputs(U_prev, run.U[n], run.incoming[n])
         kw = drv._kw(inc, n + 1)
@@ -660,15 +799,18 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
                   "kinematics": {"name": kin.name, "detail": kin.describe()},
                   "problem": {"name": problem.name, "description": problem.description,
                               "path": problem.path, "qois": problem.qois,
-                              "ndof": problem.mesh.ndof, "free": int(problem.free.size)},
+                              "ndof": problem.mesh.ndof, "free": int(problem.free.size),
+                              "coords_from_author_element": problem.material_element},
                   "provider": {k: v for k, v in record.items() if k != "completed_contract"}}
         try:
-            analytic = run_history(provider, problem, case.props, material="oti",
-                                   sensitivities=True, kinematics=kin)
+            # the exact matrix on the planned increments first (B2); if that does
+            # not converge, other steering (the converged state is the same
+            # R = 0) and increment cut-backs as Abaqus would
+            analytic = analytic_solve(provider, problem, case.props, kin, detail)
         except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
             reason = "%s: %s" % (type(error).__name__, error)
             try:
-                run_history(provider, problem, case.props, material="regular", kinematics=kin)
+                reference_solve(provider, problem, case.props, kin, None, cutbacks=CUTBACKS)
                 status, failure = "failed", "oti_primal_solve_failed_original_succeeds"
             except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as again:
                 status, failure = "unsupported", "generic_problem_inadmissible"
@@ -680,17 +822,23 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
             detail["error"] = reason
             evidence.write_text(json.dumps(detail, indent=1, default=_json_default), encoding="utf-8")
             continue
+        if analytic.cutbacks:
+            analytic = common_schedule(provider, problem, case.props, kin, analytic, detail)
         # uninitialised-memory probe, once per source, on the first solved history
         if probe_result is None:
             probe_result = hidden_state.probe(record, case, provider_dir,
-                                              _history_calls(provider, problem, analytic, kin))
+                                              _history_calls(provider, problem, analytic, kin),
+                                              undefined_statev=case.extra.get("undefined_statev") or ())
             detail["hidden_state_probe"] = probe_result
             if probe_result["status"] == "trip":
                 evidence.write_text(json.dumps(detail, indent=1, default=_json_default), encoding="utf-8")
                 return _not_attempted(case, problems, record, kin, evidence,
                                       "uninitialised-memory probe: %s" % probe_result["statement"],
                                       probe_result)
-        moved = [float(np.max(np.abs(o.state - i.state))) if o.state.size else 0.0
+        defined = [k for k in range(case.nstatv)
+                   if k + 1 not in (case.extra.get("undefined_statev") or ())]
+        moved = [float(np.max(np.abs(o.state[:, defined] - i.state[:, defined])))
+                 if o.state.size and defined else 0.0
                  for i, o in zip(analytic.incoming, analytic.outgoing)]
         activity = {"increments_with_state_change": int(sum(m > 0.0 for m in moved)),
                     "max_state_change": max(moved) if moved else 0.0,
@@ -700,12 +848,19 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
         parity_note = {} if parity <= 1e-12 else {
             "failure_class_if_failed": "oti_primal_differs_from_original",
             "primal_parity_max": parity}
-        detail["analytic"] = {"newton": analytic.newton, "newton_matrix": analytic.newton_matrix,
+        solve = {"cutbacks": len(analytic.cutbacks),
+                 "increments_planned": len(problem.schedule()),
+                 "newton_matrix": sorted(set(analytic.newton_matrix)),
+                 "converged_by_roundoff_floor": analytic.converged_by.count("roundoff_floor")}
+        detail["analytic"] = {"solve": solve, "cutback_log": analytic.cutbacks,
+                              "converged_by": analytic.converged_by,
+                              "roundoff_floor": analytic.roundoff_floor,
+                              "newton": analytic.newton, "newton_matrix": analytic.newton_matrix,
                               "backtracks": analytic.backtracks, "activity": activity,
                               "primal_parity_max": parity,
                               "sensitivity_equilibrium_max": max(analytic.sensitivity_equilibrium),
                               "seconds": analytic.seconds}
-        common = {"increments": len(analytic.U), "activity": activity,
+        common = {"increments": len(analytic.U), "activity": activity, "solve": solve,
                   "hidden_state_probe": (probe_result or {}).get("status"),
                   "primal_parity_max": parity}
         try:
@@ -726,8 +881,12 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
                     comps, info = global_sensitivity(provider, case, problem, analytic, kin)
                     summary = summarise(comps)
                 except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
+                    # the ORIGINAL could not be solved at the nominal PROPS on the
+                    # analytic solve's increments: there is no reference, which
+                    # says nothing about the derivative (not a failed comparison)
                     comps, info = [], {"error": "%s: %s" % (type(error).__name__, error)}
-                    summary = {"status": "failed", "reason": info["error"]}
+                    summary = {"status": "unsupported", "reason": info["error"],
+                               "reason_class": "reference_solve_failed"}
                 summary["tolerance"] = {"rtol": RTOL_GLOBAL, "atol": "%g * scale / |p|" % ATOL_FACTOR,
                                         "entry": "atol + rtol|D_e| + 2 u_e",
                                         "plateau_steps": PLATEAU, "eps_eval": info.get("eps_eval")}
