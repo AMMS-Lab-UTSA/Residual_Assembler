@@ -396,24 +396,29 @@
   },
   "reference_data:tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json": {
    "verdict": "justified",
-   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time, the transform fingerprint and the verifier's new evidence field primal_decided_by (declared by contract 4.1.0) changed (checked field by field).",
-   "quote": "Every number is unchanged; only the generation time, the fingerprint and the verifier's new evidence field primal_decided_by differ.",
-   "quote_source": "82a7d3b",
+   "reason": "Regenerated in Abaqus at the 830e5ee95ce99cd2 re-freeze from a clean UMAT-OTI tree with byte-identical decks. Besides the generation time and the fingerprint, only the verification summary fields changed: UMAT-OTI's entrywise tangent gate (D-4) now chooses and judges the states, records no agreeing count (states_agreeing null) and, for J2, judges two more (unloading) states. Every number is identical (checked field by field).",
+   "quote": "Every number is identical.",
+   "quote_source": "f1abeb9",
    "json_only_changed": [
     "generated",
     "transform_fingerprint",
-    "finite_history.evidence.primal_decided_by"
+    "finite_history.evidence.primal_decided_by",
+    "verification.states_agreeing",
+    "verification.tangent"
    ]
   },
   "reference_data:tests/fixtures/verified/j2_props--2feae9f158.json": {
    "verdict": "justified",
-   "reason": "Regenerated in Abaqus at the re-freeze with byte-identical decks; only the generation time, the transform fingerprint and the verifier's new evidence field primal_decided_by (declared by contract 4.1.0) changed (checked field by field).",
-   "quote": "Every number is unchanged; only the generation time, the fingerprint and the verifier's new evidence field primal_decided_by differ.",
-   "quote_source": "82a7d3b",
+   "reason": "Regenerated in Abaqus at the 830e5ee95ce99cd2 re-freeze from a clean UMAT-OTI tree with byte-identical decks. Besides the generation time and the fingerprint, only the verification summary fields changed: UMAT-OTI's entrywise tangent gate (D-4) now chooses and judges the states, records no agreeing count (states_agreeing null) and, for J2, judges two more (unloading) states. Every number is identical (checked field by field).",
+   "quote": "Every number is identical.",
+   "quote_source": "f1abeb9",
    "json_only_changed": [
     "generated",
     "transform_fingerprint",
-    "finite_history.evidence.primal_decided_by"
+    "finite_history.evidence.primal_decided_by",
+    "verification.states_agreeing",
+    "verification.states_checked",
+    "verification.tangent"
    ]
   },
   "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:13ad9f85": {
@@ -549,6 +554,18 @@
     {
      "in": "tests/corpus/test_corpus_solver_robustness.py",
      "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
+    }
+   ]
+  },
+  "removed_check:tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py:test_current_operational_fixtures_carry_independent_verification:f7213b00": {
+   "verdict": "justified",
+   "reason": "states_agreeing > 0 is kept for fixtures that carry a count; a fixture from the entrywise D-4 gate carries null and must instead state that every chosen state was judged and every entry agrees, which the test now requires, and describe() must say so. No case is left unchecked.",
+   "quote": "The fixture test accepts a null count only together with that gate statement.",
+   "quote_source": "f1abeb9",
+   "evidence": [
+    {
+     "in": "tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py",
+     "text": "chosen states judged and every entry agrees"
     }
    ]
   }
