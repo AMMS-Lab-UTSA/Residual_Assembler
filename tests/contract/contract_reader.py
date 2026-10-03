@@ -45,7 +45,11 @@ from tristate import NOT_ESTABLISHED, Tri, all_true, read  # noqa: F401
 #: changes with how memory is initialised. A 3.x reader would have fallen
 #: through on it and booked a defect in somebody's file as the producer's own
 #: work -- a misreading, so major.
-CONTRACT_VERSION = "4.0.0"
+#:
+#: 4.1.0, MINOR: ``finite_history.evidence.primal_decided_by`` (optional) names
+#: which check decided the primal gate. A 4.0 record lacks it and is still read;
+#: the field is then NOT ESTABLISHED, which is what require_compatible says.
+CONTRACT_VERSION = "4.1.0"
 SPEAKER = "Residual_Assembler"
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")

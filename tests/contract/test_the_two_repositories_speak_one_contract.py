@@ -113,6 +113,13 @@ def test_a_one_x_producer_is_refused_by_this_two_x_consumer():
     assert "wrong numbers" in str(exc.value)
 
 
+def test_a_four_zero_record_is_still_read_with_its_newer_fields_not_established():
+    """4.1 only added an optional field, so a 4.0 producer's records stay
+    readable; what 4.1 added is reported as NOT ESTABLISHED, never assumed."""
+    caveat = require_compatible("4.0.0", speaker="UMAT_source_transformation")
+    assert "older than" in caveat and "NOT ESTABLISHED" in caveat
+
+
 def test_the_same_version_needs_no_caveat():
     assert require_compatible(CONTRACT_VERSION,
                               speaker="UMAT_source_transformation") == ""

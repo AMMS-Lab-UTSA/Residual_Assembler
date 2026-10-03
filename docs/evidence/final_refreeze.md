@@ -151,3 +151,35 @@ tools/promote_verified_umats.py --results <run>/pass16/results/store_verificatio
 ```
 
 That rewrites the collection, and it was not done in this step.
+
+## Fixtures re-frozen at `a4f0ea8c9d124f18` (2026-10-02)
+
+UMAT-OTI moved to transform fingerprint `a4f0ea8c9d124f18` during the corpus
+robustness campaign. The contract is 4.1.0 (UMAT-OTI 8a9a0ea), with combined lock digest
+`ece44657d1350d504a5b24d3dfbee2bb20084a992fcfbdecdcd2ba7427164dc4`. The
+corpus evidence for this generation is UMAT-OTI's pass20 at `ab32cce7bec15c93`,
+with an A/B showing every generated Fortran file byte-identical between the two
+(see `evidence_status` in `schemas/transform_generation.json`). Here only step 6
+was redone:
+
+- `schemas/transform_generation.json` and `schemas/contract_lock.json` were copied
+  byte for byte from UMAT-OTI.
+- `scripts/regenerate_recovery_fixture.py` was run for both fixtures, with the same
+  arguments as in `recovery_fixtures.md` and `--fixture` set to the current
+  `tests/fixtures/verified/` file. That made six Abaqus 2021.HF5 jobs, run one
+  after another: original, transformed and jacobian_matched for each material.
+  Both were verified, with tangent agreement 1.069e-14 (2-step plateau) and
+  8.250e-11 (3-step plateau).
+- Diff against the `dbe9f928191e1d43` fixtures: every number is identical. Only
+  `generated` and `transform_fingerprint` changed, plus one new evidence field,
+  `primal_decided_by: "routine_level+jacobian_matched"`, which the verifier has
+  recorded since UMAT-OTI 4d91f0c. Under contract 4.0.0 the shared
+  `residual_fixture_v1` schema did not list that field and refused these fixtures.
+  Contract 4.1.0 declares it as optional.
+- `residual_core.core.fixture_residual_check`: elasticity 1 held / 2 not
+  established, J2 32 held / 3 not established, unchanged. Apart from the fixture
+  sha256 and the fingerprint, the check files are identical.
+
+The run directories, with `jobs.json`, `verification.json` and `hashes.json`, are
+outside the repository at
+`softwarex_work/corpus_campaign/batches/B6/noether/refreeze_a4f0ea8c/`.

@@ -24,8 +24,11 @@ public interfaces may still change.
   branch (`--branch`) and adds the full-size J2 cantilever (`--cantilever`).
 - **Presentation claims** reproduced claim by claim (`verification/run_all.py`,
   `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
-- Shared transform generation re-frozen at `dbe9f928191e1d43` with the two
-  current fixtures regenerated in Abaqus (`docs/evidence/final_refreeze.md`).
+- Shared contract 4.1.0: `finite_history.evidence.primal_decided_by` is declared
+  (optional); 4.0 records are still read, with that field NOT ESTABLISHED.
+- Shared transform generation re-frozen at `a4f0ea8c9d124f18` (previously
+  `dbe9f928191e1d43`) with the two current fixtures regenerated in Abaqus,
+  numbers unchanged (`docs/evidence/final_refreeze.md`).
 - The `bridge` extra pins UMAT-OTI `faa0360`; CI checks the companion out at
   that commit beside this repository (`docs/COMPATIBILITY.md`).
 
