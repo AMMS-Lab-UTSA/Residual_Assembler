@@ -233,6 +233,14 @@
     "tests/corpus/test_corpus_residual.py::test_the_hypoelastic_corpus_umat_is_objective_only_with_drot"
    ],
    "selected_by": "manual"
+  },
+  {
+   "commit": "cde44a0",
+   "bug": "The corpus sources defaulted CORPUS_WORKSPACE, and the manifest locator its roots, to folders on one machine, and the run_corpus_residual docstring named them; on any other machine corpus reads looked there silently.",
+   "tests": [
+    "tests/corpus/test_corpus_residual.py::test_corpus_data_with_no_workspace_named_raises_and_names_the_variable"
+   ],
+   "selected_by": "manual"
   }
  ],
  "excluded": [
