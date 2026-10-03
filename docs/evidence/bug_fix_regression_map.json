@@ -223,6 +223,16 @@
     "tests/framework/test_no_derivative_loss_on_oti_paths.py::test_every_derivative_losing_operation_on_the_oti_chain_is_reviewed"
    ],
    "selected_by": "manual"
+  },
+  {
+   "commit": "7a490d3",
+   "bug": "The live corpus tests named their materials by registry store key, which derives from the transform fingerprint, and load_case read manifests from a fixed pass16 run; after the pass20 freeze renamed every key, the three tests could not find their materials.",
+   "tests": [
+    "tests/corpus/test_corpus_residual.py::test_a_verified_elastic_umat_gives_a_residual_derivative_a_difference_agrees_with",
+    "tests/corpus/test_corpus_residual.py::test_a_finite_strain_corpus_umat_with_state_verifies_under_the_abaqus_contract",
+    "tests/corpus/test_corpus_residual.py::test_the_hypoelastic_corpus_umat_is_objective_only_with_drot"
+   ],
+   "selected_by": "manual"
   }
  ],
  "excluded": [
