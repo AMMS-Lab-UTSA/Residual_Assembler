@@ -286,6 +286,24 @@
     "tests/corpus/test_corpus_solver_robustness.py::test_the_held_fixed_texts_name_coords"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "74eb075",
+   "bug": "The equilibrium gate could excuse an increment where primal parity was broken (a primal defect would become unsupported), and excused only the departing increments rather than every increment from the first departure on (Vera R-1).",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_branch_gate_never_excuses_a_primal_defect",
+    "tests/corpus/test_corpus_solver_robustness.py::test_after_a_departure_only_a_full_rejoin_is_judged",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_on_another_equilibrium_is_not_judged"
+   ],
+   "selected_by": "message_pattern"
+  },
+  {
+   "commit": "1527a0c",
+   "bug": "Where only the ORIGINAL converged (non-unique equilibrium, 0e56ba3c), the problem was booked failed although the analytic solve converges when started on the original's solution.",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_analytic_solve_is_steered_onto_the_originals_equilibrium"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [

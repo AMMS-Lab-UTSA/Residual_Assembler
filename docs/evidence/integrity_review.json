@@ -537,26 +537,6 @@
     }
    ]
   },
-  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_on_another_equilibrium_is_not_judged:monkeypatch.setattr:1fd2df9e": {
-   "verdict": "justified",
-   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested.",
-   "evidence": [
-    {
-     "in": "tests/corpus/test_corpus_solver_robustness.py",
-     "text": "class _Branch:"
-    }
-   ]
-  },
-  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_reference_on_another_equilibrium_is_not_judged:monkeypatch.setattr:eecb494c": {
-   "verdict": "justified",
-   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification.",
-   "evidence": [
-    {
-     "in": "tests/corpus/test_corpus_solver_robustness.py",
-     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
-    }
-   ]
-  },
   "removed_check:tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py:test_current_operational_fixtures_carry_independent_verification:f7213b00": {
    "verdict": "justified",
    "reason": "states_agreeing > 0 is kept for fixtures that carry a count; a fixture from the entrywise D-4 gate carries null and must instead state that every chosen state was judged and every entry agrees, which the test now requires, and describe() must say so. No case is left unchecked.",
@@ -566,6 +546,26 @@
     {
      "in": "tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py",
      "text": "chosen states judged and every entry agrees"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:c7b72109": {
+   "verdict": "justified",
+   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested. Moved into the shared helper _global (Vera R-1 tests), unchanged.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "class _Branch:"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:dd22a83d": {
+   "verdict": "justified",
+   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification. Moved into the shared helper _global (Vera R-1 tests), unchanged.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
     }
    ]
   }
