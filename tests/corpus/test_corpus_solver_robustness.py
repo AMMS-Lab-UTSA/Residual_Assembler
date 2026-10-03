@@ -40,6 +40,10 @@ B9 (Vera's B8 review):
 14. A floor acceptance needs one confirming Newton step on the floor.
 15. The unread check writes 0, -1.2345e30, +1.2345e30 and NaN; every problem
    is probed; records name COORDS as held fixed and disclose the mixed geometry.
+16. Past a bifurcation (K_ff indefinite) the ORIGINAL's nominal solve can land
+   on another equilibrium than the analytic solve; a difference around it is
+   no reference for the analytic derivative. Such increments are unresolved
+   (reference_on_another_equilibrium), never judged (B9: SeaShell, |dV| 0.66).
 """
 from __future__ import annotations
 
@@ -279,6 +283,56 @@ def test_a_step_across_nu_one_half_is_dropped_and_the_zero_bound_uses_the_kept_s
     assert runner._ladder(case, 1, 906512.0)[1]["dropped_steps"] == []
     # no declared domain: the whole ladder
     assert runner._ladder(case, 3, 1.0)[0] == runner._steps(1.0)
+
+
+def test_the_held_fixed_texts_name_coords():
+    from residual_core.corpus import runner
+    for feature in ("residual_sens", "global_sens"):
+        assert "COORDS" in runner.HELD[feature] and "coords_contract" in runner.HELD[feature]
+
+
+class _Branch:
+    """A reference run of a linear model V_n = p a_n (+ offset_n)."""
+
+    def __init__(self, p, offsets):
+        a = np.array([[1.0, 2.0], [3.0, 4.0]])
+        self.V = [p * a[n] + offsets[n] for n in range(2)]
+        self.U = [v.copy() for v in self.V]
+        self.force_scale, self.newton = [1.0, 1.0], [[1e-14], [1e-14]]
+        self.newton_matrix, self.newton_matrix_arg = ["ra", "ra"], "auto"
+        self.outputs = [{"stress": v.copy()} for v in self.V]
+
+    def qoi(self, problem):
+        return np.zeros((2, 0))
+
+
+def test_a_reference_on_another_equilibrium_is_not_judged(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from residual_core.corpus import runner
+    source = tmp_path / "u.for"
+    source.write_text("      EMOD=PROPS(1)\n")
+    case = _case()
+    case.source_path, case.props = source, [2.0]
+    monkeypatch.setattr(runner, "reference_solve",
+                        lambda prov, prob, props, kin, sched, first=None, **kw:
+                        _Branch(props[0], [0.0, 0.0]))
+    monkeypatch.setattr(runner, "run_history", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))
+    problem = SimpleNamespace(qois=[])
+    analytic = SimpleNamespace(schedule=[{}, {}], newton_matrix_arg="exact",
+                               V=_Branch(2.0, [0.0, 0.5]).V,     # inc 2: another branch
+                               du_dp=[np.array([[1.0], [2.0]]), np.array([[3.0], [4.0]])],
+                               qoi_dp=lambda problem: np.zeros((2, 0, 1)))
+    provider = SimpleNamespace(slots=[1])
+    comps, info = runner.global_sensitivity(provider, case, problem, analytic, None)
+    by_inc = {c["increment"]: c for c in comps}
+    assert by_inc[1]["verdict"] == "verified"
+    assert by_inc[2]["verdict"] == "unresolved"
+    assert by_inc[2]["reason"].startswith("reference_on_another_equilibrium")
+    assert info["reference_on_another_equilibrium"] == [2]
+    # without the offset both increments are judged (and verified)
+    analytic.V = _Branch(2.0, [0.0, 0.0]).V
+    comps, info = runner.global_sensitivity(provider, case, problem, analytic, None)
+    assert {c["verdict"] for c in comps} == {"verified"} and not info["reference_on_another_equilibrium"]
 
 
 class _FakeLib:
