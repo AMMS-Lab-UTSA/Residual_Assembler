@@ -43,7 +43,9 @@ B9 (Vera's B8 review):
 16. Past a bifurcation (K_ff indefinite) the ORIGINAL's nominal solve can land
    on another equilibrium than the analytic solve; a difference around it is
    no reference for the analytic derivative. Such increments are unresolved
-   (reference_on_another_equilibrium), never judged (B9: SeaShell, |dV| 0.66).
+   (reference_on_another_equilibrium), never judged (B9: SeaShell, |dV| 0.66),
+   but only while primal parity holds, and from the first departure on unless
+   solution and incoming state both match again (Vera R-1).
 """
 from __future__ import annotations
 
@@ -292,12 +294,16 @@ def test_the_held_fixed_texts_name_coords():
 
 
 class _Branch:
-    """A reference run of a linear model V_n = p a_n (+ offset_n)."""
+    """A reference run of a linear model V_n = p a_n (+ offset_n); its incoming
+    state at increment n is V_{n-1} (+ state_offsets)."""
 
-    def __init__(self, p, offsets):
+    def __init__(self, p, offsets, state_offsets=(0.0, 0.0)):
+        from types import SimpleNamespace
         a = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.V = [p * a[n] + offsets[n] for n in range(2)]
         self.U = [v.copy() for v in self.V]
+        self.incoming = [SimpleNamespace(stress=np.array([1.0 + state_offsets[n]]),
+                                         state=np.zeros(0), stran=np.zeros(0)) for n in range(2)]
         self.force_scale, self.newton = [1.0, 1.0], [[1e-14], [1e-14]]
         self.newton_matrix, self.newton_matrix_arg = ["ra", "ra"], "auto"
         self.outputs = [{"stress": v.copy()} for v in self.V]
@@ -306,7 +312,8 @@ class _Branch:
         return np.zeros((2, 0))
 
 
-def test_a_reference_on_another_equilibrium_is_not_judged(monkeypatch, tmp_path):
+def _global(monkeypatch, tmp_path, analytic_offsets, state_offsets=(0.0, 0.0), parity=0.0,
+            du_scale=1.0):
     from types import SimpleNamespace
     from residual_core.corpus import runner
     source = tmp_path / "u.for"
@@ -317,22 +324,45 @@ def test_a_reference_on_another_equilibrium_is_not_judged(monkeypatch, tmp_path)
                         lambda prov, prob, props, kin, sched, first=None, **kw:
                         _Branch(props[0], [0.0, 0.0]))
     monkeypatch.setattr(runner, "run_history", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))
-    problem = SimpleNamespace(qois=[])
-    analytic = SimpleNamespace(schedule=[{}, {}], newton_matrix_arg="exact",
-                               V=_Branch(2.0, [0.0, 0.5]).V,     # inc 2: another branch
-                               du_dp=[np.array([[1.0], [2.0]]), np.array([[3.0], [4.0]])],
+    mine = _Branch(2.0, analytic_offsets, state_offsets)
+    analytic = SimpleNamespace(schedule=[{}, {}], newton_matrix_arg="exact", V=mine.V,
+                               incoming=mine.incoming, primal_parity=[parity, parity],
+                               du_dp=[du_scale * np.array([[1.0], [2.0]]),
+                                      du_scale * np.array([[3.0], [4.0]])],
                                qoi_dp=lambda problem: np.zeros((2, 0, 1)))
-    provider = SimpleNamespace(slots=[1])
-    comps, info = runner.global_sensitivity(provider, case, problem, analytic, None)
-    by_inc = {c["increment"]: c for c in comps}
+    comps, info = runner.global_sensitivity(SimpleNamespace(slots=[1]), case,
+                                            SimpleNamespace(qois=[]), analytic, None)
+    return {c["increment"]: c for c in comps}, info
+
+
+def test_a_reference_on_another_equilibrium_is_not_judged(monkeypatch, tmp_path):
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.5])      # inc 2: another branch
     assert by_inc[1]["verdict"] == "verified"
     assert by_inc[2]["verdict"] == "unresolved"
     assert by_inc[2]["reason"].startswith("reference_on_another_equilibrium")
     assert info["reference_on_another_equilibrium"] == [2]
     # without the offset both increments are judged (and verified)
-    analytic.V = _Branch(2.0, [0.0, 0.0]).V
-    comps, info = runner.global_sensitivity(provider, case, problem, analytic, None)
-    assert {c["verdict"] for c in comps} == {"verified"} and not info["reference_on_another_equilibrium"]
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0])
+    assert {c["verdict"] for c in by_inc.values()} == {"verified"}
+    assert not info["reference_on_another_equilibrium"]
+
+
+def test_the_branch_gate_never_excuses_a_primal_defect(monkeypatch, tmp_path):
+    """R-1: with primal parity broken, a different solution may be the defect
+    itself; the comparisons stay judged, and a wrong derivative stays FAILED."""
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.5], parity=1e-6, du_scale=1.1)
+    assert not info["reference_on_another_equilibrium"]
+    assert by_inc[2]["verdict"] == "failed" and by_inc[1]["verdict"] == "failed"
+
+
+def test_after_a_departure_only_a_full_rejoin_is_judged(monkeypatch, tmp_path):
+    """R-1: from the first departure on, increments are excused unless both the
+    solution and the incoming state match again."""
+    by_inc, info = _global(monkeypatch, tmp_path, [0.5, 0.0], state_offsets=(0.0, 0.3))
+    assert info["reference_on_another_equilibrium"] == [1, 2]     # inc 2: history differs
+    by_inc, info = _global(monkeypatch, tmp_path, [0.5, 0.0])
+    assert info["reference_on_another_equilibrium"] == [1]        # inc 2 fully rejoined
+    assert by_inc[2]["verdict"] == "verified"
 
 
 class _FakeLib:

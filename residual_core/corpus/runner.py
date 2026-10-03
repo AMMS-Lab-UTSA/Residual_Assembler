@@ -335,6 +335,41 @@ def reference_solve(provider, problem, props, kinematics, schedule, first=None, 
     raise error
 
 
+def _state_rel(a, b) -> float:
+    """max relative difference of two IncrementStates (stress, state, strain)."""
+    worst = 0.0
+    for x, y in ((a.stress, b.stress), (a.state, b.state), (a.stran, b.stran)):
+        x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+        if x.size:
+            worst = max(worst, float(np.max(np.abs(x - y))) / max(float(np.max(np.abs(x))), 1e-300))
+    return worst
+
+
+def branch_departures(case, analytic, base, branch) -> set:
+    """0-based increments whose comparisons are not judged because the
+    reference left the analytic equilibrium (Vera R-1).
+
+    Applies only when primal parity holds on this problem: if the OTI build's
+    stress differs from the original's beyond the parity tolerance, a different
+    solution may be a primal defect, and the comparisons stay judged (and fail).
+    From the first departure on, every increment is excused -- the history
+    differs -- unless both its solution and its incoming state (stress, STATEV,
+    strain) match again to BRANCH_TOL."""
+    parity = max(analytic.primal_parity) if getattr(analytic, "primal_parity", None) else 0.0
+    if parity > parity_tolerance(case):
+        return set()
+    departed = [n for n, d in enumerate(branch) if d > BRANCH_TOL]
+    if not departed:
+        return set()
+    out = set()
+    for n in range(departed[0], len(branch)):
+        rejoined = (branch[n] <= BRANCH_TOL
+                    and _state_rel(analytic.incoming[n], base.incoming[n]) <= BRANCH_TOL)
+        if not rejoined:
+            out.add(n)
+    return out
+
+
 def global_sensitivity(provider, case, problem, analytic, kinematics):
     props = np.asarray(case.props, dtype=float)
     eps = eps_eval_for(case)
@@ -353,7 +388,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
     # original's Newton can land on another branch, and a difference around it
     # says nothing about the analytic derivative (B9: SeaShell, |dV| = 0.66)
     branch = [float(np.max(np.abs(V0[n] - analytic.V[n]))) / uscale for n in range(len(V0))]
-    elsewhere = {n for n, d in enumerate(branch) if d > BRANCH_TOL}
+    elsewhere = branch_departures(case, analytic, base, branch)
     dQ = analytic.qoi_dp(problem)                      # (ninc, nq, npar)
     comparisons, matrices, failures = [], set(), []
     achieved = [max(h[-1] for h in base.newton)]       # final relative free residuals
