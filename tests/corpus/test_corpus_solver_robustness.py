@@ -327,6 +327,17 @@ def test_the_held_fixed_texts_name_coords():
         assert "COORDS" in runner.HELD[feature] and "coords_contract" in runner.HELD[feature]
 
 
+def test_branch_excused_problems_have_their_own_reason_class():
+    from residual_core.corpus.verify import summarise
+    excused = {"verdict": "unresolved", "reason": "reference_on_another_equilibrium: ..."}
+    fd = {"verdict": "unresolved"}
+    ok = {"verdict": "verified"}
+    assert summarise([ok, excused, excused])["reason_class"] == "reference_on_another_equilibrium"
+    assert summarise([ok, excused, fd])["reason_class"] == "fd_reference_unresolved"
+    assert summarise([ok, fd])["reason_class"] == "fd_reference_unresolved"
+    assert summarise([ok, ok])["status"] == "verified"
+
+
 class _Branch:
     """A reference run of a linear model V_n = p a_n (+ offset_n); its incoming
     state at increment n is V_{n-1} (+ state_offsets)."""
