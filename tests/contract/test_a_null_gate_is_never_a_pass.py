@@ -230,3 +230,37 @@ def test_the_reason_names_the_primal_chain_and_not_just_the_raw_gate():
     answer, why = usable_for_assembly(_record(evidence=refused))
     assert answer.is_false()
     assert "primal_agreed" in why and "did not explain" in why
+
+
+def test_a_primal_control_not_decided_is_not_a_disagreement_and_not_a_pass():
+    """Contract 5.0.0. The routine-level replay agreed and the Abaqus control
+    produced no comparison: ``primal_agreed`` is null, the state is INTERNAL,
+    and the record is neither refused as a measured disagreement nor offered as
+    verified."""
+    from contract_reader import CONTRACT_VERSION, INTERNAL_STATES, owner_of
+    assert CONTRACT_VERSION == "5.0.0"
+    assert "primal_control_not_decided" in INTERNAL_STATES
+    assert owner_of("primal_control_not_decided") == "INTERNAL"
+    # the states it used to be filed under are still what they were
+    assert owner_of("primal_disagreed") == "INTERNAL"
+    record = _record(
+        contract_version="5.0.0",
+        terminal={"state": "primal_control_not_decided", "owner": "INTERNAL"},
+        evidence={**{n: True for n in GATES}, "primal_agreed": None})
+    gates = gates_of(record)
+    assert gates["primal_agreed"].is_not_established()
+    settled = primal_settled(gates)
+    assert settled.is_not_established() and not settled.is_false()
+    # a terminal state that is not fully_verified is a refusal, with the state named
+    answer, why = usable_for_assembly(record)
+    assert answer.is_false() and "primal_control_not_decided" in why and "INTERNAL" in why
+    # the same null gate under fully_verified is a queue item, never a pass
+    queue, _ = usable_for_assembly(_record(
+        evidence={**{n: True for n in GATES}, "primal_agreed": None}))
+    assert queue.is_not_established()
+
+
+def test_an_unknown_terminal_state_is_still_refused_not_defaulted():
+    from contract_reader import ContractError, owner_of
+    with pytest.raises(ContractError):
+        owner_of("primal_control_not_decided_yet")
