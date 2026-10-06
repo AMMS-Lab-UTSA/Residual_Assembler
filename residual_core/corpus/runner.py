@@ -1052,6 +1052,19 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
         if "assembly" in features:
             records.append(_assembly_record(provider, case, problem, analytic, kin, record,
                                             evidence, detail, patch))
+        steered = detail.get("steered_onto_reference")
+        if steered:
+            # the analytic solve only converged started on the original's solution:
+            # say so on every record of this problem, and what it came to
+            for rec in records:
+                if rec.get("problem") == problem.name and rec["feature"] in (
+                        "residual_sens", "global_sens"):
+                    rec["steered_onto_reference"] = steered
+                    if rec["status"] != "verified":
+                        verified_n = (rec.get("counts") or {}).get("verified", 0)
+                        rec["reason"] = ("%s; steered onto the original's equilibrium "
+                                         "(steered_onto_reference); %s, %d verified comparisons"
+                                         % (rec.get("reason") or "", rec["status"], verified_n))
         detail["seconds"] = time.time() - started
         evidence.write_text(json.dumps(detail, indent=1, default=_json_default), encoding="utf-8")
     provider.flush()

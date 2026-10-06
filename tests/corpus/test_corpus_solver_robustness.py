@@ -51,6 +51,10 @@ B9 (Vera's B8 review):
 17. Where only the ORIGINAL converges (0e56ba3c: K_ff indefinite at increment
    9), the analytic solve is started on the original's solution and, if it
    converges there with its own residual, judged on that path.
+18. Labels only (Vera B9): a record whose analytic solve was steered says so and
+   what it came to; problems excused by a branch departure have their own
+   reason class, distinct from fd_reference_unresolved; the per-source tally
+   quotes "verified on k of n problems" and flags a cell that rests on 1 of 3.
 """
 from __future__ import annotations
 
@@ -630,3 +634,21 @@ def test_the_analytic_solve_is_steered_onto_the_originals_equilibrium(built):
         np.max(np.abs(np.array(ref.V))))
     assert run.reference_steering == ref.newton_matrix_arg
     assert len(run.du_dp) == len(ref.U)
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_a_steered_record_says_so_and_what_it_came_to(built):
+    from residual_core.corpus import runner
+    case, _, _, root = built["z2"]
+    problem = [p for p in runner.default_problems(case) if p.name.startswith("clamped_shear")][0]
+    records = runner.run_case(case, root / "run_steered", problems=[problem],
+                              features=("residual_sens", "global_sens"))
+    for record in [r for r in records if r["feature"] in ("residual_sens", "global_sens")]:
+        assert record["steered_onto_reference"]["max_V_difference"] < 1e-6
+        if record["status"] != "verified":
+            assert ("steered onto the original's equilibrium (steered_onto_reference); "
+                    "%s, %d verified comparisons" % (record["status"],
+                                                      record["counts"]["verified"])
+                    ) in record["reason"]
