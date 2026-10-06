@@ -225,8 +225,10 @@ def summarise(comparisons: List[dict]) -> dict:
     nonsmooth comparison sits on a kink of the material response, where the
     derivative does not exist; they are listed, never counted verified).
     Otherwise ``unsupported`` with ``reason_class`` ``fd_reference_unresolved``
-    (the FD reference could not resolve a significant entry at this precision)
-    or ``nonsmooth_dominant`` -- never verified on partial coverage.
+    (the FD reference could not resolve a significant entry at this precision),
+    ``reference_on_another_equilibrium`` (every unresolved comparison was
+    excused because the ORIGINAL's solve left the analytic equilibrium), or
+    ``nonsmooth_dominant`` -- never verified on partial coverage.
     """
     counts = {"verified": 0, "failed": 0, "nonsmooth": 0, "unresolved": 0}
     for c in comparisons:
@@ -238,7 +240,13 @@ def summarise(comparisons: List[dict]) -> dict:
     elif counts["failed"]:
         status = "failed"
     elif counts["unresolved"]:
-        status, reason = "unsupported", "fd_reference_unresolved"
+        status = "unsupported"
+        # increments excused because the reference sits on another equilibrium
+        # (runner.branch_departures) are not an FD resolution problem: own class
+        branch = sum(1 for c in comparisons if c["verdict"] == "unresolved"
+                     and str(c.get("reason", "")).startswith("reference_on_another_equilibrium"))
+        reason = ("reference_on_another_equilibrium" if branch == counts["unresolved"]
+                  else "fd_reference_unresolved")
     elif counts["verified"] > counts["nonsmooth"]:
         status = "verified"
     else:
