@@ -49,7 +49,16 @@ from tristate import NOT_ESTABLISHED, Tri, all_true, read  # noqa: F401
 #: 4.1.0, MINOR: ``finite_history.evidence.primal_decided_by`` (optional) names
 #: which check decided the primal gate. A 4.0 record lacks it and is still read;
 #: the field is then NOT ESTABLISHED, which is what require_compatible says.
-CONTRACT_VERSION = "4.1.0"
+#:
+#: 5.0.0: ``primal_control_not_decided`` joined the vocabulary (INTERNAL), and
+#: ``finite_history.evidence.primal_decided_by`` gained
+#: ``jacobian_matched_not_decided``. The routine-level replay agreed and the
+#: Abaqus control that was to settle the rest produced no comparison: the gate
+#: is not decided, ``primal_agreed`` is null, nothing was measured to disagree.
+#: A 4.x reader would have fallen through on the new state, or booked it with
+#: the ``primal_disagreed`` it used to be filed under -- a measured disagreement
+#: that never happened -- so major.
+CONTRACT_VERSION = "5.0.0"
 SPEAKER = "Residual_Assembler"
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -89,7 +98,8 @@ INTERNAL_STATES = frozenset({
     "transform_refused", "experiment_not_generated",
     "experiment_not_informative", "informativeness_not_established",
     "unsupported_formulation", "support_build_failed", "original_job_failed",
-    "transformed_job_failed", "primal_disagreed", "primal_mismatch_explained",
+    "transformed_job_failed", "primal_control_not_decided", "primal_disagreed",
+    "primal_mismatch_explained",
     "arguments_diverged_before_the_routine",
     "disagreement_not_in_any_recorded_call", "derivative_truncated",
     "tangent_not_verified", "not_attempted", "harness_error"})
