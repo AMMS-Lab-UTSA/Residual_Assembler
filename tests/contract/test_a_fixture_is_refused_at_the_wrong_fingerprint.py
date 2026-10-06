@@ -141,6 +141,46 @@ def test_current_operational_fixtures_carry_independent_verification():
             assert grouping == archived["finite_history"]["history_grouping"][side]
 
 
+def _enum_of(node, key):
+    """The ``enum`` of the first property named ``key`` anywhere in a schema."""
+    if isinstance(node, dict):
+        if key in node.get("properties", {}) and "enum" in node["properties"][key]:
+            return node["properties"][key]["enum"]
+        for value in node.values():
+            found = _enum_of(value, key)
+            if found is not None:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = _enum_of(value, key)
+            if found is not None:
+                return found
+    return None
+
+
+def test_a_fixture_whose_primal_control_was_not_decided_is_declared_and_not_all_six(tmp_path):
+    """Contract 5.0.0: ``primal_decided_by`` may be ``jacobian_matched_not_decided``
+    with ``primal_agreed`` null -- the routine-level replay agreed and the Abaqus
+    control produced no comparison. The shared schema declares the value (read
+    from the file, so the test needs no schema library), and the reader reads
+    the gate NOT ESTABLISHED: the fixture is not a six-gate fixture."""
+    from residual_core.materials.verified_fixture import load
+    schema = json.loads((SCHEMAS / "residual_fixture_v1.schema.json").read_text())
+    declared = _enum_of(schema, "primal_decided_by")
+    assert declared and "jacobian_matched_not_decided" in declared
+    assert "jacobian_matched_not_decided_yet" not in declared
+    payload = json.loads((CURRENT_FIXTURES / "j2_props--2feae9f158.json").read_text())
+    evidence = payload["finite_history"]["evidence"]
+    assert evidence["primal_decided_by"] in declared
+    evidence["primal_agreed"] = None
+    evidence["primal_decided_by"] = "jacobian_matched_not_decided"
+    path = tmp_path / "not_decided.json"
+    path.write_text(json.dumps(payload))
+    fixture = load(path)
+    assert not fixture.all_six_gates
+    assert fixture.gates_not_true == ("primal_agreed",)
+
+
 def test_historical_archive_preserves_every_original_inventory_hash():
     inventory = json.loads((SCHEMAS.parent / "docs/evidence/recovery_evidence_inventory.json").read_text())
     artifacts = inventory["repositories"]["RA"]["artifacts"]

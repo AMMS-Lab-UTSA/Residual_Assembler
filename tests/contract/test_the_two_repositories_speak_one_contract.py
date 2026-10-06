@@ -113,10 +113,18 @@ def test_a_one_x_producer_is_refused_by_this_two_x_consumer():
     assert "wrong numbers" in str(exc.value)
 
 
-def test_a_four_zero_record_is_still_read_with_its_newer_fields_not_established():
-    """4.1 only added an optional field, so a 4.0 producer's records stay
-    readable; what 4.1 added is reported as NOT ESTABLISHED, never assumed."""
-    caveat = require_compatible("4.0.0", speaker="UMAT_source_transformation")
+def test_a_four_x_producer_is_refused_by_a_five_zero_reader():
+    """5.0.0 added a terminalState member a consumer switches on and a
+    primal_decided_by value: a 4.x record would be misread, so major."""
+    for theirs in ("4.0.0", "4.1.0"):
+        with pytest.raises(ContractVersionError) as exc:
+            require_compatible(theirs, speaker="UMAT_source_transformation")
+        assert "BREAKING" in str(exc.value) and "5.0.0" in str(exc.value)
+
+
+def test_an_older_minor_is_still_read_with_its_newer_fields_not_established():
+    """The caveat path of a MINOR difference (here a synthetic 5.1 reader)."""
+    caveat = require_compatible("5.0.0", speaker="UMAT_source_transformation", ours="5.1.0")
     assert "older than" in caveat and "NOT ESTABLISHED" in caveat
 
 
