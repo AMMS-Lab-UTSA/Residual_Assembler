@@ -338,6 +338,26 @@ def test_branch_excused_problems_have_their_own_reason_class():
     assert summarise([ok, ok])["status"] == "verified"
 
 
+def test_the_per_source_tally_says_k_of_n_and_flags_one_of_three():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("run_corpus_residual",
+                                                  ROOT / "tools" / "run_corpus_residual.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    def rec(problem, status, feature="residual_sens"):
+        return {"key": "k" * 24, "source_id": "src", "feature": feature, "problem": problem,
+                "status": status}
+    three = [rec(p, s) for p, s in (("a", "verified"), ("b", "unsupported"), ("c", "unsupported"))]
+    cell = tool.fold_cell(three)
+    assert (cell["cell"], cell["k"], cell["n"], cell["run"]) == ("verified", 1, 1, 3)
+    assert cell["rests_on_1_of_3"] is True
+    assert "verified on 1 of 1 evaluated problems (of 3 run)" in cell["text"]
+    assert "rests on 1 of 3" in cell["text"]
+    two = tool.fold_cell([rec("a", "verified"), rec("b", "verified"), rec("c", "unsupported")])
+    assert (two["k"], two["n"], two["rests_on_1_of_3"]) == (2, 2, False)
+    assert tool.fold_cell([rec("a", "verified"), rec("b", "failed"), rec("c", "verified")])["cell"] == "failed"
+
+
 class _Branch:
     """A reference run of a linear model V_n = p a_n (+ offset_n); its incoming
     state at increment n is V_{n-1} (+ state_offsets)."""

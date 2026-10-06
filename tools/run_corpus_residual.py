@@ -85,6 +85,60 @@ def summarise_ledger(path: Path) -> str:
     return "\n".join(out)
 
 
+def fold_cell(records):
+    """One (source, feature) cell from its per-problem records, by the manifest's
+    rule: failed if any problem failed; verified if at least min(2, n) of the n
+    EVALUATED problems (not unsupported) verified. States "verified on k of n
+    evaluated problems (of r run)" and flags a cell that rests on 1 of 3."""
+    per = {r.get("problem"): r["status"] for r in records}
+    verified = [p for p, v in per.items() if v == "verified"]
+    evaluated = [p for p, v in per.items() if v != "unsupported"]
+    if any(v == "failed" for v in per.values()):
+        cell = "failed"
+    elif verified and len(verified) >= min(2, len(evaluated)):
+        cell = "verified"
+    elif set(per.values()) == {"unsupported"}:
+        cell = "unsupported"
+    else:
+        cell = "not_attempted"
+    run = len(per)
+    thin = cell == "verified" and len(verified) == 1 and run >= 3
+    text = "%s: verified on %d of %d evaluated problems (of %d run)" % (
+        cell, len(verified), len(evaluated), run)
+    if thin:
+        text += "; rests on 1 of %d problems" % run
+    return {"cell": cell, "k": len(verified), "n": len(evaluated), "run": run,
+            "rests_on_1_of_3": thin, "text": text}
+
+
+def summarise_sources(path: Path) -> str:
+    """Per-source cells for residual_sens and global_sens, and the two ways the
+    counts must always be quoted: on at least 2 of 3 problems, and on any problem."""
+    groups = {}
+    for line in path.read_text().splitlines():
+        if line.strip():
+            r = json.loads(line)
+            if r["feature"] in ("residual_sens", "global_sens"):
+                groups.setdefault((r["key"], r.get("source_id", "")), {}).setdefault(
+                    r["feature"], []).append(r)
+    out = ["| key | source | residual_sens | global_sens |", "|---|---|---|---|"]
+    tally = {"residual_sens": [0, 0], "global_sens": [0, 0]}
+    for (key, source), cells in sorted(groups.items(), key=lambda kv: kv[0][1]):
+        folded = {f: fold_cell(cells[f]) for f in tally if f in cells}
+        for f, c in folded.items():
+            if c["cell"] == "verified":
+                tally[f][1] += 1
+                tally[f][0] += 0 if c["rests_on_1_of_3"] else 1
+        out.append("| %s | %s | %s | %s |" % (key[:12], source[:60],
+                   folded.get("residual_sens", {}).get("text", "-"),
+                   folded.get("global_sens", {}).get("text", "-")))
+    out.append("")
+    for f, (two, anyp) in tally.items():
+        out.append("%s: verified on at least 2 of 3 problems: %d; on any problem: %d (of %d sources)"
+                   % (f, two, anyp, len(groups)))
+    return "\n".join(out)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -106,11 +160,17 @@ def main(argv=None) -> int:
                              "Small-strain cases ignore it.")
     parser.add_argument("--summarise", action="store_true",
                         help="print a markdown table of <out>/records.jsonl and exit")
+    parser.add_argument("--summarise-sources", action="store_true",
+                        help="print per-source cells (verified on k of n problems, 1-of-3 flag) "
+                             "of <out>/records.jsonl and exit")
     parser.add_argument("--one", help=argparse.SUPPRESS)
     parser.add_argument("--records-out", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.one:
         return _one(args)
+    if args.summarise_sources:
+        print(summarise_sources(Path(args.out) / "records.jsonl"))
+        return 0
     if args.summarise:
         print(summarise_ledger(Path(args.out) / "records.jsonl"))
         return 0
