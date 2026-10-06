@@ -24,6 +24,13 @@ public interfaces may still change.
   branch (`--branch`) and adds the full-size J2 cantilever (`--cantilever`).
 - **Presentation claims** reproduced claim by claim (`verification/run_all.py`,
   `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
+- Shared contract 5.0.0 (MAJOR, from UMAT-OTI 8f1efaf): terminal state
+  `primal_control_not_decided` (INTERNAL) and `primal_decided_by` value
+  `jacobian_matched_not_decided`. The routine-level replay agreed and the Abaqus
+  control produced no comparison, so `primal_agreed` is null: NOT ESTABLISHED,
+  neither a measured disagreement nor a pass. A 4.x producer is now refused at
+  the version handshake. The lock (combined digest `82db77bf...`) and the four
+  schemas are copied byte for byte; both fixtures keep verifying unchanged.
 - Shared contract 4.1.0: `finite_history.evidence.primal_decided_by` is declared
   (optional); 4.0 records are still read, with that field NOT ESTABLISHED.
 - Shared transform generation re-frozen at `830e5ee95ce99cd2` (previously
