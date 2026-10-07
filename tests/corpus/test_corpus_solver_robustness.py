@@ -59,6 +59,9 @@ B9 (Vera's B8 review):
 20. A slot whose value flows through an INTEGER variable has no derivative; the
    provider is built without it, and every record names the slot left out
    (B12: Worlthen enhanced/simplified curing, PROPS(5)).
+21. The host speaks six components; a routine of NTENS = 4 (plane strain) reads
+   and writes the first four, the others are zero (B12). The provider maps in
+   both directions, for the original and for the OTI build.
 18. Labels only (Vera B9): a record whose analytic solve was steered says so and
    what it came to; problems excused by a branch departure have their own
    reason class, distinct from fd_reference_unresolved; the per-source tally
@@ -844,3 +847,141 @@ def test_a_source_with_an_integer_slot_verifies_on_the_differentiable_ones(built
         assert r["status"] == "verified", r
         assert "NOT seeded, non-differentiable: [5]" in r["wrt"]
         assert r["unseeded_slots"][0]["props_index"] == 5
+
+
+# --------------------------------------------------------------------------- #
+# NTENS-generic provider: the host's six components, the routine's NTENS
+# --------------------------------------------------------------------------- #
+ELASTIC_UMAT = """      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
+     1 RPL,DDSDDT,DRPLDE,DRPLDT,
+     2 STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME,
+     3 NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
+     4 CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,KSTEP,KINC)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*80 CMNAME
+      DIMENSION STRESS(NTENS),STATEV(NSTATV),DDSDDE(NTENS,NTENS),
+     1 DDSDDT(NTENS),DRPLDE(NTENS),STRAN(NTENS),DSTRAN(NTENS),TIME(2),
+     2 PREDEF(1),DPRED(1),PROPS(NPROPS),COORDS(3),DROT(3,3),
+     3 DFGRD0(3,3),DFGRD1(3,3)
+      E=PROPS(1)
+      XNU=PROPS(2)
+      XLAM=E*XNU/((1.D0+XNU)*(1.D0-2.D0*XNU))
+      G=E/(2.D0*(1.D0+XNU))
+      DO I=1,NTENS
+        DO J=1,NTENS
+          DDSDDE(I,J)=0.D0
+        ENDDO
+      ENDDO
+      DO I=1,NDI
+        DO J=1,NDI
+          DDSDDE(I,J)=XLAM
+        ENDDO
+        DDSDDE(I,I)=XLAM+2.D0*G
+      ENDDO
+      DO I=NDI+1,NTENS
+        DDSDDE(I,I)=G
+      ENDDO
+      DO I=1,NTENS
+        DO J=1,NTENS
+          STRESS(I)=STRESS(I)+DDSDDE(I,J)*DSTRAN(J)
+        ENDDO
+      ENDDO
+      RETURN
+      END
+"""
+
+
+def _regular_only_provider(tmp_path, ntens):
+    import subprocess
+    from residual_core.corpus.hidden_state import _REGULAR_SHIM, _ProbeProvider
+    (tmp_path / "umat.f").write_text(ELASTIC_UMAT)
+    (tmp_path / "shim.f90").write_text(_REGULAR_SHIM)
+    run = dict(cwd=tmp_path, check=True, capture_output=True, text=True)
+    subprocess.run(["gfortran", "-O0", "-fPIC", "-std=legacy", "-ffixed-form",
+                    "-ffixed-line-length-none", "-c", "umat.f", "-o", "umat.o"], **run)
+    subprocess.run(["gfortran", "-O0", "-fPIC", "-ffree-form", "-c", "shim.f90", "-o", "shim.o"], **run)
+    subprocess.run(["gfortran", "-shared", "shim.o", "umat.o", "-o", "lib.so"], **run)
+    case = _case()
+    case.ntens, case.nstatv, case.props = ntens, 1, [210.0e3, 0.3]
+    record = {"parameters": [{"props_index": 1}, {"props_index": 2}]}
+    return _ProbeProvider(record, case, tmp_path, tmp_path / "lib.so"), case
+
+
+def test_components_map_between_the_host_and_a_routine_of_fewer():
+    from residual_core.corpus.provider import ProviderBuildFailed, to_host, to_material
+    host = np.arange(1.0, 7.0)
+    assert list(to_material(host, 4, 0)) == [1, 2, 3, 4]
+    assert list(to_material(host, 6, 0)) == [1, 2, 3, 4, 5, 6]
+    assert list(to_host(np.array([1.0, 2.0, 3.0, 4.0]), 4, 0)) == [1, 2, 3, 4, 0, 0]
+    matrix = np.arange(16.0).reshape(1, 4, 4)
+    padded = to_host(to_host(matrix, 4, 1), 4, 2)
+    assert padded.shape == (1, 6, 6) and np.array_equal(padded[0, :4, :4], matrix[0])
+    assert not padded[0, 4:, :].any() and not padded[0, :, 4:].any()
+    for unsupported in (3, 2, 5):
+        with pytest.raises(ProviderBuildFailed):
+            to_material(host, unsupported, 0)
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+def test_a_plane_strain_routine_sees_four_components_and_returns_the_host_six(tmp_path):
+    """The same elastic law as NTENS = 6 and NTENS = 4: the leading components and
+    the leading block of the tangent agree; the shear components a plane-strain
+    routine does not have are zero for the host."""
+    for name in ("d3", "pe"):
+        (tmp_path / name).mkdir()
+    three_d, _ = _regular_only_provider(tmp_path / "d3", 6)
+    plane, _ = _regular_only_provider(tmp_path / "pe", 4)
+    rng = np.random.default_rng(0)
+    n = 3
+    dstran = rng.normal(size=(n, 6)) * 1e-3
+    flat = dstran.copy()
+    flat[:, 4:] = 0.0                      # the 3D routine must see a plane-strain increment
+    common = dict(time=np.zeros(2), dtime=1.0, coords=np.zeros((n, 3)), celent=np.ones(n),
+                  noel=np.arange(1, n + 1), npt=np.ones(n, dtype=int))
+    args = (np.array([210.0e3, 0.3]), np.zeros((n, 6)), np.zeros((n, 1)), np.zeros((n, 6)))
+    eye = np.tile(np.eye(3), (n, 1, 1))
+    a = three_d.regular(*args, flat, eye, eye, **common)
+    b = plane.regular(*args, dstran, eye, eye, **common)    # e13, e23 present: not seen
+    assert np.allclose(b["stress"][:, :4], a["stress"][:, :4], rtol=1e-14, atol=0.0)
+    assert not b["stress"][:, 4:].any()
+    assert np.allclose(b["ddsdde"][:, :4, :4], a["ddsdde"][:, :4, :4], rtol=1e-14, atol=0.0)
+    assert not b["ddsdde"][:, 4:, :].any() and not b["ddsdde"][:, :, 4:].any()
+    assert plane.ntens == three_d.ntens == 6 and plane.material_ntens == 4
+
+
+def test_the_oti_call_maps_seeds_in_and_results_out(monkeypatch):
+    """The OTI entry with NTENS = 4: seeds reach the library with four components and
+    the outputs come back padded to six. A stand-in library records and fills them."""
+    from residual_core.corpus import provider as P
+    seen = {}
+
+    class Lib:
+        def corpus_total(self, *args):
+            n, nprops, nt, ns, npar = (a.value for a in args[:5])
+            arrays = [a for a in args if isinstance(a, np.ndarray)]
+            dsi = arrays[6]
+            seen.update(nt=nt, dsi_shape=dsi.shape, stress_shape=arrays[1].shape)
+            ddsdde, dsig, dstv, dstv_de, pnewdt = arrays[-5:]
+            ddsdde[:] = 1.0
+            dsig[:] = 2.0
+            dstv[:] = 3.0
+            dstv_de[:] = 4.0
+            pnewdt[:] = 1.0
+    monkeypatch.setattr(P, "_ptr", lambda a: a)
+    provider = P.CorpusProvider.__new__(P.CorpusProvider)
+    provider.material_ntens, provider.ntens, provider.nstatv, provider.nparam = 4, 6, 2, 3
+    provider.nprops, provider.finite, provider.lib = 2, True, Lib()
+    provider.case = _case()
+    n = 2
+    out = provider.total(np.array([1.0, 0.3]), np.zeros((n, 6)), np.zeros((n, 2)), np.zeros((n, 6)),
+                         np.zeros((n, 6)), np.tile(np.eye(3), (n, 1, 1)), np.tile(np.eye(3), (n, 1, 1)),
+                         time=np.zeros(2), dtime=1.0, coords=np.zeros((n, 3)), celent=np.ones(n),
+                         noel=np.arange(1, n + 1), npt=np.ones(n, dtype=int),
+                         dstress_in=np.ones((n, 6, 3)))
+    assert seen["nt"] == 4 and seen["dsi_shape"] == (n, 3, 4) and seen["stress_shape"] == (n, 4)
+    assert out["stress"].shape == (n, 6) and out["ddsdde"].shape == (n, 6, 6)
+    assert out["dstress_dp"].shape == (n, 6, 3) and out["dstate_ddstran"].shape == (n, 2, 6)
+    assert (out["dstress_dp"][:, :4] == 2.0).all() and not out["dstress_dp"][:, 4:].any()
+    assert (out["ddsdde"][:, :4, :4] == 1.0).all() and not out["ddsdde"][:, 4:].any()
+    assert (out["dstate_ddstran"][:, :, :4] == 4.0).all() and not out["dstate_ddstran"][:, :, 4:].any()

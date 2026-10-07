@@ -31,7 +31,7 @@ import numpy as np
 
 from residual_core.runtime import load_shared_library
 
-from .provider import _SHIM, CorpusProvider, MaterialCallError
+from .provider import _SHIM, HOST_NTENS, CorpusProvider, MaterialCallError
 
 __all__ = ["FLAG_SETS", "build_probe", "probe"]
 
@@ -64,7 +64,8 @@ class _ProbeProvider(CorpusProvider):
         self.record, self.case, self.workdir = record, case, Path(workdir)
         self.slots = [int(p["props_index"]) for p in record["parameters"]]
         self.nparam = len(self.slots)
-        self.ntens, self.nstatv = int(case.ntens), int(case.nstatv)
+        self.material_ntens, self.nstatv = int(case.ntens), int(case.nstatv)
+        self.ntens = HOST_NTENS
         self.nprops = len(case.props)
         self.finite = bool(case.finite)
         self.has_sdvini = False
