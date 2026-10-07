@@ -88,17 +88,21 @@ def summarise_ledger(path: Path) -> str:
 def fold_cell(records):
     """One (source, feature) cell from its per-problem records, by the manifest's
     rule: failed if any problem failed; verified if at least min(2, n) of the n
-    EVALUATED problems (not unsupported) verified. States "verified on k of n
-    evaluated problems (of r run)", flags a cell that rests on 1 of 3, and carries
-    the plant test and the slot coverage:
+    EVALUATED problems (not unsupported) verified. The text is generated here and
+    carries, with the verdict:
 
-    * power: a verified problem has power if the same comparisons, judged with the
-      analytic derivative scaled by 1 + 1e-4, FAIL. The cell is power-checked if at
-      least min(2, n) of its verified problems have power; otherwise its text says
-      it is NOT power-checked and on which problems (the verdict on a derivative the
-      FD cannot see says nothing).
-    * slots: "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable,
-      excluded" where the provider was built without a slot."""
+    * "verified on k of n evaluated problems (of r run)", and a flag for a cell that
+      rests on 1 of 3;
+    * power-checked, ONE condition: k >= 2 AND at least 2 of the verified problems
+      have power (a problem has power if the analytic derivative scaled by 1 + 1e-4
+      FAILS, caught by at least 10% of the comparisons that can show it);
+    * the verified-comparison volume, without the zero-valued du/dp comparisons of a
+      problem whose du/dp is identically zero under displacement control (such a
+      problem is verified through dQ/dp, and says so);
+    * the notes of the records: the plant definition, the reference (for global
+      sensitivity: the +/-h re-solves start from the nominal solution), and
+      "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable, excluded"
+      where a slot was left out."""
     per = {r.get("problem"): r["status"] for r in records}
     verified = [p for p, v in per.items() if v == "verified"]
     evaluated = [p for p, v in per.items() if v != "unsupported"]
@@ -112,31 +116,44 @@ def fold_cell(records):
         cell = "not_attempted"
     run = len(per)
     thin = cell == "verified" and len(verified) == 1 and run >= 3
-    powered = [r.get("problem") for r in records if r["status"] == "verified"
-               and (r.get("plant") or {}).get("power")]
+    ver_records = [r for r in records if r["status"] == "verified"]
+    powered = [r.get("problem") for r in ver_records if (r.get("plant") or {}).get("power")]
     unpowered = [p for p in verified if p not in powered]
-    power_checked = cell == "verified" and len(powered) >= min(2, len(evaluated))
+    power_checked = cell == "verified" and len(verified) >= 2 and len(powered) >= 2
+    zero_du = [r.get("problem") for r in ver_records if r.get("du_dp_identically_zero")]
+    counted = sum(r.get("verified_comparisons_counted") or 0 for r in ver_records)
+    excluded = sum(r.get("zero_du_comparisons_excluded") or 0 for r in ver_records)
+    notes = []
+    for r in records:
+        for note in r.get("notes") or []:
+            if note not in notes:
+                notes.append(note)
+    slots = next((n for n in notes if n.startswith("verified on ") and " slots; " in n), None)
     text = "%s: verified on %d of %d evaluated problems (of %d run)" % (
         cell, len(verified), len(evaluated), run)
     if thin:
         text += "; rests on 1 of %d problems" % run
     if cell == "verified":
-        text += "; power-checked on %d of %d" % (len(powered), len(verified))
-        if not power_checked:
-            text += "; NOT POWER-CHECKED (no power at 1e-4 on: %s)" % ", ".join(unpowered)
-    unseeded = next((r.get("unseeded_slots") for r in records if r.get("unseeded_slots")), None)
-    slots = None
-    if unseeded:
-        seeded = next(len(r["wrt"].split("[")[1].split("]")[0].split(",")) for r in records
-                      if r.get("wrt") and "[" in r["wrt"])
-        slots = "verified on %d of %d slots; %s integer, non-differentiable, excluded" % (
-            seeded, seeded + len(unseeded),
-            ", ".join("PROPS(%d)" % u["props_index"] for u in unseeded))
-        text += "; " + slots
+        if power_checked:
+            text += "; power-checked (k >= 2 and %d problems with power)" % len(powered)
+        else:
+            text += ("; NOT POWER-CHECKED (needs k >= 2 and 2 problems with power: k = %d, "
+                     "with power %d; no power on: %s)" % (
+                         len(verified), len(powered), ", ".join(unpowered) or "-"))
+        text += "; verified comparisons counted: %d" % counted
+        if excluded:
+            text += " (zero-valued du/dp excluded: %d)" % excluded
+        if zero_du:
+            text += ("; du/dp identically zero under displacement control; "
+                     "verified through dQ/dp (%s)" % ", ".join(zero_du))
+        for note in notes:
+            text += "; " + note
     return {"cell": cell, "k": len(verified), "n": len(evaluated), "run": run,
             "rests_on_1_of_3": thin, "power_checked": power_checked,
             "powered_problems": powered, "unpowered_problems": unpowered,
-            "slots": slots, "text": text}
+            "verified_comparisons_counted": counted, "zero_du_comparisons_excluded": excluded,
+            "du_dp_identically_zero_problems": zero_du, "slots": slots, "notes": notes,
+            "text": text}
 
 
 def summarise_sources(path: Path) -> str:
