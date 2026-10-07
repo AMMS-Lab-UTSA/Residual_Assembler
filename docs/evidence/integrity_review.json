@@ -545,26 +545,6 @@
     }
    ]
   },
-  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:c7b72109": {
-   "verdict": "justified",
-   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested. Moved into the shared helper _global (Vera R-1 tests), unchanged.",
-   "evidence": [
-    {
-     "in": "tests/corpus/test_corpus_solver_robustness.py",
-     "text": "class _Branch:"
-    }
-   ]
-  },
-  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:dd22a83d": {
-   "verdict": "justified",
-   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification. Moved into the shared helper _global (Vera R-1 tests), unchanged.",
-   "evidence": [
-    {
-     "in": "tests/corpus/test_corpus_solver_robustness.py",
-     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
-    }
-   ]
-  },
   "broad_except:residual_core/corpus/provider.py:_build_with_slots:except Exception:c947ed0e": {
    "verdict": "justified",
    "reason": "A provider build failure is recorded as data: the message is kept, classified (provider_build_failed, undefined references, rank mismatch) and the case is reported unsupported with that reason; nothing is counted as verified. Moved with the build into _build_with_slots; the one new case, a slot that flows through an INTEGER variable, is recorded as unseeded_slots and the build repeated, never dropped silently."
@@ -626,6 +606,26 @@
     {
      "in": "tests/corpus/test_corpus_solver_robustness.py",
      "text": "monkeypatch.setattr(P, \"_ptr\", lambda a: a)"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:bc43aa52": {
+   "verdict": "justified",
+   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested. Moved into the shared helper _global (Vera R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "class _Branch:"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:ffc1f28b": {
+   "verdict": "justified",
+   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification. Moved into the shared helper _global (Vera R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
     }
    ]
   }
