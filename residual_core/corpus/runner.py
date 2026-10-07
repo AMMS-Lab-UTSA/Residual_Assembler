@@ -434,8 +434,17 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
             pp[slot - 1] += h
             pm[slot - 1] -= h
             try:
-                rp = reference_solve(provider, problem, pp, kinematics, schedule, first=first)
-                rm = reference_solve(provider, problem, pm, kinematics, schedule, first=first)
+                # each increment starts from the NOMINAL solution: the re-solve at
+                # p +/- h is the same equilibrium moved by O(h), followed from the
+                # nominal one. Started cold, Newton at p +/- h falls into other
+                # basins -- or does not converge at all, even at h = 1e-8 -- on
+                # the paths whose nominal solve needed hundreds of backtracks
+                # (B12 diagnosis). The convergence rule is unchanged: R = 0 with
+                # the original's own residual, to the same tolerance.
+                rp = reference_solve(provider, problem, pp, kinematics, schedule, first=first,
+                                     start_from=base.V)
+                rm = reference_solve(provider, problem, pm, kinematics, schedule, first=first,
+                                     start_from=base.V)
             except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
                 # the ORIGINAL cannot be re-solved at p +/- h (e.g. a viscosity of 0
                 # perturbed negative): that step is missing from the ladder
@@ -493,6 +502,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
             raise HiddenStateTrip("nominal ORIGINAL history re-run after the perturbed re-solves "
                                   "differs at increment %d in %s" % (n + 1, bad))
     return comparisons, {"force_scale": force, "u_scale": uscale, "eps_eval": eps,
+                         "resolves_started_from": "nominal solution (per increment)",
                          "reference_vs_analytic_V_rel": branch,
                          "reference_on_another_equilibrium": sorted(n + 1 for n in elsewhere),
                          "resolve_residual_achieved_max": max(achieved),

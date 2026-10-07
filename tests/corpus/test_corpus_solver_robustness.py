@@ -51,6 +51,11 @@ B9 (Vera's B8 review):
 17. Where only the ORIGINAL converges (0e56ba3c: K_ff indefinite at increment
    9), the analytic solve is started on the original's solution and, if it
    converges there with its own residual, judged on that path.
+19. The FD re-solves at p +/- h are started from the NOMINAL solution of each
+   increment (B12). Started cold, Newton at p +/- h did not converge, even at
+   h = 1e-8, on paths whose nominal solve needed hundreds of backtracks: 113 of
+   157 unresolved global records had missing ladder steps. Same equilibrium
+   followed from the nominal one, same tolerance, same residual.
 18. Labels only (Vera B9): a record whose analytic solve was steered says so and
    what it came to; problems excused by a branch departure have their own
    reason class, distinct from fd_reference_unresolved; the per-source tally
@@ -83,6 +88,11 @@ ARC_DOWN_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under
 Z2_SOURCE = ("Jeff97__Realization-of-planar-and-surface-conformal-mappings/"
              "Mesh_Convergence_test/2D/Z2/10/Growth-Z2.for",
              "b41f018c4396eab01dd9306aff57bd3978f79df9a3929aa5028319688af26cb1")
+UP_BODY_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Body-Forces/"
+                  "Examples-In-Section-3/ArcUp/Th005/BodyForce-Growth-2Stages.for",
+                  "1bf3ad8383f4b28f021b00667334cadd851f1f8b2b4b219c081a76e74f0719c1")
+SCALLOP_SOURCE = ("Jeff97__General-shape-control-of-shell/Abaqus_Files/2Dto2D/From-2D-to-2D-Scallop.for",
+                  "52ae0b5f7a057fed224b64ef0eb4739147b606332ea49432d3ed4577e7d1e7ab")
 ARC_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Body-Forces/"
               "Examples-In-Section-3/ArcUp/Th002/PureGrowth.for",
               "f7a30a6be5719b7ca68c4e6aa1197e6a7536c6fa49b64b125c3622c03a88b37a")
@@ -412,6 +422,33 @@ def test_a_reference_on_another_equilibrium_is_not_judged(monkeypatch, tmp_path)
     assert not info["reference_on_another_equilibrium"]
 
 
+def test_every_perturbed_resolve_is_started_from_the_nominal_solution(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from residual_core.corpus import runner
+    calls = []
+    source = tmp_path / "u.for"
+    source.write_text("      EMOD=PROPS(1)\n")
+    case = _case()
+    case.source_path, case.props = source, [2.0]
+    nominal = _Branch(2.0, [0.0, 0.0])
+
+    def fake(prov, prob, props, kin, sched, first=None, **kw):
+        calls.append((props[0], kw.get("start_from")))
+        return _Branch(props[0], [0.0, 0.0])
+    monkeypatch.setattr(runner, "reference_solve", fake)
+    monkeypatch.setattr(runner, "run_history", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))
+    analytic = SimpleNamespace(schedule=[{}, {}], newton_matrix_arg="exact", V=nominal.V,
+                               incoming=nominal.incoming, primal_parity=[0.0, 0.0],
+                               du_dp=[np.array([[1.0], [2.0]]), np.array([[3.0], [4.0]])],
+                               qoi_dp=lambda problem: np.zeros((2, 0, 1)))
+    runner.global_sensitivity(SimpleNamespace(slots=[1]), case, SimpleNamespace(qois=[]),
+                              analytic, None)
+    nominal_call, perturbed = calls[0], calls[1:]
+    assert nominal_call[1] is None and len(perturbed) >= 2
+    assert all(start is not None and all(np.array_equal(a, b) for a, b in zip(start, nominal.V))
+               for value, start in perturbed)
+
+
 def test_the_branch_gate_never_excuses_a_primal_defect(monkeypatch, tmp_path):
     """R-1: with primal parity broken, a different solution may be the defect
     itself; the comparisons stay judged, and a wrong derivative stays FAILED."""
@@ -478,7 +515,8 @@ def built(tmp_path_factory):
     root = tmp_path_factory.mktemp("solver_robustness")
     out = {}
     for name, source in (("flat", FLAT_SOURCE), ("arc", ARC_SOURCE),
-                         ("arc_down", ARC_DOWN_SOURCE), ("z2", Z2_SOURCE)):
+                         ("arc_down", ARC_DOWN_SOURCE), ("z2", Z2_SOURCE),
+                         ("up_body", UP_BODY_SOURCE), ("scallop", SCALLOP_SOURCE)):
         case = load_case(key_for_source(*source))
         record = build_provider_for(case, root / case.key, umat_repo=paths().umat_repo)
         out[name] = (case, CorpusProvider(record, case, root / case.key / "lib"), record, root)
@@ -683,3 +721,57 @@ def test_a_steered_record_says_so_and_what_it_came_to(built):
                     "%s, %d verified comparisons" % (record["status"],
                                                       record["counts"]["verified"])
                     ) in record["reason"]
+
+
+def _resolve_pair(built, name, h):
+    """Nominal solve, and the solve at p(1+h) of slot 1 cold and from the nominal solution."""
+    from residual_core.corpus import runner
+    from residual_core.corpus.engine import NewtonFailed
+    case, provider, _, _ = built[name]
+    problem = [p for p in runner.default_problems(case) if p.name.startswith("clamped_tension")][0]
+    analytic = runner.analytic_solve(provider, problem, case.props, None, {})
+    if analytic.cutbacks:
+        analytic = runner.common_schedule(provider, problem, case.props, None, analytic, {})
+    first = getattr(analytic, "reference_steering", None) or \
+        runner._SAME_STEERING.get(analytic.newton_matrix_arg)
+    props = np.asarray(case.props, dtype=float)
+    nominal = runner.reference_solve(provider, problem, props, None, analytic.schedule, first=first)
+    perturbed = props.copy()
+    perturbed[provider.slots[0] - 1] *= 1.0 + h
+    cold = warm = None
+    try:
+        cold = runner.reference_solve(provider, problem, perturbed, None, analytic.schedule,
+                                      first=first)
+    except NewtonFailed:
+        pass
+    warm = runner.reference_solve(provider, problem, perturbed, None, analytic.schedule,
+                                  first=first, start_from=nominal.V)
+    return nominal, cold, warm
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_a_resolve_that_does_not_converge_cold_converges_from_the_nominal_solution(built):
+    """Scallop, clamped tension: the nominal solve needs 500+ backtracks; at
+    p(1 + 1e-6) a cold Newton does not converge. From the nominal solution it does."""
+    nominal, cold, warm = _resolve_pair(built, "scallop", 1e-6)
+    assert sum(nominal.backtracks) > 100
+    assert cold is None, "this problem is the one a cold re-solve cannot do"
+    assert len(warm.V) == len(nominal.V)
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_where_both_converge_the_warm_resolve_is_the_cold_one(built):
+    """Starting from the nominal solution changes the basin Newton starts in, not
+    the equilibrium it finds: where the cold re-solve converges too, the two
+    agree to round-off (ArcUp Th005 BodyForce, clamped tension, h = 1e-6)."""
+    nominal, cold, warm = _resolve_pair(built, "up_body", 1e-6)
+    assert cold is not None
+    scale = float(np.max(np.abs(np.array(nominal.V))))
+    worst = max(float(np.max(np.abs(a - b))) for a, b in zip(cold.V, warm.V)) / scale
+    assert worst < 1e-9
+    assert max(float(np.max(np.abs(a - b))) for a, b in zip(warm.V, nominal.V)) / scale > 1e-12, \
+        "the perturbation must move the solution; otherwise nothing was compared"
