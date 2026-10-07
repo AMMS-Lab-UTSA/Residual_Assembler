@@ -362,34 +362,97 @@ def test_branch_excused_problems_have_their_own_reason_class():
     assert summarise([ok, ok])["status"] == "verified"
 
 
-def test_the_cell_text_carries_power_and_the_slot_coverage():
+def _tool():
     import importlib.util
     spec = importlib.util.spec_from_file_location("run_corpus_residual",
                                                   ROOT / "tools" / "run_corpus_residual.py")
     tool = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tool)
-    wrt = "PROPS slots [1, 2, 3, 4, 6, 7, 8] (seeded; NOT seeded, non-differentiable: [5])"
-    unseeded = [{"props_index": 5, "reason": "non_differentiable_integer_parameter_path"}]
+    return tool
 
-    def rec(problem, status, power, **extra):
-        return dict({"key": "k" * 24, "source_id": "src", "feature": "global_sens",
-                     "problem": problem, "status": status, "plant": {"power": power}}, **extra)
-    full = tool.fold_cell([rec("a", "verified", True), rec("b", "verified", True),
-                           rec("c", "verified", True)])
-    assert full["power_checked"] and "power-checked on 3 of 3" in full["text"]
-    thin = tool.fold_cell([rec("a", "verified", True), rec("b", "verified", False),
-                           rec("c", "unsupported", False)])
-    assert thin["cell"] == "verified" and not thin["power_checked"]
-    assert thin["unpowered_problems"] == ["b"] and "NOT POWER-CHECKED" in thin["text"]
-    # a cell whose only verification has no power says so in the text itself
-    blind = tool.fold_cell([rec("a", "verified", False), rec("b", "unsupported", False),
-                            rec("c", "unsupported", False)])
-    assert "NOT POWER-CHECKED (no power at 1e-4 on: a)" in blind["text"]
-    slots = tool.fold_cell([rec(p, "verified", True, wrt=wrt, unseeded_slots=unseeded)
-                            for p in ("a", "b", "c")])
-    assert slots["slots"] == ("verified on 7 of 8 slots; PROPS(5) integer, "
-                              "non-differentiable, excluded")
-    assert slots["slots"] in slots["text"]
+
+def _plant_record(problem, status, power, **extra):
+    return dict({"key": "k" * 24, "source_id": "src", "feature": "global_sens",
+                 "problem": problem, "status": status, "plant": {"power": power}}, **extra)
+
+
+def test_power_checked_is_one_condition_k_at_least_two_and_two_problems_with_power():
+    tool = _tool()
+    full = tool.fold_cell([_plant_record(p, "verified", True) for p in "abc"])
+    assert full["power_checked"] and "power-checked (k >= 2 and 3 problems with power)" in full["text"]
+    # k = 2 but only one problem with power: not power-checked
+    one = tool.fold_cell([_plant_record("a", "verified", True), _plant_record("b", "verified", False),
+                          _plant_record("c", "unsupported", False)])
+    assert one["cell"] == "verified" and not one["power_checked"]
+    assert one["unpowered_problems"] == ["b"]
+    assert "NOT POWER-CHECKED (needs k >= 2 and 2 problems with power: k = 2, with power 1; " \
+        "no power on: b)" in one["text"]
+    # k = 1 (verified on 1 of 1): never power-checked, whatever its power
+    single = tool.fold_cell([_plant_record("a", "verified", True), _plant_record("b", "unsupported", False),
+                             _plant_record("c", "unsupported", False)])
+    assert single["cell"] == "verified" and not single["power_checked"]
+    assert "NOT POWER-CHECKED (needs k >= 2 and 2 problems with power: k = 1, with power 1" in single["text"]
+    # a cell that is not verified carries no power claim
+    assert "power" not in tool.fold_cell([_plant_record("a", "unsupported", False)])["text"]
+
+
+def test_a_zero_du_dp_is_said_in_the_text_and_kept_out_of_the_volume():
+    tool = _tool()
+    notes = ["plant test: ...", "reference: the +/-h re-solves of the original start every "
+             "increment from the nominal solution"]
+    records = [_plant_record(p, "verified", True, du_dp_identically_zero=True,
+                             verified_comparisons_counted=20, zero_du_comparisons_excluded=10,
+                             notes=notes) for p in "abc"]
+    cell = tool.fold_cell(records)
+    assert cell["verified_comparisons_counted"] == 60 and cell["zero_du_comparisons_excluded"] == 30
+    assert "verified comparisons counted: 60 (zero-valued du/dp excluded: 30)" in cell["text"]
+    assert ("du/dp identically zero under displacement control; verified through dQ/dp (a, b, c)"
+            in cell["text"])
+    assert "the +/-h re-solves of the original start every increment from the nominal solution" \
+        in cell["text"] and cell["notes"] == notes
+
+
+def test_the_cell_text_carries_the_slot_coverage_and_the_notes():
+    from residual_core.corpus import runner
+    tool = _tool()
+    record = {"parameters": [{"props_index": i} for i in (1, 2, 3, 4, 6, 7, 8)],
+              "unseeded_slots": [{"props_index": 5, "reason": "non_differentiable_integer_parameter_path"}]}
+    notes = runner._notes("global_sens", provider_record=record)
+    assert any("1 + 0.0001" in n or "1 + 0.0001" in n.replace("1e-04", "0.0001") for n in notes)
+    assert any(n.startswith("reference: the +/-h re-solves") for n in notes)
+    assert "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable, excluded" in notes
+    residual = runner._notes("residual_sens", provider_record=record)
+    assert not any(n.startswith("reference:") for n in residual)      # no re-solve in dR/dp
+    cell = tool.fold_cell([_plant_record(p, "verified", True, notes=notes) for p in "abc"])
+    assert cell["slots"] == "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable, excluded"
+    assert cell["slots"] in cell["text"]
+
+
+def test_the_plant_needs_a_floor_of_the_comparisons_that_can_show_it():
+    from residual_core.corpus import runner
+    caught, missed = {"verdict": "failed", "quantity": "dQ"}, {"verdict": "verified", "quantity": "dQ"}
+    assert runner.PLANT_FLOOR == pytest.approx(0.10)
+    exactly = runner.plant_summary([caught] + [missed] * 9)                  # 10%: has power
+    assert exactly["power"] and exactly["caught_fraction"] == pytest.approx(0.10)
+    below = runner.plant_summary([caught] + [missed] * 10)                   # 9.1%: none
+    assert not below["power"] and below["caught"] == 1
+    assert not runner.plant_summary([missed] * 5)["power"]
+    assert not runner.plant_summary([])["power"]
+    # a du/dp that is identically zero neither catches nor dilutes
+    zero_u = [{"verdict": "verified", "quantity": "u"}] * 30
+    with_zero = runner.plant_summary(zero_u + [caught] + [missed] * 9, du_zero=True)
+    assert with_zero["power"] and with_zero["counted"] == 10 and with_zero["comparisons"] == 40
+    assert not runner.plant_summary(zero_u + [caught] + [missed] * 9, du_zero=False)["power"]
+
+
+def test_a_displacement_controlled_response_has_du_dp_identically_zero(monkeypatch, tmp_path):
+    from residual_core import corpus
+    from residual_core.corpus import runner
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0], gain=0.0)
+    assert info["du_dp_identically_zero"] is True
+    assert all(c["du_zero"] for c in by_inc.values() if c.get("quantity") == "u")
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0])
+    assert info["du_dp_identically_zero"] is False
 
 
 def test_the_per_source_tally_says_k_of_n_and_flags_one_of_three():
@@ -1056,3 +1119,16 @@ def test_a_live_verified_record_carries_a_plant_that_is_caught(built):
         plant = record["plant"]
         assert plant["power"] and plant["status"] == "failed" and plant["caught"] > 0
         assert plant["factor"] == pytest.approx(1.0 + 1e-4)
+        assert plant["caught_fraction"] >= runner.PLANT_FLOOR
+        assert any(n.startswith("plant test:") for n in record["notes"])
+        if record["feature"] == "global_sens":
+            # stress is linear in C0 and the load is a displacement: du/dC0 is zero, the
+            # problem is verified through dQ/dp and says so; the zeros are not counted
+            assert record["du_dp_identically_zero"] is True
+            assert plant["u"]["caught"] == 0 and plant["dQ"]["caught"] > 0
+            assert record["zero_du_comparisons_excluded"] > 0
+            assert record["verified_comparisons_counted"] + record["zero_du_comparisons_excluded"] \
+                == record["counts"]["verified"]
+            assert any(n.startswith("reference: the +/-h re-solves") for n in record["notes"])
+        else:
+            assert not any(n.startswith("reference:") for n in record["notes"])
