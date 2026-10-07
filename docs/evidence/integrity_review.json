@@ -449,10 +449,6 @@
    "verdict": "justified",
    "reason": "Skips only when an external resource the test needs is absent (gfortran, an importable umat_oti from UMAT_OTI_REPO rather than a stale checkout, the corpus registry/acquisition cache, or OTILib) and names it; the test runs wherever the resource exists, as in the campaign's runs."
   },
-  "broad_except:residual_core/corpus/provider.py:build_provider_for:except Exception:50492f9a": {
-   "verdict": "justified",
-   "reason": "A provider build failure is recorded as data: the message is kept, classified (provider_build_failed, undefined references, rank mismatch) and the case is reported unsupported with that reason; nothing is counted as verified."
-  },
   "skip:tests/corpus/test_corpus_residual.py:_live:call:skip:26c4e406": {
    "verdict": "justified",
    "reason": "Skips only when CORPUS_WORKSPACE, the folder holding the corpus data that lives outside both repositories, is unset, and names the variable; with it set the test runs, as in the campaign's runs."
@@ -566,6 +562,70 @@
     {
      "in": "tests/corpus/test_corpus_solver_robustness.py",
      "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
+    }
+   ]
+  },
+  "broad_except:residual_core/corpus/provider.py:_build_with_slots:except Exception:c947ed0e": {
+   "verdict": "justified",
+   "reason": "A provider build failure is recorded as data: the message is kept, classified (provider_build_failed, undefined references, rank mismatch) and the case is reported unsupported with that reason; nothing is counted as verified. Moved with the build into _build_with_slots; the one new case, a slot that flows through an INTEGER variable, is recorded as unseeded_slots and the build repeated, never dropped silently."
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_provider_is_built_without_the_slot_that_flows_through_an_integer:monkeypatch.setattr:36e5d3df": {
+   "verdict": "justified",
+   "reason": "Stands a Python build module in for UMAT-OTI's provider builder, whose message is the integer-slot refusal on the first call and success on the second, to check which slots are asked for and what is recorded; no numerical result is replaced.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "class Module:"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_provider_is_built_without_the_slot_that_flows_through_an_integer:monkeypatch.setattr:8d053f5a": {
+   "verdict": "justified",
+   "reason": "The provider-tree probe is replaced by an empty state; it only records the checkout and carries no number.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(P, \"_umat_tree_state\", lambda f: {})"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_a_provider_is_built_without_the_slot_that_flows_through_an_integer:monkeypatch.setattr:f8ebe171": {
+   "verdict": "justified",
+   "reason": "Stands a Python build module in for UMAT-OTI's provider builder, whose message is the integer-slot refusal on the first call and success on the second, to check which slots are asked for and what is recorded; no numerical result is replaced. The second build module raises the integer message for the only slot, to show the last slot is never dropped.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(P, \"_umat_oti_build_module\", lambda repo: Other)"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_every_perturbed_resolve_is_started_from_the_nominal_solution:monkeypatch.setattr:4512558b": {
+   "verdict": "justified",
+   "reason": "Logic test of global_sensitivity: stand-in reference solves record the start_from each re-solve receives; no number is judged.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(runner, \"reference_solve\", fake)"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_every_perturbed_resolve_is_started_from_the_nominal_solution:monkeypatch.setattr:7ab8b3e7": {
+   "verdict": "justified",
+   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear stand-in; it replaces no verification.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
+    }
+   ]
+  },
+  "mock:tests/corpus/test_corpus_solver_robustness.py:test_the_oti_call_maps_seeds_in_and_results_out:monkeypatch.setattr:d00721e9": {
+   "verdict": "justified",
+   "reason": "The pointer conversion is replaced by the identity so a Python stand-in library can fill the output arrays; the test checks the component mapping of seeds in and results out, not the library.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_corpus_solver_robustness.py",
+     "text": "monkeypatch.setattr(P, \"_ptr\", lambda a: a)"
     }
    ]
   }
