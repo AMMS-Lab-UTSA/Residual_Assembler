@@ -210,7 +210,21 @@ def build_provider_for(case: CorpusCase, out_dir: Path, *, umat_repo: Optional[P
     adapted, notes = adapt_source(text, fixed)
     name = case.source_path.name.replace(" ", "_")
     (src_dir / name).write_text(adapted, encoding="utf-8")
-    slots = list(parameters or range(1, len(case.props) + 1))
+    all_slots = list(parameters or range(1, len(case.props) + 1))
+    unseeded: List[Dict[str, Any]] = []     # slots the build cannot differentiate, with why
+    return _build_with_slots(case, out_dir, umat_repo, src_dir, build_dir, original, adapted,
+                             notes, name, all_slots, unseeded)
+
+
+#: a slot whose value passes through an INTEGER variable has no derivative
+_INTEGER_SLOT = re.compile(r"non_differentiable_integer_parameter_path: PROPS\((\d+)\)")
+
+
+def _build_with_slots(case, out_dir, umat_repo, src_dir, build_dir, original, adapted, notes,
+                      name, slots, unseeded):
+    """Build seeding ``slots``; if the build says one slot flows through an INTEGER
+    variable (non-differentiable), leave THAT slot out, say so in the record, and
+    build again with the others. Every other failure is raised as before."""
     kinematics = "finite_strain" if case.finite else "small_strain"
     stem = "corpus_%s" % case.key[:12]
     contract = {
@@ -244,6 +258,14 @@ def build_provider_for(case: CorpusCase, out_dir: Path, *, umat_repo: Optional[P
         result = module.build_provider(contract_path, build_dir)
     except Exception as error:  # ProviderBuildError, CalledProcessError, ...
         message = str(error)
+        integer = _INTEGER_SLOT.search(message)
+        if integer and int(integer.group(1)) in slots and len(slots) > 1:
+            slot = int(integer.group(1))
+            return _build_with_slots(
+                case, out_dir, umat_repo, src_dir, build_dir, original, adapted, notes, name,
+                [k for k in slots if k != slot],
+                unseeded + [{"props_index": slot, "reason": "non_differentiable_integer_parameter_path",
+                             "message": message[-600:]}])
         failure = "provider_build_failed"
         undefined = re.findall(r"undefined reference to `([^']+)'", message)
         if "Rank mismatch" in message:
@@ -270,6 +292,9 @@ def build_provider_for(case: CorpusCase, out_dir: Path, *, umat_repo: Optional[P
         "source_adapted": bool(notes),
         "adaptation_notes": notes,
         "parameters": contract["parameters"],
+        #: slots left out of the seeding, each with why; their values still enter
+        #: the routine as constants, so every other derivative is unchanged
+        "unseeded_slots": unseeded,
         "kinematics": kinematics,
         "umat_oti_module": module.__file__,
         "umat_tree": _umat_tree_state(module.__file__),

@@ -832,8 +832,12 @@ def _record(case, problem, feature, provider_record, summary, evidence, kin, ext
            "max_abs": summary.get("max_abs"), "max_rel": summary.get("max_rel"),
            "resolution_max": summary.get("resolution_max"),
            "tolerance": summary.get("tolerance"), "what": WHAT.get(feature, ""),
-           "wrt": "PROPS slots %s (all seeded)" % [p["props_index"] for p in
-                                                   provider_record["parameters"]],
+           "wrt": "PROPS slots %s%s" % (
+               [p["props_index"] for p in provider_record["parameters"]],
+               " (seeded; NOT seeded, non-differentiable: %s)" % [
+                   u["props_index"] for u in provider_record["unseeded_slots"]]
+               if provider_record.get("unseeded_slots") else " (all seeded)"),
+           "unseeded_slots": provider_record.get("unseeded_slots") or [],
            "held_fixed": HELD.get(feature, ""), "evidence": locator(evidence),
            "material_path": "live OTI provider (umat_oti.provider.build_provider), "
                             "original routine from the same compile for references",
