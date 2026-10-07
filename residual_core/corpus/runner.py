@@ -212,7 +212,7 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
     base = [asm.residual(analytic.U[n], o["stress"]) for n, o in enumerate(first)]
     vscale = [asm.residual_scale_entrywise(analytic.U[n], o["stress"]) for n, o in enumerate(first)]
     force = max(float(np.max(np.abs(v))) for v in vscale) or 1.0
-    comparisons, replays = [], 0
+    comparisons, replays, planted = [], 0, []
     for j, slot in enumerate(provider.slots):
         value = props[slot - 1]
         hs, ladder = _ladder(case, slot, value)
@@ -232,12 +232,21 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
             if bad:
                 raise HiddenStateTrip("h=0 replay of the ORIGINAL at increment %d after the P%d "
                                       "ladder differs in %s" % (n + 1, slot, bad))
-            c = adjudicate(analytic.local_dR_dp[n][:, j], plus, minus, base[n], hs,
-                           rtol=RTOL_LOCAL, atol=atol, value_scale=vscale[n], eps_eval=eps)
+            args = dict(rtol=RTOL_LOCAL, atol=atol, value_scale=vscale[n], eps_eval=eps)
+            c = adjudicate(analytic.local_dR_dp[n][:, j], plus, minus, base[n], hs, **args)
             c.update(parameter="P%d" % slot, increment=n + 1, **ladder)
             comparisons.append(c)
-    return comparisons, {"force_scale": force, "h0_replays_bit_exact": replays, "eps_eval": eps}
+            planted.append(dict(adjudicate(analytic.local_dR_dp[n][:, j] * (1.0 + PLANT), plus,
+                                           minus, base[n], hs, **args), quantity="dR"))
+    return comparisons, {"force_scale": force, "h0_replays_bit_exact": replays, "eps_eval": eps,
+                         "planted": planted}
 
+
+#: The plant test (Vera, B12): every comparison is judged a second time with the
+#: analytic derivative scaled by 1 + PLANT. A verified cell has POWER only if that
+#: planted error is caught -- the cell fails. A derivative that is zero (or below
+#: the FD resolution) everywhere cannot be caught, and a verdict on it says nothing.
+PLANT = 1e-4
 
 #: largest max|V_ref - V_analytic| / max|V| at which the nominal reference is
 #: taken to sit on the analytic solve's equilibrium
@@ -402,6 +411,24 @@ def branch_departures(case, analytic, base, branch) -> set:
     return out
 
 
+def plant_summary(planted) -> dict:
+    """What the plant test found: the same comparisons, judged with the analytic
+    derivative scaled by 1 + PLANT. ``power`` is True when the planted error is
+    caught (the problem would FAIL); the counts say how many comparisons caught it,
+    for each derivative quantity (dR, u, dQ)."""
+    out = {"factor": 1.0 + PLANT, "comparisons": len(planted)}
+    caught = [c for c in planted if c["verdict"] == "failed"]
+    out["caught"] = len(caught)
+    out["status"] = summarise(planted)["status"] if planted else "not_run"
+    out["power"] = bool(caught)
+    for name in ("dR", "u", "dQ"):
+        mine = [c for c in planted if c["quantity"] == name]
+        if mine:
+            out[name] = {"comparisons": len(mine),
+                         "caught": sum(1 for c in mine if c["verdict"] == "failed")}
+    return out
+
+
 def global_sensitivity(provider, case, problem, analytic, kinematics):
     props = np.asarray(case.props, dtype=float)
     eps = eps_eval_for(case)
@@ -423,7 +450,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
     branch = [float(np.max(np.abs(V0[n] - analytic.V[n]))) / uscale for n in range(len(V0))]
     elsewhere = branch_departures(case, analytic, base, branch)
     dQ = analytic.qoi_dp(problem)                      # (ninc, nq, npar)
-    comparisons, matrices, failures = [], set(), []
+    comparisons, matrices, failures, planted = [], set(), [], []
     achieved = [max(h[-1] for h in base.newton)]       # final relative free residuals
     for j, slot in enumerate(provider.slots):
         value = props[slot - 1]
@@ -476,22 +503,29 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                                   "solve differs from the analytic solution by %.3g of |V| "
                                   "at this increment" % branch[n]})
                 continue
-            c = adjudicate(analytic.du_dp[n][:, j], {s: Vp[s][n] for s in Vp},
-                           {s: Vm[s][n] for s in Vm}, V0[n], hs, rtol=RTOL_GLOBAL,
-                           atol=ATOL_FACTOR * uscale / _scale(value),
-                           value_scale=uscale, eps_eval=eps,
-                           step_level={s: levels[s][n] for s in levels})
+            u_args = dict(rtol=RTOL_GLOBAL, atol=ATOL_FACTOR * uscale / _scale(value),
+                          value_scale=uscale, eps_eval=eps,
+                          step_level={s: levels[s][n] for s in levels})
+            u_plus, u_minus = {s: Vp[s][n] for s in Vp}, {s: Vm[s][n] for s in Vm}
+            c = adjudicate(analytic.du_dp[n][:, j], u_plus, u_minus, V0[n], hs, **u_args)
             c.update(parameter="P%d" % slot, increment=n + 1, quantity="u", **ladder)
             comparisons.append(c)
+            planted.append(dict(adjudicate(analytic.du_dp[n][:, j] * (1.0 + PLANT), u_plus,
+                                           u_minus, V0[n], hs, **u_args), quantity="u"))
             for k, q in enumerate(problem.qois):
                 qscale = force if q["kind"] == "reaction" else uscale
-                c = adjudicate(np.array([dQ[n, k, j]]), {s: Qp[s][n, k:k + 1] for s in Qp},
-                               {s: Qm[s][n, k:k + 1] for s in Qm}, Q0[n, k:k + 1], hs,
-                               rtol=RTOL_GLOBAL, atol=ATOL_FACTOR * qscale / _scale(value),
-                               value_scale=force if q["kind"] == "reaction" else uscale,
-                               eps_eval=eps, step_level={s: levels[s][n] for s in levels})
+                q_args = dict(rtol=RTOL_GLOBAL, atol=ATOL_FACTOR * qscale / _scale(value),
+                              value_scale=force if q["kind"] == "reaction" else uscale,
+                              eps_eval=eps, step_level={s: levels[s][n] for s in levels})
+                q_plus, q_minus = ({s: Qp[s][n, k:k + 1] for s in Qp},
+                                   {s: Qm[s][n, k:k + 1] for s in Qm})
+                c = adjudicate(np.array([dQ[n, k, j]]), q_plus, q_minus, Q0[n, k:k + 1], hs,
+                               **q_args)
                 c.update(parameter="P%d" % slot, increment=n + 1, quantity=q["name"], **ladder)
                 comparisons.append(c)
+                planted.append(dict(adjudicate(np.array([dQ[n, k, j]]) * (1.0 + PLANT), q_plus,
+                                               q_minus, Q0[n, k:k + 1], hs, **q_args),
+                                    quantity="dQ"))
     # nominal re-run after every perturbed history: all outputs bit-identical
     again = run_history(provider, problem, props, material="regular", kinematics=kinematics,
                         keep_outputs=True, schedule=schedule,
@@ -503,6 +537,7 @@ def global_sensitivity(provider, case, problem, analytic, kinematics):
                                   "differs at increment %d in %s" % (n + 1, bad))
     return comparisons, {"force_scale": force, "u_scale": uscale, "eps_eval": eps,
                          "resolves_started_from": "nominal solution (per increment)",
+                         "planted": planted,
                          "reference_vs_analytic_V_rel": branch,
                          "reference_on_another_equilibrium": sorted(n + 1 for n in elsewhere),
                          "resolve_residual_achieved_max": max(achieved),
@@ -1023,12 +1058,13 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
         try:
             if "residual_sens" in features:
                 comps, info = residual_sensitivity(provider, case, problem, analytic, kin)
+                plant = plant_summary(info.pop("planted", []))
                 summary = summarise(comps)
                 summary["tolerance"] = {"rtol": RTOL_LOCAL, "atol": "%g * max(sum_e|f_e|) / |p|"
                                         % ATOL_FACTOR, "entry": "atol + rtol|D_e| + 2 u_e",
                                         "plateau_steps": PLATEAU, "eps_eval": info["eps_eval"]}
                 detail["residual_sens"] = {"summary": summary, "info": info, "comparisons": comps}
-                extra = dict(common, h0_replays_bit_exact=info["h0_replays_bit_exact"])
+                extra = dict(common, h0_replays_bit_exact=info["h0_replays_bit_exact"], plant=plant)
                 if summary["status"] == "failed" and parity_note:
                     extra.update(failure_class=parity_note["failure_class_if_failed"])
                 records.append(_record(case, problem, "residual_sens", record, summary, evidence,
@@ -1036,12 +1072,14 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
             if "global_sens" in features:
                 try:
                     comps, info = global_sensitivity(provider, case, problem, analytic, kin)
+                    plant = plant_summary(info.pop("planted", []))
                     summary = summarise(comps)
                 except (NewtonFailed, MaterialCallError, np.linalg.LinAlgError) as error:
                     # the ORIGINAL could not be solved at the nominal PROPS on the
                     # analytic solve's increments: there is no reference, which
                     # says nothing about the derivative (not a failed comparison)
                     comps, info = [], {"error": "%s: %s" % (type(error).__name__, error)}
+                    plant = plant_summary([])
                     summary = {"status": "unsupported", "reason": info["error"],
                                "reason_class": "reference_solve_failed"}
                 summary["tolerance"] = {"rtol": RTOL_GLOBAL, "atol": "%g * scale / |p|" % ATOL_FACTOR,
@@ -1051,7 +1089,7 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
                 detail["global_sens"] = {"summary": summary, "qoi_summary": qoi, "info": info,
                                          "comparisons": comps}
                 records.append(_record(case, problem, "global_sens", record, summary, evidence, kin, dict(
-                    common, qoi=[q["name"] for q in problem.qois],
+                    common, plant=plant, qoi=[q["name"] for q in problem.qois],
                     qoi_status=qoi["status"], qoi_max_rel=qoi.get("max_rel"),
                     reference_newton=info.get("reference_newton_matrices"),
                     reference_resolve_failures=len(info.get("reference_resolve_failures", [])),

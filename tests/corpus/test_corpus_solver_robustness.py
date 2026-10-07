@@ -62,6 +62,11 @@ B9 (Vera's B8 review):
 21. The host speaks six components; a routine of NTENS = 4 (plane strain) reads
    and writes the first four, the others are zero (B12). The provider maps in
    both directions, for the original and for the OTI build.
+22. The plant test (Vera, B12): every comparison is judged again with the analytic
+   derivative scaled by 1 + 1e-4; a verified cell has power only if that is caught.
+   The cell text carries "power-checked p of k", names the problems without power,
+   and says "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable,
+   excluded" where a slot was left out.
 18. Labels only (Vera B9): a record whose analytic solve was steered says so and
    what it came to; problems excused by a branch departure have their own
    reason class, distinct from fd_reference_unresolved; the per-source tally
@@ -357,6 +362,36 @@ def test_branch_excused_problems_have_their_own_reason_class():
     assert summarise([ok, ok])["status"] == "verified"
 
 
+def test_the_cell_text_carries_power_and_the_slot_coverage():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("run_corpus_residual",
+                                                  ROOT / "tools" / "run_corpus_residual.py")
+    tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tool)
+    wrt = "PROPS slots [1, 2, 3, 4, 6, 7, 8] (seeded; NOT seeded, non-differentiable: [5])"
+    unseeded = [{"props_index": 5, "reason": "non_differentiable_integer_parameter_path"}]
+
+    def rec(problem, status, power, **extra):
+        return dict({"key": "k" * 24, "source_id": "src", "feature": "global_sens",
+                     "problem": problem, "status": status, "plant": {"power": power}}, **extra)
+    full = tool.fold_cell([rec("a", "verified", True), rec("b", "verified", True),
+                           rec("c", "verified", True)])
+    assert full["power_checked"] and "power-checked on 3 of 3" in full["text"]
+    thin = tool.fold_cell([rec("a", "verified", True), rec("b", "verified", False),
+                           rec("c", "unsupported", False)])
+    assert thin["cell"] == "verified" and not thin["power_checked"]
+    assert thin["unpowered_problems"] == ["b"] and "NOT POWER-CHECKED" in thin["text"]
+    # a cell whose only verification has no power says so in the text itself
+    blind = tool.fold_cell([rec("a", "verified", False), rec("b", "unsupported", False),
+                            rec("c", "unsupported", False)])
+    assert "NOT POWER-CHECKED (no power at 1e-4 on: a)" in blind["text"]
+    slots = tool.fold_cell([rec(p, "verified", True, wrt=wrt, unseeded_slots=unseeded)
+                            for p in ("a", "b", "c")])
+    assert slots["slots"] == ("verified on 7 of 8 slots; PROPS(5) integer, "
+                              "non-differentiable, excluded")
+    assert slots["slots"] in slots["text"]
+
+
 def test_the_per_source_tally_says_k_of_n_and_flags_one_of_three():
     import importlib.util
     spec = importlib.util.spec_from_file_location("run_corpus_residual",
@@ -381,9 +416,9 @@ class _Branch:
     """A reference run of a linear model V_n = p a_n (+ offset_n); its incoming
     state at increment n is V_{n-1} (+ state_offsets)."""
 
-    def __init__(self, p, offsets, state_offsets=(0.0, 0.0)):
+    def __init__(self, p, offsets, state_offsets=(0.0, 0.0), gain=1.0):
         from types import SimpleNamespace
-        a = np.array([[1.0, 2.0], [3.0, 4.0]])
+        a = gain * np.array([[1.0, 2.0], [3.0, 4.0]])
         self.V = [p * a[n] + offsets[n] for n in range(2)]
         self.U = [v.copy() for v in self.V]
         self.incoming = [SimpleNamespace(stress=np.array([1.0 + state_offsets[n]]),
@@ -397,7 +432,7 @@ class _Branch:
 
 
 def _global(monkeypatch, tmp_path, analytic_offsets, state_offsets=(0.0, 0.0), parity=0.0,
-            du_scale=1.0):
+            du_scale=1.0, gain=1.0):
     from types import SimpleNamespace
     from residual_core.corpus import runner
     source = tmp_path / "u.for"
@@ -406,13 +441,13 @@ def _global(monkeypatch, tmp_path, analytic_offsets, state_offsets=(0.0, 0.0), p
     case.source_path, case.props = source, [2.0]
     monkeypatch.setattr(runner, "reference_solve",
                         lambda prov, prob, props, kin, sched, first=None, **kw:
-                        _Branch(props[0], [0.0, 0.0]))
-    monkeypatch.setattr(runner, "run_history", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))
-    mine = _Branch(2.0, analytic_offsets, state_offsets)
+                        _Branch(props[0], [0.0, 0.0], gain=gain))
+    monkeypatch.setattr(runner, "run_history", lambda *a, **k: _Branch(2.0, [0.0, 0.0], gain=gain))
+    mine = _Branch(2.0, analytic_offsets, state_offsets, gain=gain)
     analytic = SimpleNamespace(schedule=[{}, {}], newton_matrix_arg="exact", V=mine.V,
                                incoming=mine.incoming, primal_parity=[parity, parity],
-                               du_dp=[du_scale * np.array([[1.0], [2.0]]),
-                                      du_scale * np.array([[3.0], [4.0]])],
+                               du_dp=[du_scale * gain * np.array([[1.0], [2.0]]),
+                                      du_scale * gain * np.array([[3.0], [4.0]])],
                                qoi_dp=lambda problem: np.zeros((2, 0, 1)))
     comps, info = runner.global_sensitivity(SimpleNamespace(slots=[1]), case,
                                             SimpleNamespace(qois=[]), analytic, None)
@@ -456,6 +491,26 @@ def test_every_perturbed_resolve_is_started_from_the_nominal_solution(monkeypatc
     assert nominal_call[1] is None and len(perturbed) >= 2
     assert all(start is not None and all(np.array_equal(a, b) for a, b in zip(start, nominal.V))
                for value, start in perturbed)
+
+
+def test_a_planted_error_is_caught_where_the_derivative_is_resolved(monkeypatch, tmp_path):
+    """The plant test (Vera, B12): the analytic scaled by 1 + 1e-4 must FAIL."""
+    from residual_core.corpus import runner
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0])
+    assert {c["verdict"] for c in by_inc.values()} == {"verified"}
+    plant = runner.plant_summary(info["planted"])
+    assert plant["power"] and plant["status"] == "failed"
+    assert plant["factor"] == pytest.approx(1.0001) and plant["u"]["caught"] == plant["u"]["comparisons"] > 0
+
+
+def test_a_verdict_on_a_derivative_the_fd_cannot_see_has_no_power(monkeypatch, tmp_path):
+    """A response that does not depend on the parameter: the analytic derivative is
+    zero, verified trivially, and scaling zero plants nothing. No power."""
+    from residual_core.corpus import runner
+    by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0], gain=0.0)
+    assert {c["verdict"] for c in by_inc.values()} == {"verified"}
+    plant = runner.plant_summary(info["planted"])
+    assert not plant["power"] and plant["caught"] == 0 and plant["status"] != "failed"
 
 
 def test_the_branch_gate_never_excuses_a_primal_defect(monkeypatch, tmp_path):
@@ -985,3 +1040,19 @@ def test_the_oti_call_maps_seeds_in_and_results_out(monkeypatch):
     assert (out["dstress_dp"][:, :4] == 2.0).all() and not out["dstress_dp"][:, 4:].any()
     assert (out["ddsdde"][:, :4, :4] == 1.0).all() and not out["ddsdde"][:, 4:].any()
     assert (out["dstate_ddstran"][:, :, :4] == 4.0).all() and not out["dstate_ddstran"][:, :, 4:].any()
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_a_live_verified_record_carries_a_plant_that_is_caught(built):
+    from residual_core.corpus import runner
+    case, _, _, root = built["flat"]
+    problem = runner.default_problems(case, quick=True)[0]
+    records = runner.run_case(case, root / "run_plant", problems=[problem],
+                              features=("residual_sens", "global_sens"))
+    for record in [r for r in records if r["feature"] in ("residual_sens", "global_sens")]:
+        assert record["status"] == "verified"
+        plant = record["plant"]
+        assert plant["power"] and plant["status"] == "failed" and plant["caught"] > 0
+        assert plant["factor"] == pytest.approx(1.0 + 1e-4)

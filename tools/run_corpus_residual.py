@@ -89,7 +89,16 @@ def fold_cell(records):
     """One (source, feature) cell from its per-problem records, by the manifest's
     rule: failed if any problem failed; verified if at least min(2, n) of the n
     EVALUATED problems (not unsupported) verified. States "verified on k of n
-    evaluated problems (of r run)" and flags a cell that rests on 1 of 3."""
+    evaluated problems (of r run)", flags a cell that rests on 1 of 3, and carries
+    the plant test and the slot coverage:
+
+    * power: a verified problem has power if the same comparisons, judged with the
+      analytic derivative scaled by 1 + 1e-4, FAIL. The cell is power-checked if at
+      least min(2, n) of its verified problems have power; otherwise its text says
+      it is NOT power-checked and on which problems (the verdict on a derivative the
+      FD cannot see says nothing).
+    * slots: "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable,
+      excluded" where the provider was built without a slot."""
     per = {r.get("problem"): r["status"] for r in records}
     verified = [p for p, v in per.items() if v == "verified"]
     evaluated = [p for p, v in per.items() if v != "unsupported"]
@@ -103,12 +112,31 @@ def fold_cell(records):
         cell = "not_attempted"
     run = len(per)
     thin = cell == "verified" and len(verified) == 1 and run >= 3
+    powered = [r.get("problem") for r in records if r["status"] == "verified"
+               and (r.get("plant") or {}).get("power")]
+    unpowered = [p for p in verified if p not in powered]
+    power_checked = cell == "verified" and len(powered) >= min(2, len(evaluated))
     text = "%s: verified on %d of %d evaluated problems (of %d run)" % (
         cell, len(verified), len(evaluated), run)
     if thin:
         text += "; rests on 1 of %d problems" % run
+    if cell == "verified":
+        text += "; power-checked on %d of %d" % (len(powered), len(verified))
+        if not power_checked:
+            text += "; NOT POWER-CHECKED (no power at 1e-4 on: %s)" % ", ".join(unpowered)
+    unseeded = next((r.get("unseeded_slots") for r in records if r.get("unseeded_slots")), None)
+    slots = None
+    if unseeded:
+        seeded = next(len(r["wrt"].split("[")[1].split("]")[0].split(",")) for r in records
+                      if r.get("wrt") and "[" in r["wrt"])
+        slots = "verified on %d of %d slots; %s integer, non-differentiable, excluded" % (
+            seeded, seeded + len(unseeded),
+            ", ".join("PROPS(%d)" % u["props_index"] for u in unseeded))
+        text += "; " + slots
     return {"cell": cell, "k": len(verified), "n": len(evaluated), "run": run,
-            "rests_on_1_of_3": thin, "text": text}
+            "rests_on_1_of_3": thin, "power_checked": power_checked,
+            "powered_problems": powered, "unpowered_problems": unpowered,
+            "slots": slots, "text": text}
 
 
 def summarise_sources(path: Path) -> str:
@@ -122,20 +150,24 @@ def summarise_sources(path: Path) -> str:
                 groups.setdefault((r["key"], r.get("source_id", "")), {}).setdefault(
                     r["feature"], []).append(r)
     out = ["| key | source | residual_sens | global_sens |", "|---|---|---|---|"]
-    tally = {"residual_sens": [0, 0], "global_sens": [0, 0]}
+    tally = {"residual_sens": [0, 0, 0, 0], "global_sens": [0, 0, 0, 0]}
     for (key, source), cells in sorted(groups.items(), key=lambda kv: kv[0][1]):
         folded = {f: fold_cell(cells[f]) for f in tally if f in cells}
         for f, c in folded.items():
             if c["cell"] == "verified":
                 tally[f][1] += 1
-                tally[f][0] += 0 if c["rests_on_1_of_3"] else 1
+                tally[f][3] += 1 if c["power_checked"] else 0
+                if not c["rests_on_1_of_3"]:
+                    tally[f][0] += 1
+                    tally[f][2] += 1 if c["power_checked"] else 0
         out.append("| %s | %s | %s | %s |" % (key[:12], source[:60],
                    folded.get("residual_sens", {}).get("text", "-"),
                    folded.get("global_sens", {}).get("text", "-")))
     out.append("")
-    for f, (two, anyp) in tally.items():
-        out.append("%s: verified on at least 2 of 3 problems: %d; on any problem: %d (of %d sources)"
-                   % (f, two, anyp, len(groups)))
+    for f, (two, anyp, two_pc, any_pc) in tally.items():
+        out.append("%s: verified on at least 2 of 3 problems: %d (power-checked: %d); "
+                   "on any problem: %d (power-checked: %d) (of %d sources)"
+                   % (f, two, two_pc, anyp, any_pc, len(groups)))
     return "\n".join(out)
 
 
