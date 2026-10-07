@@ -56,6 +56,9 @@ B9 (Vera's B8 review):
    h = 1e-8, on paths whose nominal solve needed hundreds of backtracks: 113 of
    157 unresolved global records had missing ladder steps. Same equilibrium
    followed from the nominal one, same tolerance, same residual.
+20. A slot whose value flows through an INTEGER variable has no derivative; the
+   provider is built without it, and every record names the slot left out
+   (B12: Worlthen enhanced/simplified curing, PROPS(5)).
 18. Labels only (Vera B9): a record whose analytic solve was steered says so and
    what it came to; problems excused by a branch departure have their own
    reason class, distinct from fd_reference_unresolved; the per-source tally
@@ -63,6 +66,7 @@ B9 (Vera's B8 review):
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -93,6 +97,8 @@ UP_BODY_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-
                   "1bf3ad8383f4b28f021b00667334cadd851f1f8b2b4b219c081a76e74f0719c1")
 SCALLOP_SOURCE = ("Jeff97__General-shape-control-of-shell/Abaqus_Files/2Dto2D/From-2D-to-2D-Scallop.for",
                   "52ae0b5f7a057fed224b64ef0eb4739147b606332ea49432d3ed4577e7d1e7ab")
+CURING_SOURCE = ("Worlthen__20220314-abqus-simulation/abaqus/enhanced/enhanced_curing.for",
+                 "6f0ff5e8b246f8c508cb2924b69e99c7fa290b0c745a9679be4aa145811b7be9")
 ARC_SOURCE = ("Jeff97__Programming-Plane-Strain-Plates-through-Growth-Under-Body-Forces/"
               "Examples-In-Section-3/ArcUp/Th002/PureGrowth.for",
               "f7a30a6be5719b7ca68c4e6aa1197e6a7536c6fa49b64b125c3622c03a88b37a")
@@ -516,7 +522,8 @@ def built(tmp_path_factory):
     out = {}
     for name, source in (("flat", FLAT_SOURCE), ("arc", ARC_SOURCE),
                          ("arc_down", ARC_DOWN_SOURCE), ("z2", Z2_SOURCE),
-                         ("up_body", UP_BODY_SOURCE), ("scallop", SCALLOP_SOURCE)):
+                         ("up_body", UP_BODY_SOURCE), ("scallop", SCALLOP_SOURCE),
+                         ("curing", CURING_SOURCE)):
         case = load_case(key_for_source(*source))
         record = build_provider_for(case, root / case.key, umat_repo=paths().umat_repo)
         out[name] = (case, CorpusProvider(record, case, root / case.key / "lib"), record, root)
@@ -775,3 +782,65 @@ def test_where_both_converge_the_warm_resolve_is_the_cold_one(built):
     assert worst < 1e-9
     assert max(float(np.max(np.abs(a - b))) for a, b in zip(warm.V, nominal.V)) / scale > 1e-12, \
         "the perturbation must move the solution; otherwise nothing was compared"
+
+
+def test_a_provider_is_built_without_the_slot_that_flows_through_an_integer(monkeypatch, tmp_path):
+    from residual_core.corpus import provider as P
+    source = tmp_path / "u.for"
+    source.write_text("      SUBROUTINE UMAT\n      END\n")
+    case = _case()
+    case.source_path, case.props = source, [1.0, 2.0, 3.0, 4.0, 5.0]
+    seen = []
+
+    class Module:
+        __file__ = str(tmp_path / "build.py")
+
+        @staticmethod
+        def build_provider(contract_path, build_dir):
+            contract = json.loads(Path(contract_path).read_text())
+            slots = [p["props_index"] for p in contract["parameters"]]
+            seen.append(slots)
+            if 5 in slots:
+                raise RuntimeError("non_differentiable_integer_parameter_path: PROPS(5) flows "
+                                   "through INTEGER variable K; integer conversion is "
+                                   "non-differentiable.")
+            build_dir = Path(build_dir)
+            build_dir.mkdir(parents=True, exist_ok=True)
+            obj = build_dir / "x.obj"
+            obj.write_bytes(b"obj")
+            out = build_dir / "x.json"
+            out.write_text("{}")
+            return {"object": str(obj), "contract": str(out)}
+    monkeypatch.setattr(P, "_umat_oti_build_module", lambda repo: Module)
+    monkeypatch.setattr(P, "_umat_tree_state", lambda f: {})
+    record = P.build_provider_for(case, tmp_path / "out", umat_repo=tmp_path)
+    assert seen == [[1, 2, 3, 4, 5], [1, 2, 3, 4]]
+    assert [p["props_index"] for p in record["parameters"]] == [1, 2, 3, 4]
+    assert [u["props_index"] for u in record["unseeded_slots"]] == [5]
+    assert record["unseeded_slots"][0]["reason"] == "non_differentiable_integer_parameter_path"
+    # any other build failure is still raised, and the last slot is never dropped
+    class Other(Module):
+        @staticmethod
+        def build_provider(contract_path, build_dir):
+            raise RuntimeError("non_differentiable_integer_parameter_path: PROPS(1) flows ...")
+    case.props = [1.0]
+    monkeypatch.setattr(P, "_umat_oti_build_module", lambda repo: Other)
+    with pytest.raises(P.ProviderBuildFailed):
+        P.build_provider_for(case, tmp_path / "out2", umat_repo=tmp_path)
+
+
+@pytest.mark.integration
+@pytest.mark.fortran
+@pytest.mark.slow
+def test_a_source_with_an_integer_slot_verifies_on_the_differentiable_ones(built, tmp_path):
+    from residual_core.corpus import runner
+    case, provider, record, _ = built["curing"]
+    assert [u["props_index"] for u in record["unseeded_slots"]] == [5]
+    assert 5 not in provider.slots and len(provider.slots) == len(case.props) - 1
+    problem = runner.default_problems(case, quick=True)[0]
+    records = runner.run_case(case, tmp_path, problems=[problem],
+                              features=("residual_sens", "global_sens"))
+    for r in [r for r in records if r["feature"] in ("residual_sens", "global_sens")]:
+        assert r["status"] == "verified", r
+        assert "NOT seeded, non-differentiable: [5]" in r["wrt"]
+        assert r["unseeded_slots"][0]["props_index"] == 5
