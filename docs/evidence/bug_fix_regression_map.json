@@ -304,6 +304,26 @@
     "tests/corpus/test_corpus_solver_robustness.py::test_the_analytic_solve_is_steered_onto_the_originals_equilibrium"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "2df8d5b",
+   "bug": "The global-sensitivity re-solves of the original at p +/- h started cold, and for paths whose nominal solve needs hundreds of backtracks they did not converge, at every step down to h = 1e-8; 113 of the 157 unresolved global records had missing ladder steps, and verified comparisons were lost.",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_every_perturbed_resolve_is_started_from_the_nominal_solution",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_resolve_that_does_not_converge_cold_converges_from_the_nominal_solution",
+    "tests/corpus/test_corpus_solver_robustness.py::test_where_both_converge_the_warm_resolve_is_the_cold_one"
+   ],
+   "selected_by": "message_pattern"
+  },
+  {
+   "commit": "a4e31e5",
+   "bug": "The provider was tied to the six 3D components: a routine with NTENS = 4 could neither be called with its own NTENS nor have its seeds and results mapped to the host; other NTENS were refused without naming what is missing.",
+   "tests": [
+    "tests/corpus/test_corpus_solver_robustness.py::test_components_map_between_the_host_and_a_routine_of_fewer",
+    "tests/corpus/test_corpus_solver_robustness.py::test_a_plane_strain_routine_sees_four_components_and_returns_the_host_six",
+    "tests/corpus/test_corpus_solver_robustness.py::test_the_oti_call_maps_seeds_in_and_results_out"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [
