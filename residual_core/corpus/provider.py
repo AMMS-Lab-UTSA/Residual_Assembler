@@ -46,7 +46,7 @@ import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -421,14 +421,55 @@ class MaterialCallError(RuntimeError):
     """A UMAT call returned something an increment cannot be built on."""
 
 
+#: The host (the assembler's C3D8 element) always speaks the six Abaqus 3D
+#: components (11, 22, 33, 12, 13, 23). A routine written for fewer sees the
+#: leading components of the same order: NTENS = 4 (plane strain, axisymmetric:
+#: 11, 22, 33, 12) is the first four. Components a routine does not have are
+#: zero in the host's stress, tangent and derivatives. NTENS = 3 (plane stress:
+#: 11, 22, 12) and 2 need an element that condenses the thickness; they are not
+#: mapped here.
+HOST_NTENS = 6
+MATERIAL_COMPONENTS = {6: (0, 1, 2, 3, 4, 5), 4: (0, 1, 2, 3)}
+
+
+def material_components(ntens: int) -> Tuple[int, ...]:
+    """Host component indices a routine of this NTENS reads and writes."""
+    try:
+        return MATERIAL_COMPONENTS[int(ntens)]
+    except KeyError:
+        raise ProviderBuildFailed(
+            "provider_ntens_unsupported",
+            "NTENS=%d: the assembler maps NTENS 6 (3D) and 4 (plane strain, axisymmetric); "
+            "plane stress (3) and cohesive (2, 3) need an element of their own" % int(ntens))
+
+
+def to_host(array, ntens: int, axis: int):
+    """Pad ``array`` (material NTENS along ``axis``) to the six host components."""
+    index = material_components(ntens)
+    array = np.asarray(array)
+    shape = list(array.shape)
+    shape[axis] = HOST_NTENS
+    out = np.zeros(shape, dtype=array.dtype)
+    sel = [slice(None)] * array.ndim
+    sel[axis] = list(index)
+    out[tuple(sel)] = array
+    return out
+
+
+def to_material(array, ntens: int, axis: int):
+    """The leading ``ntens`` host components of ``array`` along ``axis``."""
+    return np.ascontiguousarray(np.take(np.asarray(array), material_components(ntens), axis=axis))
+
+
 @dataclass
 class CorpusProvider:
     """The linked provider: ``regular`` and ``total`` over a batch of points.
 
-    Python-side layouts (C order, point axis first):
-      stress (n, NTENS); state (n, NSTATV); F (n, 3, 3) with F[q, i, J];
-      DDSDDE (n, NTENS, NTENS) with [q, a, b] = d sigma_a / d eps_b;
-      dsig (n, NTENS, NPARAM); dstate (n, NSTATV, NPARAM);
+    Python-side layouts (C order, point axis first), in the HOST's six components
+    (``ntens``); the routine itself is called with ``material_ntens``:
+      stress (n, 6); state (n, NSTATV); F (n, 3, 3) with F[q, i, J];
+      DDSDDE (n, 6, 6) with [q, a, b] = d sigma_a / d eps_b;
+      dsig (n, 6, NPARAM); dstate (n, NSTATV, NPARAM);
       dF (n, NPARAM, 3, 3) with dF[q, j, i, J] = d F_iJ / d p_j.
     """
 
@@ -444,7 +485,9 @@ class CorpusProvider:
         self.workdir.mkdir(parents=True, exist_ok=True)
         self.slots = [int(p["props_index"]) for p in self.record["parameters"]]
         self.nparam = len(self.slots)
-        self.ntens = int(self.case.ntens)
+        self.material_ntens = int(self.case.ntens)
+        material_components(self.material_ntens)           # refuses what is not mapped
+        self.ntens = HOST_NTENS
         self.nstatv = int(self.case.nstatv)
         self.nprops = len(self.case.props)
         self.finite = bool(self.case.finite)
@@ -497,8 +540,10 @@ class CorpusProvider:
                 raise ValueError("expected %s, got %s" % (shape, a.shape))
             return a
         out = dict(
-            stress=c(stress, (n, self.ntens)).copy(), state=c(state, (n, self.nstatv)).copy(),
-            stran=c(stran, (n, self.ntens)), dstran=c(dstran, (n, self.ntens)),
+            stress=to_material(c(stress, (n, self.ntens)), self.material_ntens, 1).copy(),
+            state=c(state, (n, self.nstatv)).copy(),
+            stran=to_material(c(stran, (n, self.ntens)), self.material_ntens, 1),
+            dstran=to_material(c(dstran, (n, self.ntens)), self.material_ntens, 1),
             F0=np.ascontiguousarray(np.transpose(c(F0, (n, 3, 3)), (0, 2, 1))),
             F1=np.ascontiguousarray(np.transpose(c(F1, (n, 3, 3)), (0, 2, 1))),
             drot=np.ascontiguousarray(np.tile(np.eye(3), (n, 1, 1)) if drot is None else
@@ -518,19 +563,20 @@ class CorpusProvider:
                 celent, noel, npt, kstep=1, kinc=1, temp=0.0, dtemp=0.0, drot=None):
         props = self.props_array(props)
         n, a = self._points(stress, state, stran, dstran, F0, F1, coords, celent, noel, npt, drot)
-        ddsdde = np.empty((n, self.ntens, self.ntens))
+        mt = self.material_ntens
+        ddsdde = np.empty((n, mt, mt))
         pnewdt = np.empty(n)
         ci, cd = ctypes.c_int, ctypes.c_double
         self.lib.corpus_regular(
-            ci(n), ci(self.nprops), ci(self.ntens), ci(self.nstatv), _ptr(props),
+            ci(n), ci(self.nprops), ci(mt), ci(self.nstatv), _ptr(props),
             _ptr(a["stress"]), _ptr(a["state"]), _ptr(a["stran"]), _ptr(a["dstran"]),
             _ptr(np.ascontiguousarray(time, dtype=float)), cd(dtime), cd(temp), cd(dtemp),
             _ptr(a["coords"]), _ptr(a["celent"]), _ptr(a["noel"]), _ptr(a["npt"]),
             ci(kstep), ci(kinc), _ptr(a["F0"]), _ptr(a["F1"]), _ptr(a["drot"]),
             _ptr(ddsdde), _ptr(pnewdt))
         self._check(pnewdt, a, "ORIGINAL")
-        return {"stress": a["stress"], "state": a["state"],
-                "ddsdde": np.ascontiguousarray(np.transpose(ddsdde, (0, 2, 1))),
+        return {"stress": to_host(a["stress"], mt, 1), "state": a["state"],
+                "ddsdde": to_host(to_host(np.transpose(ddsdde, (0, 2, 1)), mt, 1), mt, 2),
                 "pnewdt": pnewdt}
 
     def total(self, props, stress, state, stran, dstran, F0, F1, *, time, dtime, coords,
@@ -539,7 +585,7 @@ class CorpusProvider:
               dtemp=0.0, drot=None):
         props = self.props_array(props)
         n, a = self._points(stress, state, stran, dstran, F0, F1, coords, celent, noel, npt, drot)
-        nt, ns, npar = self.ntens, self.nstatv, self.nparam
+        nt, ns, npar = self.material_ntens, self.nstatv, self.nparam
         def seed(value, shape):
             if value is None:
                 return np.zeros(shape)
@@ -548,10 +594,12 @@ class CorpusProvider:
                 raise ValueError("seed must be finite with shape %s, got %s" % (shape, value.shape))
             return value
         # Fortran (ntens, nparam, n) == C (n, nparam, ntens)
-        dsi = np.ascontiguousarray(np.transpose(seed(dstress_in, (n, nt, npar)), (0, 2, 1)))
+        def material_seed(value):                    # (n, 6, npar) host -> (n, nt, npar)
+            return to_material(seed(value, (n, HOST_NTENS, npar)), nt, 1)
+        dsi = np.ascontiguousarray(np.transpose(material_seed(dstress_in), (0, 2, 1)))
         dvi = np.ascontiguousarray(np.transpose(seed(dstate_in, (n, ns, npar)), (0, 2, 1)))
-        e0 = np.ascontiguousarray(np.transpose(seed(stran_dp, (n, nt, npar)), (0, 2, 1)))
-        de = np.ascontiguousarray(np.transpose(seed(dstran_dp, (n, nt, npar)), (0, 2, 1)))
+        e0 = np.ascontiguousarray(np.transpose(material_seed(stran_dp), (0, 2, 1)))
+        de = np.ascontiguousarray(np.transpose(material_seed(dstran_dp), (0, 2, 1)))
         # Fortran (3,3,nparam,n) == C (n, nparam, 3[col J], 3[row i])
         f0p = np.ascontiguousarray(np.transpose(seed(dF0_dp, (n, npar, 3, 3)), (0, 1, 3, 2)))
         f1p = np.ascontiguousarray(np.transpose(seed(dF1_dp, (n, npar, 3, 3)), (0, 1, 3, 2)))
@@ -570,11 +618,11 @@ class CorpusProvider:
             _ptr(a["F0"]), _ptr(a["F1"]), _ptr(a["drot"]), _ptr(f0p), _ptr(f1p),
             _ptr(ddsdde), _ptr(dsig), _ptr(dstv), _ptr(dstv_de), _ptr(pnewdt))
         self._check(pnewdt, a, "OTI")
-        return {"stress": a["stress"], "state": a["state"],
-                "ddsdde": np.ascontiguousarray(np.transpose(ddsdde, (0, 2, 1))),
-                "dstress_dp": np.ascontiguousarray(np.transpose(dsig, (0, 2, 1))),
+        return {"stress": to_host(a["stress"], nt, 1), "state": a["state"],
+                "ddsdde": to_host(to_host(np.transpose(ddsdde, (0, 2, 1)), nt, 1), nt, 2),
+                "dstress_dp": to_host(np.transpose(dsig, (0, 2, 1)), nt, 1),
                 "dstate_dp": np.ascontiguousarray(np.transpose(dstv, (0, 2, 1))),
-                "dstate_ddstran": np.ascontiguousarray(np.transpose(dstv_de, (0, 2, 1))),
+                "dstate_ddstran": to_host(np.transpose(dstv_de, (0, 2, 1)), nt, 2),
                 "pnewdt": pnewdt}
 
     def _check(self, pnewdt, a, which):
