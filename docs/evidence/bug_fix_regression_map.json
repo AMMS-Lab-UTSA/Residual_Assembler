@@ -394,6 +394,10 @@
   {
    "commit": "7fcfa3f",
    "reason": "New capability (corpus residual/global sensitivities, NLGEOM contract); 'fixed' appears in 'u and incoming state fixed', the quantity held constant."
+  },
+  {
+   "commit": "87205e3",
+   "reason": "Re-freeze of the shared transform generation and the two fixtures. 'failed' is the suite's failure count in the message (the environmental test_connected_j2 case); no defect is corrected."
   }
  ],
  "changelog_fixed": {}
