@@ -216,3 +216,23 @@ Only step 6 was redone, from a clean UMAT-OTI tree at b95f066:
 
 The run directories are outside the repository, at
 `softwarex_work/corpus_campaign/batches/B9/noether/refreeze_830e5ee9/`.
+
+## Fixtures re-frozen at `50ae446f12de66d8` (2026-10-08)
+
+UMAT-OTI recorded transform generation `50ae446f12de66d8` for corpus pass24
+(B17 engineering batch; contract stays 5.0.0; combined lock digest
+`c665f46fb43aa2694ce08fd668bc622071b6a79ac2267e873ce6a76050249dcc`).
+Only step 6 was redone:
+
+- `schemas/transform_generation.json` and `schemas/contract_lock.json` were copied
+  byte for byte from UMAT-OTI; the three shared schemas compare equal.
+- `scripts/regenerate_recovery_fixture.py` ran for both fixtures with the pass24
+  `store_verification.jsonl` as the retained experiment, absolute work paths (a
+  relative `--work` makes the support build look for its objects in the wrong
+  directory and stop with `support_build_failed`): six Abaqus 2021.HF5 jobs, run
+  one after another. Both verified (`4 of 4 chosen states judged and every entry
+  agrees`).
+- Diff against the `830e5ee95ce99cd2` fixtures: only `generated` and
+  `transform_fingerprint` differ; every number is identical.
+- `residual_core.core.fixture_residual_check` is unchanged: elasticity 1 held /
+  2 not established, and J2 32 held / 3 not established.

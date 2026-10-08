@@ -572,8 +572,8 @@ python -c "from umat_oti.store import transform_fingerprint; print(transform_fin
 ```
 
 ```text
-830e5ee95ce99cd2
-830e5ee95ce99cd2
+50ae446f12de66d8
+50ae446f12de66d8
 ```
 
 Both lines must be equal (re-run 2026-10-03). The contract tests `tests/contract/test_the_two_repositories_speak_one_contract.py` and `tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py` reported `27 passed`.
@@ -3436,7 +3436,7 @@ You do not have to check the files by hand; the request does it on every run:
 -   **Engine fit.** The bounded engine accepts only the pinned J2 source fingerprint (`regular_source_hash`); any other valid provider goes to the history engine. The history engine requires the `UMAT_OTI_EVAL_TOTAL` entry point and refuses older objects with a rebuild message.
 -   **Deck fit.** The deck's `*User Material` constant count must equal the provider's `nprops`. Measured: `the deck has 4 USER MATERIAL constants; the provider contract declares NPROPS=10`.
 -   **Physics fit.** The strongest check is the ODB parity of [chapter 11](#11-verification-and-reports). The provider must reproduce, at every point and increment, the stress and state that Abaqus computed with the ORIGINAL UMAT. A provider built from a different version of the material fails here, loudly.
--   **Transform generation.** Both repositories carry `schemas/transform_generation.json`. `transform_fingerprint()` of the installed UMAT-OTI must print the same value (`830e5ee95ce99cd2`, chapter 4).
+-   **Transform generation.** Both repositories carry `schemas/transform_generation.json`. `transform_fingerprint()` of the installed UMAT-OTI must print the same value (`50ae446f12de66d8`, chapter 4).
 
 > [!WARNING]
 >
@@ -3681,6 +3681,6 @@ These limits are deliberate: outside them the program refuses with a named reaso
 
 -   **`Total-history derivative`**: A derivative that includes how every earlier increment changes with the parameter.
 
--   **`Transform generation`**: The fingerprint of the transformer version that made a provider (`830e5ee95ce99cd2` at the time of writing).
+-   **`Transform generation`**: The fingerprint of the transformer version that made a provider (`50ae446f12de66d8` at the time of writing).
 
 -   **`Weighted derivative`**: `p dQ/dp`: the first-order change of `Q` per unit relative change of `p`, comparable across parameters.

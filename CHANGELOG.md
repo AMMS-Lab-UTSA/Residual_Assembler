@@ -33,6 +33,11 @@ public interfaces may still change.
   schemas are copied byte for byte; both fixtures keep verifying unchanged.
 - Shared contract 4.1.0: `finite_history.evidence.primal_decided_by` is declared
   (optional); 4.0 records are still read, with that field NOT ESTABLISHED.
+- Shared transform generation re-frozen at `50ae446f12de66d8` (previously
+  `830e5ee95ce99cd2`) for UMAT-OTI corpus pass24, with the two fixtures
+  regenerated in Abaqus 2021. Every number is identical; only `generated` and
+  the fingerprint changed. The residual check is unchanged (elasticity 1 held /
+  2 not established, J2 32 held / 3 not established).
 - Shared transform generation re-frozen at `830e5ee95ce99cd2` (previously
   `a4f0ea8c9d124f18`, `dbe9f928191e1d43`) with the two current fixtures
   regenerated in Abaqus. The numbers are unchanged; the producer's entrywise
