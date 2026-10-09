@@ -236,3 +236,22 @@ Only step 6 was redone:
   `transform_fingerprint` differ; every number is identical.
 - `residual_core.core.fixture_residual_check` is unchanged: elasticity 1 held /
   2 not established, and J2 32 held / 3 not established.
+
+## Fixtures re-frozen at `c61511ea0ffe58e2` (2026-10-08)
+
+UMAT-OTI recorded transform generation `c61511ea0ffe58e2` for corpus pass25 (B20
+engineering batch; contract stays 5.0.0; combined lock digest
+`c5915241819d85f08355d3af68786c9128275a60c0249eadfb5104e9f1da3d7c`). Only step 6 was redone:
+
+- `schemas/transform_generation.json` and `schemas/contract_lock.json` were copied
+  byte for byte from UMAT-OTI; the three shared schemas compare equal.
+- `scripts/regenerate_recovery_fixture.py` ran for both fixtures with the pass25
+  `store_verification.jsonl` as the retained experiment and `--umat` at the UMAT
+  checkout that already carries the new generation file (the pass25 run tree at
+  a7b6b4b still records the previous one, which the script asserts against), absolute
+  work paths: six Abaqus 2021.HF5 jobs, one after another. Both verified (4 of 4
+  chosen states judged and every entry agrees).
+- Diff against the `50ae446f12de66d8` fixtures: only `generated` and
+  `transform_fingerprint` differ; every number is identical.
+- `residual_core.core.fixture_residual_check` is unchanged: elasticity 1 held /
+  2 not established, and J2 32 held / 3 not established.

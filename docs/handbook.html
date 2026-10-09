@@ -579,8 +579,8 @@ resasm check "$WORK/spring_check/resasm.yml"</code></pre></div>
 <p>Evidence about a transformed material belongs to the version of the transformer that produced it. That version is identified by a <strong>transform generation</strong> fingerprint, recorded in <code>schemas/transform_generation.json</code>, a file that is identical in both repositories. To check that your UMAT-OTI computes the generation this repository expects:</p>
 <div class="code cmd"><span class="tag">Command</span><button type="button" class="copy">Copy</button><pre><code>python -c "import json; print(json.load(open('schemas/transform_generation.json'))['transform_fingerprint'])"
 python -c "from umat_oti.store import transform_fingerprint; print(transform_fingerprint())"</code></pre></div>
-<div class="code out"><span class="tag">Output</span><pre><code>50ae446f12de66d8
-50ae446f12de66d8</code></pre></div>
+<div class="code out"><span class="tag">Output</span><pre><code>c61511ea0ffe58e2
+c61511ea0ffe58e2</code></pre></div>
 <p>Both lines must be equal (re-run 2026-10-03). The contract tests <code>tests/contract/test_the_two_repositories_speak_one_contract.py</code> and <code>tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py</code> reported <code>27 passed</code>.</p>
 
 <h3 data-toc id="gate">The clean-install gate and the one-command reproduction</h3>
@@ -2704,7 +2704,7 @@ run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'response
 <li><strong>Engine fit.</strong> The bounded engine accepts only the pinned J2 source fingerprint (<code>regular_source_hash</code>); any other valid provider goes to the history engine. The history engine requires the <code>UMAT_OTI_EVAL_TOTAL</code> entry point and refuses older objects with a rebuild message.</li>
 <li><strong>Deck fit.</strong> The deck's <code>*User Material</code> constant count must equal the provider's <code>nprops</code>. Measured: <code>the deck has 4 USER MATERIAL constants; the provider contract declares NPROPS=10</code>.</li>
 <li><strong>Physics fit.</strong> The strongest check is the ODB parity of <a href="#verify">chapter 11</a>. The provider must reproduce, at every point and increment, the stress and state that Abaqus computed with the ORIGINAL UMAT. A provider built from a different version of the material fails here, loudly.</li>
-<li><strong>Transform generation.</strong> Both repositories carry <code>schemas/transform_generation.json</code>. <code>transform_fingerprint()</code> of the installed UMAT-OTI must print the same value (<code>50ae446f12de66d8</code>, chapter 4).</li>
+<li><strong>Transform generation.</strong> Both repositories carry <code>schemas/transform_generation.json</code>. <code>transform_fingerprint()</code> of the installed UMAT-OTI must print the same value (<code>c61511ea0ffe58e2</code>, chapter 4).</li>
 </ul>
 <aside class="warn"><span class="lbl">Watch out</span><p>The hashes prove that the mapping belongs to the object and that the object replays the analysis. They do not certify that an object from an unknown source is safe to run: it is compiled code that runs on your machine. Run only providers you trust.</p></aside>
 </section>
@@ -2904,7 +2904,7 @@ run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'response
 <dt>Sensitivity</dt><dd>A derivative of a result with respect to a parameter.</dd>
 <dt>Tangent</dt><dd><code>K = ∂R/∂u</code>, the matrix of the sensitivity equation <code>K du/dp = −dR/dp</code>.</dd>
 <dt>Total-history derivative</dt><dd>A derivative that includes how every earlier increment changes with the parameter.</dd>
-<dt>Transform generation</dt><dd>The fingerprint of the transformer version that made a provider (<code>50ae446f12de66d8</code> at the time of writing).</dd>
+<dt>Transform generation</dt><dd>The fingerprint of the transformer version that made a provider (<code>c61511ea0ffe58e2</code> at the time of writing).</dd>
 <dt>Weighted derivative</dt><dd><code>p dQ/dp</code>: the first-order change of <code>Q</code> per unit relative change of <code>p</code>, comparable across parameters.</dd>
 </dl>
 </section></main></div><script>
