@@ -398,6 +398,10 @@
   {
    "commit": "87205e3",
    "reason": "Re-freeze of the shared transform generation and the two fixtures. 'failed' is the suite's failure count in the message (the environmental test_connected_j2 case); no defect is corrected."
+  },
+  {
+   "commit": "412b68e",
+   "reason": "Re-freeze of the shared transform generation and the two fixtures. 'failed' is the suite's failure count in the message (the environmental test_connected_j2 case); no defect is corrected."
   }
  ],
  "changelog_fixed": {}
