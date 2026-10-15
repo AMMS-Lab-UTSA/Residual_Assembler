@@ -324,6 +324,15 @@
     "tests/corpus/test_corpus_solver_robustness.py::test_the_oti_call_maps_seeds_in_and_results_out"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "0f1e5ad",
+   "bug": "The history reader refused the deck an analysis ran when it carried *User Material, UNSYMM or results-file/printed-output requests, although neither enters the residual; the deck had to be rewritten by hand.",
+   "tests": [
+    "tests/replay_history/test_deck_output_requests_and_unsymm.py::test_the_deck_abaqus_ran_reads_into_the_same_model",
+    "tests/replay_history/test_deck_output_requests_and_unsymm.py::test_an_option_that_changes_the_material_is_still_refused"
+   ],
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [
