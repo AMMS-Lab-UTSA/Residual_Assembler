@@ -132,7 +132,7 @@ _TRUE = np.array([np.cos(0.7), -1e-7 * np.sin(0.7), 1e-9 * np.exp(0.7)])
 @pytest.mark.unit
 @pytest.mark.parametrize("entry,factor", [(1, 1.005), (1, 0.0), (2, 10.0), (0, 1.0 + 3e-6)])
 def test_an_error_on_any_entry_fails_however_small_the_entry(entry, factor):
-    """Vera B1 B/C: a column-norm tolerance passes +0.5% at 1e-7 of the column,
+    """review B1 B/C: a column-norm tolerance passes +0.5% at 1e-7 of the column,
     x10 at 1e-9, -100% on a small entry; the entrywise rule fails all of them."""
     wrong = _TRUE.copy()
     wrong[entry] *= factor
@@ -336,7 +336,7 @@ def test_the_hypoelastic_corpus_umat_is_objective_only_with_drot(out_root):
 
 
 def test_zero_entries_are_reported_apart_from_the_plateau_statistics():
-    """B3 review (Vera, LOW): a zero entry's all-steps 'plateau' is not evidence
+    """B3 review (review LOW): a zero entry's all-steps 'plateau' is not evidence
     of FD convergence; the plateau minimum is taken over non-zero resolved
     entries and the zero entries are reported on their own."""
     from residual_core.corpus.verify import STEPS

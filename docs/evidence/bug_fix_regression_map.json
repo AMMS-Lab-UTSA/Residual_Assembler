@@ -289,7 +289,7 @@
   },
   {
    "commit": "74eb075",
-   "bug": "The equilibrium gate could excuse an increment where primal parity was broken (a primal defect would become unsupported), and excused only the departing increments rather than every increment from the first departure on (Vera R-1).",
+   "bug": "The equilibrium gate could excuse an increment where primal parity was broken (a primal defect would become unsupported), and excused only the departing increments rather than every increment from the first departure on (review R-1).",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_the_branch_gate_never_excuses_a_primal_defect",
     "tests/corpus/test_corpus_solver_robustness.py::test_after_a_departure_only_a_full_rejoin_is_judged",

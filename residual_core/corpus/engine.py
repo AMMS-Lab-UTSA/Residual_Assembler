@@ -698,7 +698,7 @@ def _solve_increment(asm, drv, material, props, problem, inc, kinc, frame, U_pre
             converged_by = "tolerance"
             break
         if candidate is not None:
-            # the confirming step (Vera, B8 review): accepted when it lands under
+            # the confirming step (review B8 review): accepted when it lands under
             # the floor again (halved or not) or does not halve the residual
             # (it has stopped falling); the better of the two states is kept.
             # Only a halving step that leaves the floor sends Newton on.

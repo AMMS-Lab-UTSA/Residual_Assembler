@@ -611,7 +611,7 @@
   },
   "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:bc43aa52": {
    "verdict": "justified",
-   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested. Moved into the shared helper _global (Vera R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
+   "reason": "Logic test of global_sensitivity: reference solves of a linear model V_n = p a_n stand in for the ORIGINAL, so the FD is exact and the only thing varied is whether the nominal reference sits on the analytic equilibrium; the branch check, not a number, is tested. Moved into the shared helper _global (review R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
    "evidence": [
     {
      "in": "tests/corpus/test_corpus_solver_robustness.py",
@@ -621,7 +621,7 @@
   },
   "mock:tests/corpus/test_corpus_solver_robustness.py:_global:monkeypatch.setattr:ffc1f28b": {
    "verdict": "justified",
-   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification. Moved into the shared helper _global (Vera R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
+   "reason": "The nominal re-run after the perturbed re-solves (bit-exactness check) is the same linear model; it replaces no numerical verification. Moved into the shared helper _global (review R-1 tests), unchanged. The stand-in now takes a gain (0 for a response that does not depend on the parameter), so the plant test can show a derivative the FD cannot see has no power.",
    "evidence": [
     {
      "in": "tests/corpus/test_corpus_solver_robustness.py",

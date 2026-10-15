@@ -242,13 +242,13 @@ def residual_sensitivity(provider, case, problem, analytic, kinematics):
                          "planted": planted}
 
 
-#: The plant test (Vera, B12): every comparison is judged a second time with the
+#: The plant test (review B12): every comparison is judged a second time with the
 #: analytic derivative scaled by 1 + PLANT. A verified cell has POWER only if that
 #: planted error is caught -- the cell fails. A derivative that is zero (or below
 #: the FD resolution) everywhere cannot be caught, and a verdict on it says nothing.
 PLANT = 1e-4
 #: A problem has power only if the planted error is caught by at least this
-#: fraction of the comparisons that can show it (Vera, B13)
+#: fraction of the comparisons that can show it (review B13)
 PLANT_FLOOR = 0.10
 #: du/dp counts as identically zero where |A| |p| <= DU_ZERO_TOL max|V| in every
 #: comparison of the problem: displacement control with a response proportional to
@@ -396,7 +396,7 @@ def _state_rel(a, b) -> float:
 
 def branch_departures(case, analytic, base, branch) -> set:
     """0-based increments whose comparisons are not judged because the
-    reference left the analytic equilibrium (Vera R-1).
+    reference left the analytic equilibrium (review R-1).
 
     Applies only when primal parity holds on this problem: if the OTI build's
     stress differs from the original's beyond the parity tolerance, a different
@@ -836,7 +836,7 @@ def single_precision_declarations(case: CorpusCase) -> List[str]:
 
 
 def build_fields(provider_record: dict) -> dict:
-    """The BUILD every derivative cell of this record verified (Vera B1 E)."""
+    """The BUILD every derivative cell of this record verified (review B1 E)."""
     tree = provider_record.get("umat_tree") or {}
     return {"build": {"kind": "provider", "sha256": provider_record.get("object_sha256") or "",
                       "fingerprint": provider_record.get("fingerprint") or ""},
@@ -1059,7 +1059,7 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
         if analytic.cutbacks:
             analytic = common_schedule(provider, problem, case.props, kin, analytic, detail)
         # uninitialised-memory probe, once per source, on the first solved history
-        # every problem is probed, on its own solved history (Vera, B8 review)
+        # every problem is probed, on its own solved history (review B8 review)
         probe_result = hidden_state.probe(record, case, provider_dir,
                                           _history_calls(provider, problem, analytic, kin),
                                           undefined_statev=case.extra.get("undefined_statev") or ())
@@ -1178,7 +1178,7 @@ def run_case(case: CorpusCase, out_root: Path, *, problems: Optional[Sequence[M.
 
 
 def _not_attempted(case, problems, record, kin, evidence, reason, probe_result):
-    """A hidden-state trip: the whole source is not attempted (Vera B1 A)."""
+    """A hidden-state trip: the whole source is not attempted (review B1 A)."""
     out = []
     for problem in problems:
         for feature in ("residual_sens", "global_sens", "assembly_consistency"):

@@ -1,4 +1,4 @@
-"""Does the ORIGINAL routine read memory it never wrote? (Vera B1 review, A)
+"""Does the ORIGINAL routine read memory it never wrote? (review B1 review, A)
 
 Finite differences of the original are an independent reference only if its
 outputs are a function of its arguments. Restoring every argument does not

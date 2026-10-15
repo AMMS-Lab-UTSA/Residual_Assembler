@@ -4,8 +4,7 @@ A finite-difference ladder step p +/- h is evidence only where the ORIGINAL is
 defined: Poisson's ratio on (-1, 1/2), a modulus above 0. A step that leaves
 that domain (nu = 0.499 + 0.05 crosses 1/2, where the bulk modulus changes
 sign) evaluates a different material, or none. Such steps are dropped from the
-ladder and tagged ``outside_parameter_domain``, for every source alike (Vera,
-B8 review of f7be16bc).
+ladder and tagged ``outside_parameter_domain``, for every source alike (review B8 review of f7be16bc).
 
 The props map is read from the source itself: an assignment ``NAME = PROPS(i)``
 inside the entry routine (``SUBROUTINE UMAT``; a helper's own dummy called

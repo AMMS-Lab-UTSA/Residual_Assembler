@@ -1,4 +1,4 @@
-"""Finite-difference adjudication, entry by entry (B2 rule; Vera B1 review B/C/D).
+"""Finite-difference adjudication, entry by entry (B2 rule; review B1 review B/C/D).
 
 A comparison is one analytic array ``A`` (the OTI-derived derivative) against
 centred differences ``D(h) = (q(p+h) - q(p-h)) / 2h`` of an INDEPENDENT

@@ -30,7 +30,7 @@ is why it is delegable. Everything downstream of it is not.
   full cantilever — and an independent check that a language model has
   touched is no longer independent.
 - **Any residual or Jacobian assembly change.** A local model may propose a
-  patch and must cite file and line; Vera reviews every material change to
+  patch and must cite file and line; an independent review covers every material change to
   mathematical assembly, and that review is not a local-model task.
 - **Any sensitivity number.** dR/dp, dσ/dp and dstatev/dp are established
   against an analytical or finite-difference reference. The reference is the

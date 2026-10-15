@@ -32,7 +32,7 @@ and the fixes (B8). Each test fails without its fix.
    Newton may converge for one and not the other: ``runner.common_schedule``
    gives both one set of increments.
 
-B9 (Vera's B8 review):
+B9 (the review's B8 review):
 13. A ladder step whose p +/- h leaves the slot's declared domain (Poisson's
    ratio in (-1, 1/2), moduli > 0, read from the source's NAME = PROPS(i)) is
    dropped and tagged ``outside_parameter_domain``; the zero-within-resolution
@@ -47,7 +47,7 @@ B9 (Vera's B8 review):
    no reference for the analytic derivative. Such increments are unresolved
    (reference_on_another_equilibrium), never judged (B9: SeaShell, |dV| 0.66),
    but only while primal parity holds, and from the first departure on unless
-   solution and incoming state both match again (Vera R-1).
+   solution and incoming state both match again (review R-1).
 17. Where only the ORIGINAL converges (0e56ba3c: K_ff indefinite at increment
    9), the analytic solve is started on the original's solution and, if it
    converges there with its own residual, judged on that path.
@@ -62,12 +62,12 @@ B9 (Vera's B8 review):
 21. The host speaks six components; a routine of NTENS = 4 (plane strain) reads
    and writes the first four, the others are zero (B12). The provider maps in
    both directions, for the original and for the OTI build.
-22. The plant test (Vera, B12): every comparison is judged again with the analytic
+22. The plant test (review B12): every comparison is judged again with the analytic
    derivative scaled by 1 + 1e-4; a verified cell has power only if that is caught.
    The cell text carries "power-checked p of k", names the problems without power,
    and says "verified on 7 of 8 slots; PROPS(5) integer, non-differentiable,
    excluded" where a slot was left out.
-18. Labels only (Vera B9): a record whose analytic solve was steered says so and
+18. Labels only (review B9): a record whose analytic solve was steered says so and
    what it came to; problems excused by a branch departure have their own
    reason class, distinct from fd_reference_unresolved; the per-source tally
    quotes "verified on k of n problems" and flags a cell that rests on 1 of 3.
@@ -294,7 +294,7 @@ HELPER_FIRST = """      SUBROUTINE HELPER(PROPS, N)
 
 
 def test_the_props_map_reads_only_the_entry_routine():
-    """Vera hardening: a helper's own PROPS dummy is another array."""
+    """The review hardening: a helper's own PROPS dummy is another array."""
     from residual_core.corpus import parameters as P
     mapping = P.props_map(HELPER_FIRST, "fixed")
     assert [(m["index"], m["name"]) for m in mapping] == [(1, "EMOD")]
@@ -557,7 +557,7 @@ def test_every_perturbed_resolve_is_started_from_the_nominal_solution(monkeypatc
 
 
 def test_a_planted_error_is_caught_where_the_derivative_is_resolved(monkeypatch, tmp_path):
-    """The plant test (Vera, B12): the analytic scaled by 1 + 1e-4 must FAIL."""
+    """The plant test (review B12): the analytic scaled by 1 + 1e-4 must FAIL."""
     from residual_core.corpus import runner
     by_inc, info = _global(monkeypatch, tmp_path, [0.0, 0.0])
     assert {c["verdict"] for c in by_inc.values()} == {"verified"}
