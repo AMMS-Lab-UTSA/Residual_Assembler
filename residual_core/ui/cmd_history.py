@@ -236,6 +236,8 @@ def run_history_request(*, model, material, request, out, odb=None, fields=None,
             "Mode": result.mode, "Parameters (provider order)": result.parameters,
             "Timings (s)": timings, "Tolerances": result.tolerances,
             "Production analysis rerun": "no", "Material source read or transformed": "no"}
+        if deck.notes:
+            report["details"]["Deck lines accepted and not applied"] = list(deck.notes)
         write_outputs(out, fields=results_fields, request=specification, parameters=parameters,
                       report=report, private={"export_command": export_command, "fields": str(fields_path),
                                               "increments": [{

@@ -18,7 +18,13 @@ Supported (one static step, small strain):
   for a static step), ``OP=MOD``;
 - ``*Cload`` inside the step: ramped from zero, ``OP=MOD``;
 - ``*Static`` (the increments actually taken come from the ODB record),
-  ``*Controls`` (solver controls only), output requests.
+  ``*Controls`` (solver controls only), output requests, including the
+  results-file and printed-output ones (``*File Format``, ``*Node File``,
+  ``*El File``, ``*Node Print``, ``*El Print``, ...), which are not read;
+- ``*User Material, UNSYMM``: how Abaqus stores its own Newton matrix; the
+  replay assembles the provider's DDSDDE as returned in any case.
+
+What is accepted without being applied is listed in ``HistoryModel.notes``.
 
 ``load_recorded_fields`` reads the per-frame export of the ODB (``.npz``,
 written by :mod:`residual_core.replay.odb_export_npz` or the equivalent
@@ -44,11 +50,24 @@ SUPPORTED_KEYWORDS = {
     "elset": {"elset", "generate", "instance", "internal", "unsorted"},
     "part": {"name"}, "end part": set(), "assembly": {"name"}, "end assembly": set(),
     "instance": {"name", "part"}, "end instance": set(),
-    "material": {"name"}, "user material": {"constants", "type"}, "depvar": set(),
+    "material": {"name"}, "user material": {"constants", "type", "unsymm"}, "depvar": set(),
     "solid section": {"elset", "material"}, "boundary": {"op"}, "cload": {"op"},
     "step": {"name", "nlgeom", "inc"}, "static": {"direct"}, "controls": {"parameters", "reset", "field"},
     "end step": set(), "output": {"field", "history", "frequency", "variable"},
     "node output": {"nset", "frequency"}, "element output": {"elset", "position", "directions", "frequency"},
+}
+#: Requests for results-file (.fil) and printed (.dat) output. They change what
+#: Abaqus writes, never what it solves, so any of their options is accepted and
+#: their data lines (the variables to write) are not read.
+OUTPUT_ONLY_KEYWORDS = frozenset({
+    "file format", "node file", "el file", "energy file", "node print", "el print", "energy print"})
+#: What a deck option the replay accepts without applying means, said once in
+#: the notes of the model that carries it.
+ACCEPTED_OPTION_NOTES = {
+    ("user material", "unsymm"): (
+        "*User Material, UNSYMM: Abaqus stores its own Newton matrix unsymmetric for this material. "
+        "The replay does not use Abaqus's matrix: it assembles the provider's DDSDDE as returned, "
+        "unsymmetric or not, so the residual and the sensitivities are what they are without it."),
 }
 PRECISION_FLOOR = float(np.finfo(np.float32).eps)
 
@@ -102,10 +121,22 @@ class HistoryModel:
         return self.element_sets[key]
 
 
-def _check_keywords(path: Path) -> None:
+def _check_keywords(path: Path) -> List[str]:
+    """Refuse what the replay cannot reproduce; return notes on what it accepts unapplied."""
     counts: Dict[str, int] = {}
+    notes: List[str] = []
     for keyword, spelling, options, data in _iter_blocks(path.read_text().splitlines()):
         counts[keyword] = counts.get(keyword, 0) + 1
+        if keyword in OUTPUT_ONLY_KEYWORDS:
+            note = ("*%s and its data lines: output requests for the results or printed file; not "
+                    "read (they change what Abaqus writes, not what it solves)" % spelling)
+            if note not in notes:
+                notes.append(note)
+            continue
+        for option in options:
+            note = ACCEPTED_OPTION_NOTES.get((keyword, option))
+            if note and note not in notes:
+                notes.append(note)
         if keyword not in SUPPORTED_KEYWORDS:
             raise UnsupportedFeature("unsupported INP keyword *%s" % spelling)
         unknown = set(options) - SUPPORTED_KEYWORDS[keyword]
@@ -126,6 +157,7 @@ def _check_keywords(path: Path) -> None:
                                      % (keyword, counts.get(keyword, 0)))
     if counts.get("part", 0) > 1 or counts.get("instance", 0) > 1:
         raise UnsupportedFeature("only one part/instance is supported")
+    return notes
 
 
 def _targets(model, target) -> List[int]:
@@ -145,7 +177,7 @@ def read_history_model(path) -> HistoryModel:
     path = Path(path)
     if not path.is_file():
         raise ValueError("model deck not found: %s" % path)
-    _check_keywords(path)
+    notes = _check_keywords(path)
     model = parse_inp(str(path))
     if model.warnings:
         raise UnsupportedFeature("INP parser diagnostics: " + "; ".join(model.warnings))
@@ -244,7 +276,7 @@ def read_history_model(path) -> HistoryModel:
         prescribed_dofs=prescribed,
         prescribed_start=np.array([values[i][0] for i in prescribed]),
         prescribed_end=np.array([values[i][1] for i in prescribed]),
-        load_end=load, source=str(path))
+        load_end=load, source=str(path), notes=notes)
 
 
 @dataclass

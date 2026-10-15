@@ -40,7 +40,14 @@ default selective-reduced (B-bar) volumetric integration, one user material on
 every element, zero-valued model-data boundaries (ENCASTRE, PINNED, XSYMM, ...
 or DOF ranges), step boundaries with any value ramped over the step (the
 Abaqus default for a static step), step `*Cload` ramped from zero, `*Controls`
-(solver settings only). Everything else - amplitudes, `OP=NEW`, other element
+(solver settings only). Two things a deck Abaqus ran often carries are read
+and not applied, and `run_report.txt` lists them under "Deck lines accepted and
+not applied": the `UNSYMM` option of `*User Material` (how Abaqus stores its own
+Newton matrix; the replay assembles the provider's DDSDDE as returned, symmetric
+or not), and the results-file and printed-output requests `*File Format`,
+`*Node File`, `*El File`, `*Energy File`, `*Node Print`, `*El Print` and
+`*Energy Print` with their data lines. So the deck the analysis ran is the deck
+to give `--model`. Everything else - amplitudes, `OP=NEW`, other element
 types, several steps or materials, NLGEOM, distributed loads, nonzero initial
 state - is refused and named in `run_report.txt` ("Unsupported feature
 detected"). The UMAT receives STRESS, STATEV, STRAN (B-bar strain at the start

@@ -6,6 +6,22 @@ public interfaces may still change.
 
 ## [Unreleased]
 
+### The deck Abaqus ran
+- `resasm history` (and `resasm request` through it) reads a deck with
+  `*User Material, ..., UNSYMM` and with results-file or printed-output
+  requests (`*File Format`, `*Node File`, `*El File`, `*Energy File`,
+  `*Node Print`, `*El Print`, `*Energy Print`) instead of refusing it. Neither
+  enters the residual: UNSYMM is how Abaqus stores its own Newton matrix (the
+  replay assembles the provider's DDSDDE as returned), and the output requests
+  choose what Abaqus writes. Both are listed in `run_report.txt` under "Deck
+  lines accepted and not applied". Such a deck reads into exactly the model
+  it reads into without them (`tests/replay_history/test_deck_output_requests_and_unsymm.py`).
+- `schemas/transform_generation.json` still records `c61511ea0ffe58e2`. The
+  UMAT_source_transformation code this branch is used with is at a newer
+  transform fingerprint that has not been re-frozen (see that repository's
+  CHANGELOG); the two fixtures in `tests/fixtures/verified` remain evidence
+  about `c61511ea0ffe58e2`.
+
 ### Connected workflow (2026-09-18)
 - **`resasm history`**: total-history sensitivities of small-strain C3D8
   analyses for any UMAT-OTI provider (entry point `UMAT_OTI_EVAL_TOTAL`),
