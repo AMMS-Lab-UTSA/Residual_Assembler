@@ -1,8 +1,8 @@
 {
  "schema": "residual-assembler/fixture-residual-check/1",
  "fixture": "tests/fixtures/verified/j2_props--2feae9f158.json",
- "fixture_sha256": "c4303968e0e070a5e5256005f1c069564d91f2b675cd7369702873cf8863b849",
- "recorded_generation": "c61511ea0ffe58e2",
+ "fixture_sha256": "3cf7dfbaa874d20ca60730f594f847fd9962d451aa02f064889a5ef50e44bcac",
+ "recorded_generation": "80a2015b780b1f25",
  "checks": [
   {
    "name": "stress recomputed by the independent model",
@@ -1447,7 +1447,7 @@
   }
  ],
  "refused": "",
- "fixture_fingerprint": "c61511ea0ffe58e2",
+ "fixture_fingerprint": "80a2015b780b1f25",
  "source_id": "bundled__generic_ps/src/j2_props.f",
  "element_type": "C3D8",
  "eligibility": {

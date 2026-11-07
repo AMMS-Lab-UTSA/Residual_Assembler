@@ -1,8 +1,8 @@
 {
  "schema": "residual-assembler/fixture-residual-check/1",
  "fixture": "tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json",
- "fixture_sha256": "74ffd6fc3fffdee0fe6426ba284d7b5ea452db2325cad453a9fc51856e8741e0",
- "recorded_generation": "c61511ea0ffe58e2",
+ "fixture_sha256": "dc93cd0a54c0249e894cb5f05dae1030fefec900dd4a1743500a1c5e0e0506cb",
+ "recorded_generation": "80a2015b780b1f25",
  "checks": [
   {
    "name": "dR/du",
@@ -103,7 +103,7 @@
   }
  ],
  "refused": "",
- "fixture_fingerprint": "c61511ea0ffe58e2",
+ "fixture_fingerprint": "80a2015b780b1f25",
  "source_id": "CAEAssistant-Group__UMAT-Abaqus-Isotropic-Elasticity-Isothermal-Suboutine/ISOTROPIC-ELASTICITY.for",
  "element_type": "C3D8",
  "eligibility": {

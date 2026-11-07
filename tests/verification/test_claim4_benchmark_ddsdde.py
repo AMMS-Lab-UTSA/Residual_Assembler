@@ -9,6 +9,11 @@ from verification import claim4_benchmark_ddsdde as claim4
 
 pytestmark = [pytest.mark.integration]
 
+#: The seven benchmark contracts whose sources are the Dunne & Petrinic book
+#: companion code, which UMAT-OTI no longer ships (its THIRD_PARTY_NOTICES 2b).
+BOOK_CODE_CASES = {"code_exp", "code_imp", "elastic", "spin_elas_def", "spin_elastic",
+                   "visco_beam", "visco_imp"}
+
 
 def test_every_benchmark_is_prepared_or_carries_its_reason(out_dirs):
     out, work = out_dirs
@@ -21,6 +26,12 @@ def test_every_benchmark_is_prepared_or_carries_its_reason(out_dirs):
     for row in payload["rows"]:
         if row["status"] == "prepared":
             assert row["compare_outputs_used"] == ["STRESS", "STATEV", "DDSDDE", "CONVERGENCE"]
+        elif row["case"] in BOOK_CODE_CASES:
+            # UMAT-OTI 1.2.0 stopped shipping the Dunne & Petrinic book code
+            # (no redistribution licence); these contracts name files that
+            # are not there unless a user places them at the old paths.
+            assert row["status"] == "error", row
+            assert "available on this machine" in row["error"], row
         else:
             assert row["status"] == "transform_failed"
             assert row["transform_success"] is False
@@ -30,6 +41,11 @@ def test_every_benchmark_is_prepared_or_carries_its_reason(out_dirs):
 def test_elastic_benchmark_end_to_end_in_abaqus(out_dirs):
     if not shutil.which("abaqus"):
         pytest.fail("abaqus-marked test run without Abaqus on PATH")
+    import os
+    from pathlib import Path
+    umat = Path(os.environ.get("UMAT_OTI_REPO", ""))
+    if not (umat / "UMATs/UMATs/ICP/elasticity/elastic.f").is_file():
+        pytest.skip("elastic.f is Dunne & Petrinic book code, which UMAT-OTI no longer ships")
     out, work = out_dirs
     assert claim4.main(["--abaqus", "--case", "elastic", "--out", str(out), "--work", str(work)]) == 0
     row = json.loads((out / "claim4_benchmark_ddsdde.json").read_text())["rows"][0]

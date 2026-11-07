@@ -6,6 +6,31 @@ public interfaces may still change.
 
 ## [Unreleased]
 
+### UMAT-OTI 1.2.1 (2026-11-06)
+- **Companion pin.** The `bridge` extra (and therefore CI) uses UMAT-OTI 1.2.1,
+  tag `v1.2.1`, commit `bf3f029d9711a2ac28fd011b6b373dd64ae24fb4`; it was
+  `faa0360`.
+- **Contract files.** `schemas/transform_generation.json` and
+  `schemas/contract_lock.json` are copied byte for byte from UMAT-OTI 1.2.1:
+  transform generation `80a2015b780b1f25` (harness `56e3725136cb897e`).
+  Contract 5.0.0 is unchanged.
+- **The two verified fixtures re-frozen in Abaqus at `80a2015b780b1f25`.**
+  `scripts/regenerate_recovery_fixture.py` re-ran both against UMAT-OTI 1.2.1:
+  the transform, the original and transformed Abaqus 2021 jobs and the
+  Jacobian-matched control, three jobs per fixture, one after another (six in
+  all), from the retained pass25 experiment (deck byte-identical). Both are
+  verified (4 of 4 chosen states judged entrywise, every entry agrees). Every
+  number is identical to the fixtures frozen at `c61511ea0ffe58e2`; only
+  `generated` and `transform_fingerprint` changed. The residual check is
+  unchanged: elasticity 1 held, 2 not established; J2 32 held, 3 not
+  established (`docs/evidence/final_refreeze_fixture_*_check.json`).
+- **Docs.** COMPATIBILITY.md, USAGE_REPORT.md, HANDBOOK.md and
+  which_layer_did_it_come_from.md give the new pin and generation.
+- **Scrub.** Machine paths in shipped records, examples and expected outputs
+  are repository-relative or `<home>`; agent names in comments, docstrings
+  and record paths name components or roles; the agent-process files
+  `.councilignore` and `docs/LOCAL_COUNCIL.md` are removed.
+
 ### The deck Abaqus ran
 - `resasm history` (and `resasm request` through it) reads a deck with
   `*User Material, ..., UNSYMM` and with results-file or printed-output
@@ -16,11 +41,6 @@ public interfaces may still change.
   choose what Abaqus writes. Both are listed in `run_report.txt` under "Deck
   lines accepted and not applied". Such a deck reads into exactly the model
   it reads into without them (`tests/replay_history/test_deck_output_requests_and_unsymm.py`).
-- `schemas/transform_generation.json` still records `c61511ea0ffe58e2`. The
-  UMAT_source_transformation code this branch is used with is at a newer
-  transform fingerprint that has not been re-frozen (see that repository's
-  CHANGELOG); the two fixtures in `tests/fixtures/verified` remain evidence
-  about `c61511ea0ffe58e2`.
 
 ### Connected workflow (2026-09-18)
 - **`resasm history`**: total-history sensitivities of small-strain C3D8
