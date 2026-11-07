@@ -46,8 +46,8 @@
     "repo": "https://github.com/mauriaristi/otilib.git",
     "license": "GPLv3",
     "env": {
-      "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
-      "PYOTI_PATH": "/home/ammslab3/otilib/build_py311"
+      "OTILIB_ROOT": "<home>/otilib/build_py311",
+      "PYOTI_PATH": "<home>/otilib/build_py311"
     },
     "error": ""
   },

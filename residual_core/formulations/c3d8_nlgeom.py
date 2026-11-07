@@ -7,7 +7,7 @@ forms (Abaqus Theory Guide, "Strain measures" / "Rate of deformation and strain
 increment" and "Stress rates"). This module reproduces that contract for the
 first-order brick and gives the EXACT linearisation of the resulting discrete
 residual. The derivation, assumption ledger and sources are in
-``corpus_campaign/batches/B2/noether/DESIGN.md``; the short form:
+``corpus_campaign/batches/B2/residual_assembler/DESIGN.md``; the short form:
 
 Per integration point q, increment n (configuration n-1 converged, n trial)::
 

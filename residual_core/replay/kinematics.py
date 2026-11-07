@@ -76,7 +76,7 @@ def bbar_b_matrices(coordinates):
 # which holds the one implementation. What Abaqus 2021 does for a fully
 # integrated C3D8 ("selectively reduced") was established against an Abaqus
 # run on a DISTORTED element with an inhomogeneous rotating field (B2 probe,
-# corpus_campaign/batches/B2/noether/abaqus_probe): MEAN DILATATION --
+# corpus_campaign/batches/B2/residual_assembler/abaqus_probe): MEAN DILATATION --
 #
 #     Jbar  = sum_q w0_q J_q / sum_q w0_q          (= v / V)
 #     F_bar = (Jbar / J_q)^(1/3) F_q               DFGRD0/1 to 4e-16

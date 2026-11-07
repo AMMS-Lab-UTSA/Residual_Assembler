@@ -166,18 +166,18 @@ historical-only, not deleted evidence. UMAT inventory entries remain untouched.
 ## Commands And Checks
 
 Environment used (confirmed imports printed both recovery paths and
-/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so):
+<home>/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so):
 
 ```bash
-WORKSPACE=/home/ammslab3/softwarex_work
+WORKSPACE=<home>/softwarex_work
 RA="$WORKSPACE/imq-ra-recovery"
 UMAT="$WORKSPACE/imq-umat-recovery"
 PY="$WORKSPACE/.venv/bin/python"
 cd "$RA"
-export PYTHONPATH="$RA:$UMAT/src:/home/ammslab3/otilib/build_py311"
+export PYTHONPATH="$RA:$UMAT/src:<home>/otilib/build_py311"
 export UMAT_OTI_REPO="$UMAT"
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+export PYOTI_PATH=<home>/otilib/build_py311
+export OTILIB_ROOT=<home>/otilib/build_py311
 export RUN_OTILIB_TESTS=1
 source /opt/intel/oneapi/compiler/latest/env/vars.sh
 ```

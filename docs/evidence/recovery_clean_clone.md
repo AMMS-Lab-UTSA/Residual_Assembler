@@ -23,7 +23,7 @@ only `docs/evidence/usage_examples.json` in each clone, after the suites; those
 are not committed inputs. No commits, pushes, new branches, or subagents.
 
 The unchanged UMAT forwarding gate was run from its clone, with explicit RA
-clone, `--python /home/ammslab3/anaconda3/bin/python3.11`, the documented
+clone, `--python <home>/anaconda3/bin/python3.11`, the documented
 external ODB below, and new `--work /tmp/imqc_clean_clone_20260918_RwJ8VT/gate`.
 It created an empty Python 3.11.7 venv, built both wheels, and installed RA's
 `gui,test,yaml` and UMAT's `test` extras. All 20 child commands exited zero.

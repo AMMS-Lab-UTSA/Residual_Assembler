@@ -11,7 +11,7 @@ appended to ``<out>/records.jsonl``; evidence JSON under ``<out>/evidence``.
     export UMAT_OTI_REPO=$CORPUS_WORKSPACE/final-umat   # optional; this is the default
     PYTHONPATH=$UMAT_OTI_REPO/src \\
     python tools/run_corpus_residual.py --keys c7bf17b21519e33da0b7bbb1 \\
-        --out $CORPUS_WORKSPACE/corpus_campaign/batches/B1/noether
+        --out $CORPUS_WORKSPACE/corpus_campaign/batches/B1/residual_assembler
 
     --routine-verified            every routine-level-verified source (109 of 238)
     --control sweep_j2_bilinear   a labelled NON-corpus plastic control

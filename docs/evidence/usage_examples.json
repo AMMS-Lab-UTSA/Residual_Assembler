@@ -1,33 +1,33 @@
 {
   "clean_install_verified": false,
   "phase": "examples",
-  "python": "/home/ammslab3/softwarex_work/.venv/bin/python",
+  "python": "<home>/softwarex_work/.venv/bin/python",
   "work": "/tmp/recovery_usage__l41upif",
   "environment": {
-    "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
-    "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
-    "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
-    "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+    "PYTHONPATH": ":<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311",
+    "UMAT_OTI_REPO": "<home>/softwarex_work/imq-umat-recovery",
+    "PYOTI_PATH": "<home>/otilib/build_py311",
+    "OTILIB_ROOT": "<home>/otilib/build_py311",
     "RUN_OTILIB_TESTS": "1"
   },
   "commands": [
     {
       "name": "environment",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-c",
         "import sys,residual_core,umat_oti,pyoti.sparse; from umat_oti.store import transform_fingerprint; print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.sparse.__file__); print(transform_fingerprint())"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
-      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\n/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/__init__.py\n/home/ammslab3/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
+      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\nresidual_core/__init__.py\n<home>/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n<home>/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
       "stderr": "",
       "seconds": 0.9954375689849257
     },
     {
       "name": "R-X1 init",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "init",
@@ -36,7 +36,7 @@
         "--out",
         "/tmp/recovery_usage__l41upif/R-X1"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "created /tmp/recovery_usage__l41upif/R-X1 (from template 'python')\n  README.md\n  resasm.yml\n  solution.npy\n  user_residual.py\n\nNext:\n  cd /tmp/recovery_usage__l41upif/R-X1\n  resasm check resasm.yml\n  resasm run resasm.yml\n",
       "stderr": "",
@@ -45,13 +45,13 @@
     {
       "name": "R-X1 check",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "check",
         "/tmp/recovery_usage__l41upif/R-X1/resasm.yml"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "[ok] config parsed: spring_demo (order 2, backend otilib)\n[ok] loaded solution vector: shape (1,)\n[ok] loaded parameter map: 2 parameters (k, f)\n[ok] residual evaluated: shape (1,)\n[ok] tangent loaded (python): shape (1, 1)\n[ok] OTILib available: order 2, basis 2\n[ok] residual norm on free DOFs is 0.000e+00\n[ok] RHS order 1 generated: shape (1, 2)\n[ok] sensitivity solve completed\n",
       "stderr": "",
@@ -60,13 +60,13 @@
     {
       "name": "R-X1",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "run",
         "/tmp/recovery_usage__l41upif/R-X1/resasm.yml"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'python', 'residual_free_norm': 0.0, 'orders_solved': [1, 2]}\n  private outputs -> /tmp/recovery_usage__l41upif/R-X1/resasm_output/private\n  public  outputs -> /tmp/recovery_usage__l41upif/R-X1/resasm_output/public\n  read: /tmp/recovery_usage__l41upif/R-X1/resasm_output/public/summary.md\n",
       "stderr": "",
@@ -127,13 +127,13 @@
     {
       "name": "R-X1 report",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "report",
         "/tmp/recovery_usage__l41upif/R-X1/resasm_output"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "Sensitivity run report: /tmp/recovery_usage__l41upif/R-X1/resasm_output\n  residual norm (free) : 0.0\n  tangent source       : python\n  parameters           : k, f\n  derivative orders    : [1, 2]\n  validation status    : ok\n  private outputs      : /tmp/recovery_usage__l41upif/R-X1/resasm_output/private\n  public  outputs      : /tmp/recovery_usage__l41upif/R-X1/resasm_output/public\n",
       "stderr": "",
@@ -142,7 +142,7 @@
     {
       "name": "R-X2 init",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "init",
@@ -151,7 +151,7 @@
         "--out",
         "/tmp/recovery_usage__l41upif/R-X2"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "created /tmp/recovery_usage__l41upif/R-X2 (from template 'blackbox-order2')\n  README.md\n  my_solver.py\n  resasm.yml\n  solution.npy\n\nNext:\n  cd /tmp/recovery_usage__l41upif/R-X2\n  resasm check resasm.yml\n  resasm run resasm.yml\n",
       "stderr": "",
@@ -160,13 +160,13 @@
     {
       "name": "R-X2 check",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "check",
         "/tmp/recovery_usage__l41upif/R-X2/resasm.yml"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "[ok] config parsed: blackbox_order2_demo (order 2, backend otilib)\n[ok] loaded solution vector: shape (1,)\n[ok] loaded parameter map: 2 parameters (k, f)\n[ok] black-box executable configured: python my_solver.py --request {request} --response {response}\n[warn] tangent will come from the black-box response\n[ok] RHS order 1 generated: shape (1, 2)\n[ok] sensitivity solve completed\n",
       "stderr": "",
@@ -175,13 +175,13 @@
     {
       "name": "R-X2",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "run",
         "/tmp/recovery_usage__l41upif/R-X2/resasm.yml"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "run complete: {'parameters': ['k', 'f'], 'order': 2, 'tangent_source': 'response', 'residual_free_norm': None, 'orders_solved': [1, 2]}\n  private outputs -> /tmp/recovery_usage__l41upif/R-X2/resasm_output/private\n  public  outputs -> /tmp/recovery_usage__l41upif/R-X2/resasm_output/public\n  read: /tmp/recovery_usage__l41upif/R-X2/resasm_output/public/summary.md\n",
       "stderr": "",
@@ -242,13 +242,13 @@
     {
       "name": "R-X2 report",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "report",
         "/tmp/recovery_usage__l41upif/R-X2/resasm_output"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "Sensitivity run report: /tmp/recovery_usage__l41upif/R-X2/resasm_output\n  residual norm (free) : None\n  tangent source       : response\n  parameters           : k, f\n  derivative orders    : [1, 2]\n  validation status    : ok\n  private outputs      : /tmp/recovery_usage__l41upif/R-X2/resasm_output/private\n  public  outputs      : /tmp/recovery_usage__l41upif/R-X2/resasm_output/public\n",
       "stderr": "",
@@ -257,19 +257,19 @@
     {
       "name": "R-X3",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "assemble",
-        "/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/examples/minimal_c3d8_stress_driven/model.json",
+        "residual_core/examples/minimal_c3d8_stress_driven/model.json",
         "--mode",
         "stress-driven",
         "--fields",
-        "/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/examples/minimal_c3d8_stress_driven/fields.json",
+        "residual_core/examples/minimal_c3d8_stress_driven/fields.json",
         "--out",
         "/tmp/recovery_usage__l41upif/stress.npy"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "assembled mode 'stress-driven': ndof=24  ||R||=7.071068e+01  max|R|=2.500000e+01\nresidual saved to /tmp/recovery_usage__l41upif/stress.npy\n",
       "stderr": "",
@@ -286,13 +286,13 @@
     {
       "name": "R-X4",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "scripts/reproduce_connected_pipeline.py",
         "--skip-abaqus",
         "--out",
         "/tmp/recovery_usage__l41upif/R-X4"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "verified bounded J2 pipeline: /tmp/recovery_usage__l41upif/R-X4/manifest.json\n",
       "stderr": "",
@@ -309,31 +309,31 @@
                 "gfortran",
                 "--version"
               ],
-              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "cwd": "",
               "returncode": 0,
               "log": "private/command-1.log"
             },
             {
               "argv": [
-                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "<home>/softwarex_work/.venv/bin/python",
                 "-m",
                 "umat_oti.provider",
                 "build",
-                "/home/ammslab3/softwarex_work/imq-umat-recovery/parameter_sensitivity/models/m3_j2/contract_v2.json",
+                "<home>/softwarex_work/imq-umat-recovery/parameter_sensitivity/models/m3_j2/contract_v2.json",
                 "--out",
                 "/tmp/recovery_usage__l41upif/R-X4/private/provider"
               ],
-              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "cwd": "",
               "returncode": 0,
               "log": "private/command-2.log"
             },
             {
               "argv": [
-                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "<home>/softwarex_work/.venv/bin/python",
                 "-m",
                 "residual_core.ui.cli",
                 "replay",
-                "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/bounded_j2_c3d8/model.json",
+                "examples/bounded_j2_c3d8/model.json",
                 "--object",
                 "/tmp/recovery_usage__l41upif/R-X4/private/provider/umat_m3_j2_oti.obj",
                 "--contract",
@@ -343,13 +343,13 @@
                 "--out",
                 "/tmp/recovery_usage__l41upif/R-X4/private/solve"
               ],
-              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "cwd": "",
               "returncode": 0,
               "log": "private/command-3.log"
             },
             {
               "argv": [
-                "/home/ammslab3/softwarex_work/.venv/bin/python",
+                "<home>/softwarex_work/.venv/bin/python",
                 "-m",
                 "residual_core.ui.cli",
                 "replay",
@@ -361,7 +361,7 @@
                 "--out",
                 "/tmp/recovery_usage__l41upif/R-X4/private/replay"
               ],
-              "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "cwd": "",
               "returncode": 0,
               "log": "private/command-4.log"
             }
@@ -370,15 +370,15 @@
           "abaqus_execution": "not_run",
           "j2_primal_origin": "synthetic_converged_fe",
           "environment": {
-            "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
-            "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
-            "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
-            "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+            "PYTHONPATH": ":<home>/softwarex_work/imq-umat-recovery/src::<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311",
+            "UMAT_OTI_REPO": "<home>/softwarex_work/imq-umat-recovery",
+            "PYOTI_PATH": "<home>/otilib/build_py311",
+            "OTILIB_ROOT": "<home>/otilib/build_py311",
             "RUN_OTILIB_TESTS": "1",
             "FC": null
           },
           "python": {
-            "executable": "/home/ammslab3/softwarex_work/.venv/bin/python",
+            "executable": "<home>/softwarex_work/.venv/bin/python",
             "version": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]",
             "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31"
           },
@@ -391,7 +391,7 @@
           "compiler": "GNU Fortran (Ubuntu 9.4.0-1ubuntu1~20.04.2) 9.4.0",
           "repositories": {
             "residual_assembler": {
-              "path": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+              "path": "",
               "commit": "69ac77cf4865ef5cfc2a46fad987bb7fb6d73e21",
               "status": " M README.md\n M START_HERE.md\n M STATUS.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M resasm_user/__init__.py\n M residual_core/app/streamlit_app.py\n M residual_core/core/assembler.py\n M residual_core/formulations/c3d8_kernel.py\n M residual_core/formulations/c3d8_sensitivity.py\n M residual_core/formulations/solid_c3d8_finite_strain.py\n M residual_core/io/abaqus_odb_export.py\n M residual_core/io/neutral_model_io.py\n M residual_core/materials/registry.py\n M residual_core/materials/verified_fixture.py\n M residual_core/ui/cli.py\n M residual_core/ui/wizard.py\n M schemas/contract_lock.json\n M schemas/transform_generation.json\n M tests/contract/contract_paths.py\n M tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py\n D tests/fixtures/verified/compresibleneohookean--d78e61195f.json\n M tests/fixtures/verified/isotropic-elasticity--f7eb90376a.json\n M tests/fixtures/verified/j2_props--2feae9f158.json\n D tests/fixtures/verified/lemaitredamagenonlocal--e7f8623ec9.json\n D tests/fixtures/verified/neohookean_umat--10759f1ffd.json\n D tests/fixtures/verified/umat--b8fa38353e.json\n D tests/fixtures/verified/umat_biofilm_visco_phase2--42eacbd5e8.json\n D tests/fixtures/verified/umat_elastic--7e9bb4c291.json\n D tests/fixtures/verified/umat_iso_stretch--890619c18d.json\n D tests/fixtures/verified/umat_viscoelastic--c6ae96a734.json\n M tests/framework/test_a_fixture_is_held_to_the_rule_that_froze_it.py\n M tests/framework/test_a_verified_umat_drives_the_assembler.py\n M tests/framework/test_otilib_fe_sensitivity.py\n M tests/framework/test_the_assembled_residual_derivative_is_differenced.py\n M tests/framework/test_user_layer.py\n M tests/framework/test_which_layer_the_failure_came_from.py\n M tests/framework/verified_fixtures.py\n?? docs/CONNECTED_WORKFLOW.md\n?? docs/REQUEST_INTERFACE.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/finite_strain_c3d8/\n?? examples/bounded_j2_c3d8/\n?? examples/presentation_request/\n?? examples/residual_sensitivity_c3d8/\n?? residual_core/core/field_sensitivity.py\n?? residual_core/formulations/finite_strain_sensitivity.py\n?? residual_core/interface/\n?? residual_core/io/derivative_fields.py\n?? residual_core/materials/neo_hookean.py\n?? residual_core/replay/\n?? residual_core/runtime/\n?? residual_core/ui/cmd_replay.py\n?? residual_core/ui/cmd_request.py\n?? scripts/audit_recovery_usage.py\n?? scripts/check_presentation_browser.py\n?? scripts/clean_install_gate.py\n?? scripts/regenerate_recovery_fixture.py\n?? scripts/reproduce_connected_pipeline.py\n?? scripts/reproduce_presentation_request.py\n?? tests/abaqus_derivative_export/\n?? tests/fixtures/historical/\n?? tests/fixtures/presentation_j2/\n?? tests/framework/test_binary_compat.py\n?? tests/framework/test_field_sensitivity.py\n?? tests/framework/test_finite_strain_hyperelastic.py\n?? tests/framework/test_interface_versions.py\n?? tests/integration/\n",
               "source_tree_sha256": "f94d61f18c83bf79ad683279b583c374caefe886347f5f73c9d7411c3dfea10d",
@@ -514,7 +514,7 @@
               }
             },
             "umat_oti": {
-              "path": "/home/ammslab3/softwarex_work/imq-umat-recovery",
+              "path": "<home>/softwarex_work/imq-umat-recovery",
               "commit": "d34c7fff51e13285efaf13a57917fa34034f57cb",
               "status": " M README.md\n M START_HERE.md\n M docs/BRANCH_IMPLEMENTATION_AUDIT.md\n M docs/COMPLETION_LEDGER.md\n M paper_results/corpus/CORPUS_VERIFICATION.md\n M paper_results/corpus/corpus_registry.csv\n M paper_results/corpus/corpus_registry.json\n M pyproject.toml\n M src/umat_oti/contract/contract_lock.json\n M src/umat_oti/contract/schemas/transform_generation.json\n M src/umat_oti/transform/parameter_sensitivity_transform.py\n M tests/test_contract_fixtures.py\n M tests/test_internal_jacobian_validation.py\n M tests/test_repository_standards.py\n M tests/test_the_crystal_plasticity_trio_lost_one_state_slot.py\n M tests/test_the_services_are_the_one_place_a_verdict_is_decided.py\n M tests/test_the_two_denominators_stay_apart.py\n M tools/audit_documentation_commands.py\n M tools/build_corpus_registry.py\n M umat/README.md\n?? docs/PROVIDER.md\n?? docs/USAGE_REPORT.md\n?? docs/evidence/\n?? examples/verify_internal_jacobian.py\n?? scripts/clean_install_gate.py\n?? src/umat_oti/provider/\n?? src/umat_oti/validation/parameter_sensitivity_provider.py\n?? tests/test_clean_install_gate.py\n?? tests/test_provider_recovery.py\n?? tools/inventory_retired_evidence.py\n",
               "source_tree_sha256": "90bdb927e50d83b9e2b1afdca63a8dc292555454f11250c6fd5e2a74a17a7f6f",
@@ -741,7 +741,7 @@
             }
           },
           "model": {
-            "path": "/home/ammslab3/softwarex_work/imq-ra-recovery/examples/bounded_j2_c3d8/model.json",
+            "path": "examples/bounded_j2_c3d8/model.json",
             "sha256": "f3785cf5ccf29226ba603f8a8f20705bde34593b85905eb26958b979e811fc19"
           },
           "provider": {
@@ -978,14 +978,14 @@
     {
       "name": "R-X5",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "examples/finite_strain_c3d8/benchmark.py",
         "--out",
         "/tmp/recovery_usage__l41upif/R-X5"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
-      "stdout": "{\n  \"schema\": \"resasm-finite-strain-verification/1\",\n  \"elements\": 2,\n  \"ndof\": 36,\n  \"law\": \"mu/2*(I1-3)-mu*log(J)+lambda/2*log(J)^2\",\n  \"constants\": [\n    2.3,\n    4.1\n  ],\n  \"residual_reference\": \"independent reference-volume first-Piola quadrature\",\n  \"residual_relative_error\": 5.703447827527888e-16,\n  \"residual_norm\": 1.7446429238033396,\n  \"free_residual_norm\": 1.056171682913856e-15,\n  \"solution_relative_error\": 8.232181767484323e-17,\n  \"nodal_tangent_fd\": [\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 4.439186672945314e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 4.5520094801878364e-11\n    },\n    {\n      \"step\": 1e-06,\n      \"relative_error\": 1.090986510175759e-10\n    }\n  ],\n  \"oti_solution_fd\": [\n    {\n      \"step\": 0.001,\n      \"relative_error\": 9.47772104561191e-07\n    },\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 9.477926231003939e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 1.0127558267045161e-10\n    }\n  ],\n  \"otilib\": {\n    \"available\": true,\n    \"api_module\": \"pyoti.sparse\",\n    \"repo\": \"https://github.com/mauriaristi/otilib.git\",\n    \"license\": \"GPLv3\",\n    \"env\": {\n      \"OTILIB_ROOT\": \"/home/ammslab3/otilib/build_py311\",\n      \"PYOTI_PATH\": \"/home/ammslab3/otilib/build_py311\"\n    },\n    \"error\": \"\"\n  },\n  \"abaqus\": \"not run by this offline benchmark\",\n  \"scope\": \"total isotropic hyperelasticity; first-order parameter sensitivity at real geometry\",\n  \"passed\": true\n}\n",
+      "stdout": "{\n  \"schema\": \"resasm-finite-strain-verification/1\",\n  \"elements\": 2,\n  \"ndof\": 36,\n  \"law\": \"mu/2*(I1-3)-mu*log(J)+lambda/2*log(J)^2\",\n  \"constants\": [\n    2.3,\n    4.1\n  ],\n  \"residual_reference\": \"independent reference-volume first-Piola quadrature\",\n  \"residual_relative_error\": 5.703447827527888e-16,\n  \"residual_norm\": 1.7446429238033396,\n  \"free_residual_norm\": 1.056171682913856e-15,\n  \"solution_relative_error\": 8.232181767484323e-17,\n  \"nodal_tangent_fd\": [\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 4.439186672945314e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 4.5520094801878364e-11\n    },\n    {\n      \"step\": 1e-06,\n      \"relative_error\": 1.090986510175759e-10\n    }\n  ],\n  \"oti_solution_fd\": [\n    {\n      \"step\": 0.001,\n      \"relative_error\": 9.47772104561191e-07\n    },\n    {\n      \"step\": 0.0001,\n      \"relative_error\": 9.477926231003939e-09\n    },\n    {\n      \"step\": 1e-05,\n      \"relative_error\": 1.0127558267045161e-10\n    }\n  ],\n  \"otilib\": {\n    \"available\": true,\n    \"api_module\": \"pyoti.sparse\",\n    \"repo\": \"https://github.com/mauriaristi/otilib.git\",\n    \"license\": \"GPLv3\",\n    \"env\": {\n      \"OTILIB_ROOT\": \"<home>/otilib/build_py311\",\n      \"PYOTI_PATH\": \"<home>/otilib/build_py311\"\n    },\n    \"error\": \"\"\n  },\n  \"abaqus\": \"not run by this offline benchmark\",\n  \"scope\": \"total isotropic hyperelasticity; first-order parameter sensitivity at real geometry\",\n  \"passed\": true\n}\n",
       "stderr": "",
       "seconds": 2.881412290968001,
       "proof": {
@@ -1039,8 +1039,8 @@
             "repo": "https://github.com/mauriaristi/otilib.git",
             "license": "GPLv3",
             "env": {
-              "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
-              "PYOTI_PATH": "/home/ammslab3/otilib/build_py311"
+              "OTILIB_ROOT": "<home>/otilib/build_py311",
+              "PYOTI_PATH": "<home>/otilib/build_py311"
             },
             "error": ""
           },
@@ -1053,7 +1053,7 @@
     {
       "name": "R-X5 public assembly",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "--config",
@@ -1064,7 +1064,7 @@
         "material-replay",
         "--tangent"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "assembled mode 'material-replay': ndof=36  ||R||=1.744643e+00  max|R|=5.938249e-01\n",
       "stderr": "",
@@ -1073,7 +1073,7 @@
     {
       "name": "R-X5 public sensitivity",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-m",
         "residual_core.ui.cli",
         "--config",
@@ -1085,7 +1085,7 @@
         "--out",
         "/tmp/recovery_usage__l41upif/R-X5/sensitivity"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "hypercomplex backend     : otilib\nbasis count (m)          : 2\ntruncation order (nt)    : 1\ntotal coefficients (N)   : 3\nsensitivity analysis (mode=material-replay, order=1)\n  residual norm ||R_free|| = 1.056172e-15\n  tangent source           = backend-assembled\n  parameters               = ['solid.mu', 'solid.lambda']\n  R^(1) shape              = (36, 2)  (2 directions)\n  hypercomplex ready       = True\n  solved derivative orders : [1]\n  order 1:\n    d^1/e1         = +1.872427e-01   [FD +1.872427e-01, rel 1.40e-10]\n    d^1/e2         = +3.398245e-02   [FD +3.398245e-02, rel 7.56e-11]\n  saved package -> /tmp/recovery_usage__l41upif/R-X5/sensitivity.{json,npz,md}\n",
       "stderr": "",

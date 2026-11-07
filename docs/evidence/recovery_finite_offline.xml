@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.154" timestamp="2026-09-18T11:37:31.251781-05:00" hostname="ammslab3-Precision-5820-Tower"><testcase classname="" name="tests.framework.test_a_verified_deck_drives_the_global_assembly" time="0.000"><error message="collection failure">tests/framework/test_a_verified_deck_drives_the_global_assembly.py:68: in &lt;module&gt;
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.154" timestamp="2026-09-18T11:37:31.251781-05:00" hostname="<user>-Precision-5820-Tower"><testcase classname="" name="tests.framework.test_a_verified_deck_drives_the_global_assembly" time="0.000"><error message="collection failure">tests/framework/test_a_verified_deck_drives_the_global_assembly.py:68: in &lt;module&gt;
     @pytest.mark.parametrize("fixture", hex_fixtures(), ids=ids(hex_fixtures()))
                                         ^^^^^^^^^^^^^^
 tests/framework/verified_fixtures.py:67: in hex_fixtures

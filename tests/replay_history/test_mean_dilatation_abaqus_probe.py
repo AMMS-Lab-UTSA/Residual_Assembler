@@ -1,7 +1,7 @@
 """The replay's finite-strain C3D8 operators are Abaqus's: mean dilatation.
 
 Evidence: Abaqus 2021 job cc_noether_nlgeom_probe (corpus_campaign/batches/B2/
-noether/abaqus_probe): one C3D8 with a DISTORTED reference shape, every node
+residual_assembler/abaqus_probe): one C3D8 with a DISTORTED reference shape, every node
 driven through a 35-degree rotation about (1,2,3) and an inhomogeneous
 stretch, 5 increments; a probe UMAT wrote DFGRD0/DFGRD1 at full precision,
 reactions read from the ODB (float32). The frozen increment (3) is shared

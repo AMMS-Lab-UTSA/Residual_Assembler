@@ -1,33 +1,33 @@
 {
   "clean_install_verified": false,
   "phase": "presentation",
-  "python": "/home/ammslab3/softwarex_work/.venv/bin/python",
+  "python": "<home>/softwarex_work/.venv/bin/python",
   "work": "/tmp/recovery_usage_u30ngtt2",
   "environment": {
-    "PYTHONPATH": "/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311",
-    "UMAT_OTI_REPO": "/home/ammslab3/softwarex_work/imq-umat-recovery",
-    "PYOTI_PATH": "/home/ammslab3/otilib/build_py311",
-    "OTILIB_ROOT": "/home/ammslab3/otilib/build_py311",
+    "PYTHONPATH": ":<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311",
+    "UMAT_OTI_REPO": "<home>/softwarex_work/imq-umat-recovery",
+    "PYOTI_PATH": "<home>/otilib/build_py311",
+    "OTILIB_ROOT": "<home>/otilib/build_py311",
     "RUN_OTILIB_TESTS": "1"
   },
   "commands": [
     {
       "name": "environment",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "-c",
         "import sys,residual_core,umat_oti,pyoti.sparse; from umat_oti.store import transform_fingerprint; print(sys.version); print(residual_core.__file__); print(umat_oti.__file__); print(pyoti.sparse.__file__); print(transform_fingerprint())"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
-      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\n/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/__init__.py\n/home/ammslab3/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
+      "stdout": "3.11.7 (main, Dec 15 2023, 18:12:31) [GCC 11.2.0]\nresidual_core/__init__.py\n<home>/softwarex_work/imq-umat-recovery/src/umat_oti/__init__.py\n<home>/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so\n6aa20d22e37f14c9\n",
       "stderr": "",
       "seconds": 1.056719266984146
     },
     {
       "name": "source-denied presentation",
       "argv": [
-        "/home/ammslab3/softwarex_work/.venv/bin/python",
+        "<home>/softwarex_work/.venv/bin/python",
         "scripts/reproduce_presentation_request.py",
         "consume",
         "--work",
@@ -35,7 +35,7 @@
         "--out",
         "results"
       ],
-      "cwd": "/home/ammslab3/softwarex_work/imq-ra-recovery",
+      "cwd": "",
       "returncode": 0,
       "stdout": "PRIVATE SOURCE READ DENIAL ACTIVE\nCOLLABORATOR CWD /tmp/recovery_usage_u30ngtt2/presentation/collaborator\nCOLLABORATOR INPUTS ['Analysis.inp', 'Analysis.odb', 'Mapping.json', 'OTI_UMAT.obj', 'sensitivity_request.json']\nrequest executed: 4 scalar results; verified=False\n\n{\n  \"source_read_denial\": true,\n  \"production_rerun_during_consume\": false,\n  \"independent_reference\": \"uniaxial J2: U1=F/E+(F-SIGY0)/H\",\n  \"scaled_derivative_errors\": {\n    \"E\": 1.6568627353483993e-07,\n    \"SIGY0\": 8.673617379884035e-16,\n    \"H\": 8.839354487082118e-09\n  },\n  \"zero_reference_absolute_errors\": {\n    \"nu\": 1.1729503437354757e-09\n  },\n  \"zero_reference_absolute_tolerance\": 1e-08,\n  \"max_equilibrium_error\": 4.120058472760017e-07,\n  \"reaction_value_error\": 0.00012360175412595709,\n  \"stress_value_error\": 0.00012360175412595709,\n  \"state_value_error\": 2.209838492750471e-10,\n  \"passed\": true\n}\n",
       "stderr": "",

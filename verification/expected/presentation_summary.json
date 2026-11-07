@@ -184,7 +184,7 @@
         }
       },
       "sources": {
-        "directory": "/home/ammslab3/Downloads/driver_utsa",
+        "directory": "<home>/Downloads/driver_utsa",
         "git_commit": "fde918ba971aceda6dfdc43aee1a90ad79d10f2a",
         "sha256": {
           "kinds.f90": "e83dd8cef38a183a87f771b9132947136f69397b47345de2b58691df301c0844",
@@ -684,7 +684,7 @@
   },
   "provenance": {
     "timestamp_utc": "2026-09-18T21:19:38+00:00",
-    "host": "ammslab3-Precision-5820-Tower",
+    "host": "<user>-Precision-5820-Tower",
     "cpu": "Intel(R) Xeon(R) W-2265 CPU @ 3.50GHz",
     "python": "3.11.7",
     "numpy": "2.4.6",
@@ -693,22 +693,22 @@
     "abaqus": "/usr/bin/abaqus",
     "repositories": {
       "residual_assembler": {
-        "path": "/home/ammslab3/softwarex_work/ra-verification",
+        "path": "",
         "commit": "36b62fd807919631738705ff9ccc629816d3b75d",
         "branch": "dev/verification",
         "dirty_files": 0
       },
       "umat_source_transformation": {
-        "path": "/home/ammslab3/softwarex_work/umat-verification",
+        "path": "<home>/softwarex_work/umat-verification",
         "commit": "0b075b4dd35423e11e1a95a82a48a748582e64aa",
         "branch": "dev/verification",
         "dirty_files": 0
       }
     },
     "imports": {
-      "residual_core": "/home/ammslab3/softwarex_work/ra-verification/residual_core/__init__.py",
-      "umat_oti": "/home/ammslab3/softwarex_work/umat-verification/src/umat_oti/__init__.py",
-      "pyoti": "/home/ammslab3/otilib/build_py311/pyoti/__init__.py"
+      "residual_core": "residual_core/__init__.py",
+      "umat_oti": "<home>/softwarex_work/umat-verification/src/umat_oti/__init__.py",
+      "pyoti": "<home>/otilib/build_py311/pyoti/__init__.py"
     },
     "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31"
   }

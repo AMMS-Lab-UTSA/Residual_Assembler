@@ -63,17 +63,17 @@ failure was fixed by using the existing state initializer and `btn_` key.
 
 ## Exact Environment and Commands
 
-All commands synchronous, from `/home/ammslab3/softwarex_work/imq-ra-recovery`.
+All commands synchronous, from ``.
 Use the following environment for the commands below (actual runs used these
 same assignments inline with `env`):
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PY=/home/ammslab3/softwarex_work/.venv/bin/python
-export PYTHONPATH=/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311
-export UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+cd 
+export PY=<home>/softwarex_work/.venv/bin/python
+export PYTHONPATH=:<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311
+export UMAT_OTI_REPO=<home>/softwarex_work/imq-umat-recovery
+export PYOTI_PATH=<home>/otilib/build_py311
+export OTILIB_ROOT=<home>/otilib/build_py311
 export RUN_OTILIB_TESTS=1
 
 env GIT_TERMINAL_PROMPT=0 bash scripts/init_permissive_sources.sh --required-only
@@ -86,7 +86,7 @@ env GIT_TERMINAL_PROMPT=0 bash scripts/init_permissive_sources.sh --required-onl
 "$PY" scripts/reproduce_connected_pipeline.py --skip-abaqus \
   --out .pytest_cache/recovery_integration_final
 
-"$PY" -c 'import os,sys,pytest,residual_core,umat_oti,pyoti; assert os.getcwd()=="/home/ammslab3/softwarex_work/imq-ra-recovery"; assert residual_core.__file__.startswith(os.getcwd()); assert umat_oti.__file__.startswith(os.environ["UMAT_OTI_REPO"]); print("RECOVERY IMPORTS",sys.executable,residual_core.__file__,umat_oti.__file__,pyoti.__file__,flush=True); sys.exit(pytest.main(["-q","-ra","-m","not abaqus and not arc and not network","--junitxml=.pytest_cache/recovery_integration_offline_final.xml"]))'
+"$PY" -c 'import os,sys,pytest,residual_core,umat_oti,pyoti; assert os.getcwd()==""; assert residual_core.__file__.startswith(os.getcwd()); assert umat_oti.__file__.startswith(os.environ["UMAT_OTI_REPO"]); print("RECOVERY IMPORTS",sys.executable,residual_core.__file__,umat_oti.__file__,pyoti.__file__,flush=True); sys.exit(pytest.main(["-q","-ra","-m","not abaqus and not arc and not network","--junitxml=.pytest_cache/recovery_integration_offline_final.xml"]))'
 ```
 
 For another reproduction use a fresh output name; existing output directories
@@ -96,7 +96,7 @@ paths and exit codes, are recorded in `private/manifest.json` and command logs.
 The equivalent standalone commands are in `../CONNECTED_WORKFLOW.md`.
 
 Verified imports: recovery `residual_core`, recovery `umat_oti/src`, and
-`/home/ammslab3/otilib/build_py311/pyoti`. Python 3.11.7; NumPy 2.4.6;
+`<home>/otilib/build_py311/pyoti`. Python 3.11.7; NumPy 2.4.6;
 matplotlib 3.11.1; pytest 9.1.1; Streamlit 1.62.0; GNU Fortran 9.4.0.
 `abaqus` availability: `/usr/bin/abaqus`; no licensed job was needed or run.
 Initialized only the documented MIT/BSD-tier Oxford dependency at

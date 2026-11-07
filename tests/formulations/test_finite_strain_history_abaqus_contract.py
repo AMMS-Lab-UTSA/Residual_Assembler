@@ -5,7 +5,7 @@ Frozen evidence: one C3D8 with a DISTORTED reference shape (not a
 parallelepiped, so centroid and mean-dilatation forms differ), all nodes driven
 through a rotation of 35 degrees about (1,2,3) combined with an inhomogeneous
 stretch (J differs between integration points), 5 increments, Abaqus 2021
-(job cc_noether_nlgeom_probe, corpus_campaign/batches/B2/noether/abaqus_probe).
+(the B2 NLGEOM probe job, corpus_campaign/batches/B2/residual_assembler/abaqus_probe).
 The probe UMAT is an isotropic hypoelastic update that writes every input it
 receives at full precision; the reactions come from the ODB (float32).
 Increment 3, all 8 points, is frozen below.

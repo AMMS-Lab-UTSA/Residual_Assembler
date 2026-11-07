@@ -76,11 +76,11 @@ established by an installed launch check.
 The final run was invoked through the UMAT forwarding script:
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-umat-recovery
-/home/ammslab3/softwarex_work/.venv/bin/python scripts/clean_install_gate.py \
-  --ra-repo /home/ammslab3/softwarex_work/imq-ra-recovery \
-  --python /home/ammslab3/anaconda3/bin/python3.11 \
-  --odb /home/ammslab3/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference/collaborator/Analysis.odb \
+cd <home>/softwarex_work/imq-umat-recovery
+<home>/softwarex_work/.venv/bin/python scripts/clean_install_gate.py \
+  --ra-repo  \
+  --python <home>/anaconda3/bin/python3.11 \
+  --odb <home>/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference/collaborator/Analysis.odb \
   --work /tmp/imqr_install_20260918_03
 ```
 
@@ -92,7 +92,7 @@ build/installation errors, failed assertions or calculation failures exit
 nonzero; no core mocks, manufactured ODB, fallback calculation or new skips.
 
 The shared venv is used only as bootstrap. Its base interpreter was discovered
-and checked: `/home/ammslab3/anaconda3/bin/python3.11`, Python 3.11.7.
+and checked: `<home>/anaconda3/bin/python3.11`, Python 3.11.7.
 `/usr/local/bin/python3.11` was actually tested and fails importing `_ctypes`;
 `/usr/bin/python3` is healthy but 3.8.10, below the joint package requirement.
 
@@ -191,11 +191,11 @@ After the guide edits, UMAT `tests/test_repository_standards.py` plus
 Editor diagnostics reported no errors in the four new gate/test files.
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-/home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q tests/integration/test_clean_install_gate.py /home/ammslab3/softwarex_work/imq-umat-recovery/tests/test_clean_install_gate.py --import-mode=importlib
-env PYTHONPATH=/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311 UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery PYOTI_PATH=/home/ammslab3/otilib/build_py311 OTILIB_ROOT=/home/ammslab3/otilib/build_py311 RUN_OTILIB_TESTS=1 /home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network' --junitxml=.pytest_cache/recovery_install_offline.xml
-cd /home/ammslab3/softwarex_work/imq-umat-recovery
-env PYTHONPATH=/home/ammslab3/softwarex_work/imq-umat-recovery/src /home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network and not corpus_pass' --junitxml=.pytest_cache/recovery_install_offline.xml
+cd 
+<home>/softwarex_work/.venv/bin/python -m pytest -q tests/integration/test_clean_install_gate.py <home>/softwarex_work/imq-umat-recovery/tests/test_clean_install_gate.py --import-mode=importlib
+env PYTHONPATH=:<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311 UMAT_OTI_REPO=<home>/softwarex_work/imq-umat-recovery PYOTI_PATH=<home>/otilib/build_py311 OTILIB_ROOT=<home>/otilib/build_py311 RUN_OTILIB_TESTS=1 <home>/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network' --junitxml=.pytest_cache/recovery_install_offline.xml
+cd <home>/softwarex_work/imq-umat-recovery
+env PYTHONPATH=<home>/softwarex_work/imq-umat-recovery/src <home>/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network and not corpus_pass' --junitxml=.pytest_cache/recovery_install_offline.xml
 ```
 
 ## Remaining Failures And Prerequisites

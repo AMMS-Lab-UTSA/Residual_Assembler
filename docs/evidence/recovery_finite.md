@@ -1,6 +1,6 @@
 # W6 Recovery: Bounded Finite Strain
 
-Date: 2026-09-18. Worktree: `/home/ammslab3/softwarex_work/imq-ra-recovery`.
+Date: 2026-09-18. Worktree: ``.
 No commits, pushes, branch changes, subagents or concurrent solver jobs.
 Existing worktree changes were preserved, including W1 scalar-preserving
 `c3d8_kernel` edits. No fixture, fingerprint or contract-lock edits were made.
@@ -83,18 +83,18 @@ from the RA recovery root. The import probe printed this checkout's
 `residual_core/__init__.py`.
 
 ```bash
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PYTHONPATH="$PWD:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311"
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
-export UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery
+cd 
+export PYTHONPATH="$PWD:<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311"
+export PYOTI_PATH=<home>/otilib/build_py311
+export OTILIB_ROOT=<home>/otilib/build_py311
+export UMAT_OTI_REPO=<home>/softwarex_work/imq-umat-recovery
 export RUN_OTILIB_TESTS=1
-PY=/home/ammslab3/softwarex_work/.venv/bin/python
+PY=<home>/softwarex_work/.venv/bin/python
 "$PY" examples/finite_strain_c3d8/benchmark.py
 ```
 
 Both OTI environment hints must target `build_py311`. An initial run with
-`OTILIB_ROOT=/home/ammslab3/otilib` put an older source package ahead of the
+`OTILIB_ROOT=<home>/otilib` put an older source package ahead of the
 build and produced 11 loading failures. Correcting only the environment gave
 26/26 passes on the same checks; no substitute algebra or skip was introduced.
 
@@ -130,12 +130,12 @@ Exactly one sequential licensed analysis, `imqr6_hyper`, completed under Abaqus
 Commands, in order (the prepare step refuses to overwrite the existing job):
 
 ```bash
-"$PY" examples/finite_strain_c3d8/abaqus_check.py prepare --work /home/ammslab3/softwarex_work/imq_abaqus/recovery_finite
-cd /home/ammslab3/softwarex_work/imq_abaqus/recovery_finite
-/usr/bin/abaqus job=imqr6_hyper input=imqr6_hyper.inp user=/home/ammslab3/softwarex_work/imq-ra-recovery/examples/finite_strain_c3d8/neo_hookean_uhyper.for cpus=1 interactive output_precision=full
-/usr/bin/abaqus python /home/ammslab3/softwarex_work/imq-ra-recovery/examples/finite_strain_c3d8/extract_odb.py imqr6_hyper.odb fields.json
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-"$PY" examples/finite_strain_c3d8/abaqus_check.py compare --work /home/ammslab3/softwarex_work/imq_abaqus/recovery_finite
+"$PY" examples/finite_strain_c3d8/abaqus_check.py prepare --work <home>/softwarex_work/imq_abaqus/recovery_finite
+cd <home>/softwarex_work/imq_abaqus/recovery_finite
+/usr/bin/abaqus job=imqr6_hyper input=imqr6_hyper.inp user=examples/finite_strain_c3d8/neo_hookean_uhyper.for cpus=1 interactive output_precision=full
+/usr/bin/abaqus python examples/finite_strain_c3d8/extract_odb.py imqr6_hyper.odb fields.json
+cd 
+"$PY" examples/finite_strain_c3d8/abaqus_check.py compare --work <home>/softwarex_work/imq_abaqus/recovery_finite
 ```
 
 The ODB extractor necessarily uses Abaqus Python 2.7, not the venv.

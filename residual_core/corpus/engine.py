@@ -1,6 +1,6 @@
 """Assemble, solve and differentiate a C3D8 boundary-value problem driven by a
-corpus UMAT. Equations: ``corpus_campaign/batches/B1/noether/DESIGN.md`` (small
-strain, B1) and ``.../B2/noether/DESIGN.md`` (finite strain WITH history under
+corpus UMAT. Equations: ``corpus_campaign/batches/B1/residual_assembler/DESIGN.md`` (small
+strain, B1) and ``.../B2/residual_assembler/DESIGN.md`` (finite strain WITH history under
 the Abaqus/Standard NLGEOM contract). Short form:
 
 Residual (no external load; prescribed DOFs carry the reaction)::

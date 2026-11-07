@@ -38,14 +38,14 @@ fail unless explicitly selected. Only compiled provider and mapping are needed.
 
 ## Exact Environment And Commands
 
-Run from `/home/ammslab3/softwarex_work/imq-ra-recovery`:
+Run from ``:
 
 ```sh
-export PY=/home/ammslab3/softwarex_work/.venv/bin/python
-export PYTHONPATH=/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/softwarex_work/imq-umat-recovery/src:/home/ammslab3/otilib/build_py311
-export UMAT_OTI_REPO=/home/ammslab3/softwarex_work/imq-umat-recovery
-export PYOTI_PATH=/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+export PY=<home>/softwarex_work/.venv/bin/python
+export PYTHONPATH=:<home>/softwarex_work/imq-umat-recovery/src:<home>/otilib/build_py311
+export UMAT_OTI_REPO=<home>/softwarex_work/imq-umat-recovery
+export PYOTI_PATH=<home>/otilib/build_py311
+export OTILIB_ROOT=<home>/otilib/build_py311
 export RUN_OTILIB_TESTS=1
 
 "$PY" -m pytest -q tests/integration/test_presentation_request.py \
@@ -58,7 +58,7 @@ export RUN_OTILIB_TESTS=1
 ```
 
 Verified Python 3.11.7 and imports from recovery `residual_core`, recovery
-`umat_oti/src`, and `/home/ammslab3/otilib/build_py311/pyoti`. Provider compiled
+`umat_oti/src`, and `<home>/otilib/build_py311/pyoti`. Provider compiled
 fresh using gfortran; no core math mocks. Test-only exporter substitution is
 explicitly named `offline-test-transport`, never counted as actual ODB evidence.
 
@@ -91,13 +91,13 @@ Only one analysis job was launched, prefix `imqrp_`:
 ```sh
 source /opt/intel/oneapi/compiler/latest/env/vars.sh
 "$PY" scripts/reproduce_presentation_request.py prepare \
-  --work /home/ammslab3/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference
+  --work <home>/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference
 ```
 
 The script synchronously executed:
 
 ```text
-/usr/bin/abaqus job=imqrp_j2 input=/home/ammslab3/softwarex_work/imq-ra-recovery/examples/presentation_request/Analysis.inp user=/home/ammslab3/softwarex_work/imq-umat-recovery/parameter_sensitivity/models/m3_j2/umat.for cpus=1 interactive
+/usr/bin/abaqus job=imqrp_j2 input=examples/presentation_request/Analysis.inp user=<home>/softwarex_work/imq-umat-recovery/parameter_sensitivity/models/m3_j2/umat.for cpus=1 interactive
 ```
 
 Working directory:
@@ -124,7 +124,7 @@ sensitivity_request.json
 
 ```sh
 "$PY" scripts/reproduce_presentation_request.py consume \
-  --work /home/ammslab3/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference \
+  --work <home>/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference \
   --out results_final
 ```
 
@@ -182,7 +182,7 @@ error for zero references. These were failures/repairs, not claimed passes.
 
 ```sh
 "$PY" scripts/check_presentation_browser.py \
-  --inputs /home/ammslab3/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference/collaborator \
+  --inputs <home>/softwarex_work/imq_abaqus/recovery_presentation/imqrp_reference/collaborator \
   --out .pytest_cache/presentation_browser_cli_final
 ```
 

@@ -2,7 +2,7 @@
 
 ## Scope and status
 
-Checkout: `/home/ammslab3/softwarex_work/imq-ra-recovery`.
+Checkout: ``.
 Branch: `integration/recovery-2026-09-18`.
 Read the shared `imq_BRIEF.md` and `docs/BRANCH_IMPLEMENTATION_AUDIT.md`.
 No agents, commits, pushes, branch changes, Abaqus jobs, network jobs, or
@@ -22,13 +22,13 @@ in the selected offline suite; skips and out-of-scope capabilities remain below.
 
 ## Interpreter and genuine OTILib
 
-All Python commands use `/home/ammslab3/softwarex_work/.venv/bin/python`
+All Python commands use `<home>/softwarex_work/.venv/bin/python`
 (Python 3.11.7), from the recovery cwd, with explicit import paths:
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-export PYTHONPATH=/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/otilib/build_py311
-export OTILIB_ROOT=/home/ammslab3/otilib/build_py311
+cd 
+export PYTHONPATH=:<home>/otilib/build_py311
+export OTILIB_ROOT=<home>/otilib/build_py311
 export RUN_OTILIB_TESTS=1
 ```
 
@@ -39,10 +39,10 @@ in the validation commands. The initial import/baseline probe preceded setting
 Before using the build, ran these read-only checks:
 
 ```sh
-git -C /home/ammslab3/otilib status --short --branch
-git -C /home/ammslab3/otilib branch --show-current
-ls -ld /home/ammslab3/otilib/build_py311
-rg --files /home/ammslab3/otilib/build_py311 -g '*.so' -g 'pyoti*' -g '*config*' -g '*log*'
+git -C <home>/otilib status --short --branch
+git -C <home>/otilib branch --show-current
+ls -ld <home>/otilib/build_py311
+rg --files <home>/otilib/build_py311 -g '*.so' -g 'pyoti*' -g '*config*' -g '*log*'
 ```
 
 Observed a clean OTILib checkout on `py311-numpy2`, with CPython-3.11 extension
@@ -55,16 +55,16 @@ is made that W1 reran those build commands.
 Actual import/derivative probe:
 
 ```sh
-/home/ammslab3/softwarex_work/.venv/bin/python -c 'import sys,residual_core,pyoti,pyoti.sparse; from residual_core.algebra.otilib_adapter import otilib_status,OtiContext; print(sys.executable); print(residual_core.__file__); print(pyoti.__file__); print(pyoti.sparse.__file__); print(otilib_status()); context=OtiContext(2,3); value=context.seed(2.,1)**3; print("cubic third derivative:",context.deriv(value,(3,0))); assert context.deriv(value,(3,0)) == 6.'
+<home>/softwarex_work/.venv/bin/python -c 'import sys,residual_core,pyoti,pyoti.sparse; from residual_core.algebra.otilib_adapter import otilib_status,OtiContext; print(sys.executable); print(residual_core.__file__); print(pyoti.__file__); print(pyoti.sparse.__file__); print(otilib_status()); context=OtiContext(2,3); value=context.seed(2.,1)**3; print("cubic third derivative:",context.deriv(value,(3,0))); assert context.deriv(value,(3,0)) == 6.'
 ```
 
 Observed:
 
 ```text
-/home/ammslab3/softwarex_work/.venv/bin/python
-/home/ammslab3/softwarex_work/imq-ra-recovery/residual_core/__init__.py
-/home/ammslab3/otilib/build_py311/pyoti/__init__.py
-/home/ammslab3/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so
+<home>/softwarex_work/.venv/bin/python
+residual_core/__init__.py
+<home>/otilib/build_py311/pyoti/__init__.py
+<home>/otilib/build_py311/pyoti/sparse.cpython-311-x86_64-linux-gnu.so
 available=True; api_module=pyoti.sparse; error=''
 cubic third derivative: 6.0
 ```
@@ -92,7 +92,7 @@ still asserted the superseded behavior. Production diagnosis was not weakened.
 Initial reproduction command:
 
 ```sh
-/home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib* tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_passes_every_stage tests/framework/test_which_layer_the_failure_came_from.py::test_the_nine_layers_are_the_nine_the_brief_names
+<home>/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib* tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_passes_every_stage tests/framework/test_which_layer_the_failure_came_from.py::test_the_nine_layers_are_the_nine_the_brief_names
 ```
 
 Result: **2 failed, 6 passed, 0 skipped**. Failures were exactly the documented
@@ -132,7 +132,7 @@ Runnable API example/verification with inputs, expected derivatives, and
 direction-specific mismatch diagnostics is the new C3D8 test group:
 
 ```sh
-/home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib_fe_sensitivity.py -k c3d8
+<home>/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib_fe_sensitivity.py -k c3d8
 ```
 
 The existing spring and nonlinear two-element bar tests additionally compare
@@ -160,13 +160,13 @@ as W1 evidence. Later suites use W1-specific JUnit files under `.pytest_cache`.
 Final focused command:
 
 ```sh
-/home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib_adapter.py tests/framework/test_otilib_fe_sensitivity.py tests/framework/test_otilib_spring_sensitivity.py tests/framework/test_a_verified_umat_drives_the_assembler.py tests/framework/test_which_layer_the_failure_came_from.py tests/framework/test_c3d8_sensitivity.py
+<home>/softwarex_work/.venv/bin/python -m pytest -q -ra tests/framework/test_otilib_adapter.py tests/framework/test_otilib_fe_sensitivity.py tests/framework/test_otilib_spring_sensitivity.py tests/framework/test_a_verified_umat_drives_the_assembler.py tests/framework/test_which_layer_the_failure_came_from.py tests/framework/test_c3d8_sensitivity.py
 ```
 
 Framework command (actual Python wrapper asserts cwd and prints import origin):
 
 ```sh
-/home/ammslab3/softwarex_work/.venv/bin/python -c 'import os,sys,pytest,residual_core; assert os.getcwd()=="/home/ammslab3/softwarex_work/imq-ra-recovery",os.getcwd(); print("W1 FRAMEWORK",os.getcwd(),sys.executable,residual_core.__file__,flush=True); sys.exit(pytest.main(["-q","-ra","tests/framework","-m","not abaqus and not arc and not network","--junitxml=.pytest_cache/recovery_W1_framework.xml"]))'
+<home>/softwarex_work/.venv/bin/python -c 'import os,sys,pytest,residual_core; assert os.getcwd()=="",os.getcwd(); print("W1 FRAMEWORK",os.getcwd(),sys.executable,residual_core.__file__,flush=True); sys.exit(pytest.main(["-q","-ra","tests/framework","-m","not abaqus and not arc and not network","--junitxml=.pytest_cache/recovery_W1_framework.xml"]))'
 ```
 
 `recovery_W1_framework.xml`: 222 tests, 8 skips, 0 failures, 0 errors,
@@ -181,8 +181,8 @@ SIGINT while commands ran. The full run was therefore isolated from the
 terminal's process group. Final actual command (environment shown explicitly):
 
 ```sh
-cd /home/ammslab3/softwarex_work/imq-ra-recovery
-setsid --wait env PYTHONPATH=/home/ammslab3/softwarex_work/imq-ra-recovery:/home/ammslab3/otilib/build_py311 OTILIB_ROOT=/home/ammslab3/otilib/build_py311 RUN_OTILIB_TESTS=1 /home/ammslab3/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network' --junitxml=/home/ammslab3/softwarex_work/imq-ra-recovery/.pytest_cache/recovery_W1_offline_final.xml
+cd 
+setsid --wait env PYTHONPATH=:<home>/otilib/build_py311 OTILIB_ROOT=<home>/otilib/build_py311 RUN_OTILIB_TESTS=1 <home>/softwarex_work/.venv/bin/python -m pytest -q -ra -m 'not abaqus and not arc and not network' --junitxml=.pytest_cache/recovery_W1_offline_final.xml
 ```
 
 Although the shared terminal returned status 130, the isolated pytest process

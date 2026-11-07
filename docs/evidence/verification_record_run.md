@@ -10,11 +10,11 @@ changed in existing files and what remains.
 
 ## Environment of the recorded run
 
-Python 3.11.7 (`/home/ammslab3/softwarex_work/.venv`), NumPy 2.4.6, gfortran 9.4.0,
+Python 3.11.7 (`<home>/softwarex_work/.venv`), NumPy 2.4.6, gfortran 9.4.0,
 ifort 2021.10.0 (oneAPI 2023.2.1), Abaqus 2021.HF5. Imports verified to come from
 the two worktrees (every claim script refuses to run otherwise and records the
 import paths in its JSON). Large intermediates were written to
-`/home/ammslab3/softwarex_work/imq_abaqus/verification/` (never inside a worktree).
+`<home>/softwarex_work/imq_abaqus/verification/` (never inside a worktree).
 The machine was shared with other agents during the run (load average 8–21 on 24
 cores); timing ratios are measured with every method under the same load, and
 the load average is recorded beside them.

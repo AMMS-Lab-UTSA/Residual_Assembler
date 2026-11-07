@@ -879,7 +879,7 @@ def locator(path) -> str:
 
 
 def contract_fields(feature: str, summary: dict, provider_record: dict) -> dict:
-    """The manifest merge contract (scout B2) for a derivative record."""
+    """The manifest merge contract (review B2) for a derivative record."""
     if feature not in SCOPE:
         return {}
     status = summary.get("status")
