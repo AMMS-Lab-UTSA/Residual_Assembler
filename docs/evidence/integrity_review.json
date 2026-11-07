@@ -628,6 +628,16 @@
      "text": "monkeypatch.setattr(runner, \"run_history\", lambda *a, **k: _Branch(2.0, [0.0, 0.0]))"
     }
    ]
+  },
+  "skip:tests/verification/test_claim4_benchmark_ddsdde.py:test_elastic_benchmark_end_to_end_in_abaqus:call:skip:11d5f3cd": {
+   "verdict": "justified",
+   "reason": "elastic.f is the Dunne & Petrinic book companion code, which UMAT-OTI stopped shipping in 1.2.0 because it states no redistribution licence (UMAT-OTI THIRD_PARTY_NOTICES.md 2b); without the file there is nothing to run, and the skip names that. A user who places the file at its old path runs the test.",
+   "evidence": [
+    {
+     "in": "tests/verification/test_claim4_benchmark_ddsdde.py",
+     "text": "elastic.f is Dunne & Petrinic book code, which UMAT-OTI no longer ships"
+    }
+   ]
   }
  }
 }

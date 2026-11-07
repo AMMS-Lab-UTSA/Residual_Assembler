@@ -24,6 +24,13 @@ public interfaces may still change.
   `generated` and `transform_fingerprint` changed. The residual check is
   unchanged: elasticity 1 held, 2 not established; J2 32 held, 3 not
   established (`docs/evidence/final_refreeze_fixture_*_check.json`).
+- **streamlit >= 1.61** for the `gui` extra: the GUI passes `width="stretch"`
+  to data frames, which older versions reject (the floor said 1.30), as in
+  UMAT-OTI 1.2.1.
+- **Benchmarks without the book code.** The seven claim-4 benchmark contracts
+  whose sources are the Dunne & Petrinic book code, which UMAT-OTI no longer
+  ships, end as "source not available"; the Abaqus elastic benchmark skips
+  without elastic.f (recorded in docs/evidence/integrity_review.json).
 - **Docs.** COMPATIBILITY.md, USAGE_REPORT.md, HANDBOOK.md and
   which_layer_did_it_come_from.md give the new pin and generation.
 - **Scrub.** Machine paths in shipped records, examples and expected outputs
