@@ -403,6 +403,7 @@ Start here:
 - [docs/VERIFICATION_RECORD.md](docs/VERIFICATION_RECORD.md) — every verified result, its command, reference and measured value
 - [docs/CONNECTED_WORKFLOW.md](docs/CONNECTED_WORKFLOW.md) — the provider-to-sensitivity pipeline in one command
 - [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) — the pinned UMAT-OTI version and the shared contract
+- [docs/HISTORY_REWRITE_2026-11.md](docs/HISTORY_REWRITE_2026-11.md) — the 2026-11-07 history rewrite: why commit ids changed, and the old-to-new map
 
 Assembly (Path A):
 - [docs/residual_assembly_recipe.md](docs/residual_assembly_recipe.md) — how R is assembled from ingredients
