@@ -333,6 +333,13 @@
     "tests/replay_history/test_deck_output_requests_and_unsymm.py::test_an_option_that_changes_the_material_is_still_refused"
    ],
    "selected_by": "message_pattern"
+  },
+  {
+   "commit": "f85ad0a",
+   "bug": "The CI step 'Every skip must name a declared external dependency' rejected the 15 skips of the private corpus tests (\"CORPUS_WORKSPACE is unset\"), although its own comment accepts the private corpus store and cache as a reason CI cannot satisfy; the declared tuple lacked that string.",
+   "tests": [],
+   "no_test_reason": "The change is one string in the declared tuple of a GitHub Actions step; no pytest test runs that step. It was checked by running the step's own Python block on the full offline-suite output: 43 skips, 0 undeclared (15 were undeclared before).",
+   "selected_by": "message_pattern"
   }
  ],
  "excluded": [
