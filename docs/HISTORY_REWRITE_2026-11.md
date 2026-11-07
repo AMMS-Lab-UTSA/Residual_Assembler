@@ -6,7 +6,7 @@ and of its companion, [UMAT_source_transformation](https://github.com/AMMS-Lab-U
 branch and tag was rewritten, so none of them carries an old id. Old objects can
 stay reachable for a while through the pull-request references of pull request
 #1, through forks and through caches, until GitHub removes them; their removal
-is being arranged with GitHub Support. This page explains why, how it was done,
+will be requested from GitHub Support. This page explains why, how it was done,
 and how to translate an old id to its new one.
 
 ## Why
@@ -127,6 +127,9 @@ length. Three kinds of ids were deliberately left as they were:
   and the prose and captured output that quote the same runs
   (`docs/evidence/recovery_clean_clone.md`, `docs/evidence/recovery_integration.md`).
   Their sha256 digests describe the bytes as captured, so the ids stay as captured.
+  The proof digests cover the captured files, which were not retained; the
+  stored `data` is a parsed copy and does not reproduce them byte for byte, and
+  on 2026-11-06 home-directory paths in it were replaced by `<home>`.
 
 The pre-rewrite ids kept in those records:
 
