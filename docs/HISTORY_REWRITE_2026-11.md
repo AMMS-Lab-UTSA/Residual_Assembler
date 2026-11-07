@@ -129,7 +129,8 @@ length. Three kinds of ids were deliberately left as they were:
   Their sha256 digests describe the bytes as captured, so the ids stay as captured.
   The proof digests cover the captured files, which were not retained; the
   stored `data` is a parsed copy and does not reproduce them byte for byte, and
-  on 2026-11-06 home-directory paths in it were replaced by `<home>`.
+  on 2026-11-06 home-directory and checkout paths in it were replaced by
+  `<home>`.
 
 The pre-rewrite ids kept in those records:
 

@@ -14453,7 +14453,7 @@
      "command": "python -m pytest -q tests/test_audit_integrity.py::test_t11_every_fix_since_the_baseline_names_existing_regression_tests"
     }
    ],
-   "why": "tools/audit_integrity.py --check t11 maps every correction selected since the pre-work baseline (UMAT 15, RA 21; the other selected commits are excluded with a reason each) to regression tests that exist and run in the suites, including tests added for the five that had none (UMAT 0a7607a, b499249; RA d31511e, 992c517, b859cad), and reports 0 open in both repositories; the only untested part is RA cd3e815's CI workflow change, which CI itself exercises."
+   "why": "tools/audit_integrity.py --check t11 maps every correction selected since the pre-work baseline (UMAT 15, RA 21; the other selected commits are excluded with a reason each) to regression tests that exist and run in the suites, including tests added for the six that had none (UMAT 0a7607a, b499249; RA d31511e, 992c517, b859cad, f85ad0a), and reports 0 open in both repositories; the only untested part is RA cd3e815's CI workflow change, which CI itself exercises."
   },
   {
    "id": "T-12",
