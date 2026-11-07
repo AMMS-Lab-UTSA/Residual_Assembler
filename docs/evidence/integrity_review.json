@@ -638,6 +638,20 @@
      "text": "elastic.f is Dunne & Petrinic book code, which UMAT-OTI no longer ships"
     }
    ]
+  },
+  "mock:tests/corpus/test_ci_accepts_the_skip_of_an_unset_corpus_workspace.py:_reason_when_the_workspace_is_unset:monkeypatch.setattr:119fe5bb": {
+   "verdict": "justified",
+   "reason": "Not a mock of tested behaviour: _live() checks for gfortran before it looks at CORPUS_WORKSPACE, so shutil.which is made to report gfortran present on a machine without it, so that the CORPUS_WORKSPACE branch, whose skip message is the subject of the test, is reached. No numerical function or assertion target is replaced; on a runner with gfortran (CI) the stub changes nothing.",
+   "evidence": [
+    {
+     "in": "tests/corpus/test_ci_accepts_the_skip_of_an_unset_corpus_workspace.py",
+     "text": "# get past the compiler check, which comes first, on a machine without gfortran"
+    },
+    {
+     "in": "tests/corpus/test_corpus_residual.py",
+     "text": "pytest.skip(\"gfortran not on PATH (environmental blocker)\")"
+    }
+   ]
   }
  }
 }
