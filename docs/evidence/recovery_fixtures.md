@@ -1,5 +1,40 @@
 # Recovery Fixtures: Current Runs And Historical Evidence
 
+## 2026-11-06: re-freeze at UMAT-OTI 1.2.1
+
+The two fixtures in `tests/fixtures/verified/` were re-frozen with
+`scripts/regenerate_recovery_fixture.py` against a fresh clone of UMAT-OTI
+1.2.1 (tag `v1.2.1`, `bf3f029d`): transform fingerprint `80a2015b780b1f25`,
+harness fingerprint `56e3725136cb897e`. The sections below this one are the
+2026-09-18 record and stay as history.
+
+- Run directories: `softwarex_work/imq_abaqus/recovery_fixtures_121/elasticity`
+  and `.../recovery_fixtures_121/j2` (logs beside them), outside the repository.
+- Retained results file: the pass12 file the 2026-09-18 run used no longer
+  exists. This run used `softwarex_work/corpus_run/pass25/results/store_verification.jsonl`,
+  sha256 `37599425eb98d2acf4ccc11c5a89fcd8262df4f692d33a7aa8491f8fb6cf2834`. Its
+  row for the elasticity source regenerates the archived deck byte for byte (the
+  script asserts it).
+- J2 templating: there is no retained row for the bundled `j2_props.f`; as
+  before, the script builds its experiment from the elasticity row's manifest
+  with the archived J2 material (props, NSTATV, provenance) and requires the
+  resulting deck to be byte-identical to the archived one.
+- Deck sha256: elasticity
+  `148a9ba1eb9cc250940ec7cca532602a66a8bad1bfb363e8933a7816f0018d92`, J2
+  `5bca9c51a7f5aab24d31950ac17a0e70be7d96f65669193cdc76e95d50fe332a`.
+- Abaqus 2021: six jobs, one after another, all completed (per fixture:
+  original, transformed, Jacobian-matched control).
+- Verdict: both verified, 4 of 4 chosen states judged entrywise, every entry
+  agrees. Every number in both fixtures is identical to the fixtures frozen at
+  `c61511ea0ffe58e2`; only `generated` and `transform_fingerprint` changed.
+- New fixture sha256: elasticity
+  `dc93cd0a54c0249e894cb5f05dae1030fefec900dd4a1743500a1c5e0e0506cb`, J2
+  `3cf7dfbaa874d20ca60730f594f847fd9962d451aa02f064889a5ef50e44bcac`.
+- Residual check (`docs/evidence/final_refreeze_fixture_*_check.json`):
+  elasticity 1 held / 0 failed / 2 not established, J2 32 held / 0 failed / 3 not
+  established, as before.
+
+
 Date: 2026-09-18. Full RA offline suite: **419 passed, 0 failed, 11 existing
 skips, 0 errors**, 57.05 seconds. No new skips, xfails, weakened tolerances,
 mocked mathematics, commits, branches, pushes, subagents, or corpus batch runs.

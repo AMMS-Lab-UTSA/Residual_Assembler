@@ -182,7 +182,7 @@ was redone:
 
 The run directories, with `jobs.json`, `verification.json` and `hashes.json`, are
 outside the repository at
-`softwarex_work/corpus_campaign/batches/B6/residual_assembler/refreeze_a4f0ea8c/`.
+`softwarex_work/corpus_campaign/batches/B6/noether/refreeze_a4f0ea8c/`.
 
 ## Fixtures re-frozen at `830e5ee95ce99cd2` (2026-10-03)
 
@@ -215,7 +215,7 @@ Only step 6 was redone, from a clean UMAT-OTI tree at b95f066:
   2 not established, and J2 32 held / 3 not established.
 
 The run directories are outside the repository, at
-`softwarex_work/corpus_campaign/batches/B9/residual_assembler/refreeze_830e5ee9/`.
+`softwarex_work/corpus_campaign/batches/B9/noether/refreeze_830e5ee9/`.
 
 ## Fixtures re-frozen at `50ae446f12de66d8` (2026-10-08)
 

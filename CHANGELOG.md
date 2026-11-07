@@ -18,7 +18,10 @@ public interfaces may still change.
   `scripts/regenerate_recovery_fixture.py` re-ran both against UMAT-OTI 1.2.1:
   the transform, the original and transformed Abaqus 2021 jobs and the
   Jacobian-matched control, three jobs per fixture, one after another (six in
-  all), from the retained pass25 experiment (deck byte-identical). Both are
+  all). The elasticity experiment comes from its retained pass25 row; J2 has
+  no row of its own and is templated from the elasticity row's manifest with
+  the archived J2 material. Both decks are byte-identical to the archived
+  ones (docs/evidence/recovery_fixtures.md, 2026-11-06 section). Both are
   verified (4 of 4 chosen states judged entrywise, every entry agrees). Every
   number is identical to the fixtures frozen at `c61511ea0ffe58e2`; only
   `generated` and `transform_fingerprint` changed. The residual check is
