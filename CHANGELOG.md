@@ -8,8 +8,8 @@ public interfaces may still change.
 
 ### UMAT-OTI 1.2.1 (2026-11-06)
 - **Companion pin.** The `bridge` extra (and therefore CI) uses UMAT-OTI 1.2.1,
-  tag `v1.2.1`, commit `bf3f029d9711a2ac28fd011b6b373dd64ae24fb4`; it was
-  `faa0360`.
+  tag `v1.2.1`, commit `bb099d85b080a295a443773c823305671164653f`; it was
+  `95b27ff`.
 - **Contract files.** `schemas/transform_generation.json` and
   `schemas/contract_lock.json` are copied byte for byte from UMAT-OTI 1.2.1:
   transform generation `80a2015b780b1f25` (harness `56e3725136cb897e`).
@@ -70,7 +70,7 @@ public interfaces may still change.
   branch (`--branch`) and adds the full-size J2 cantilever (`--cantilever`).
 - **Presentation claims** reproduced claim by claim (`verification/run_all.py`,
   `docs/VERIFICATION_RECORD.md`), including what did not reproduce.
-- Shared contract 5.0.0 (MAJOR, from UMAT-OTI 8f1efaf): terminal state
+- Shared contract 5.0.0 (MAJOR, from UMAT-OTI 7cecbb5): terminal state
   `primal_control_not_decided` (INTERNAL) and `primal_decided_by` value
   `jacobian_matched_not_decided`. The routine-level replay agreed and the Abaqus
   control produced no comparison, so `primal_agreed` is null: NOT ESTABLISHED,
@@ -95,7 +95,7 @@ public interfaces may still change.
   tangent gate now records the states it judged (`states_agreeing` null), and
   `verified_fixture` describes such a fixture accordingly
   (`docs/evidence/final_refreeze.md`).
-- The `bridge` extra pins UMAT-OTI `faa0360`; CI checks the companion out at
+- The `bridge` extra pins UMAT-OTI `95b27ff`; CI checks the companion out at
   that commit beside this repository (`docs/COMPATIBILITY.md`).
 
 ### Added

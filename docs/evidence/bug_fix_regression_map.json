@@ -5,7 +5,7 @@
   "A regression test is a test added or changed in the fix commit, or named in its message.",
   "untested_parts names a part of a fix that no test exercises."
  ],
- "baseline": "0789984c6c2750091d0f43b9ba42b84b3d890556",
+ "baseline": "24d6c8fb743f4acf36b262e1aeecd12bf9599c83",
  "rule": {
   "message_pattern": "\\b(fix|fixes|fixed|fixing|bugs?|defects?|wrong|refus\\w*|regression|incorrect|broke|broken|crash\\w*|silent\\w*|stale|failed|fails|exit(?:ed|s)? [0-9])\\b",
   "selects": "every commit since the baseline whose subject or body (trailers removed) matches message_pattern, case-insensitive, and every commit that adds an entry under a '### Fixed' heading of CHANGELOG.md",
@@ -14,7 +14,7 @@
  },
  "fixes": [
   {
-   "commit": "0a680d9",
+   "commit": "7addeef",
    "selected_by": "manual",
    "bug": "resasm verify returned 0 on the shipped unloaded stressed C3D8 with ||R_free|| = 70.71; equilibrium verification now fails unbalanced or non-finite residuals against an explicit absolute tolerance.",
    "tests": [
@@ -25,8 +25,8 @@
    ]
   },
   {
-   "commit": "a7271cd",
-   "bug": "The history engine's solve mode started each increment from a jump (the explicit FCC update overflowed) and accepted non-finite states; it now takes Abaqus's linear predictor and refuses non-finite states. The engine itself was added earlier in this work (9dd6a8c).",
+   "commit": "d902c21",
+   "bug": "The history engine's solve mode started each increment from a jump (the explicit FCC update overflowed) and accepted non-finite states; it now takes Abaqus's linear predictor and refuses non-finite states. The engine itself was added earlier in this work (96856cf).",
    "tests": [
     "tests/replay_history/test_history_engine.py::test_fcc_whole_model_fd_of_original_umat",
     "tests/replay_history/test_history_engine.py::test_j2_whole_model_fd_of_original_umat",
@@ -34,7 +34,7 @@
    ]
   },
   {
-   "commit": "15a5240",
+   "commit": "0beed34",
    "bug": "Newton iterated for minutes on round-off when no step lowered the residual, and run_report's 'Command executed' line was rendered from sys.argv, which is wrong when resasm runs in-process.",
    "tests": [
     "tests/replay_history/test_history_example.py::test_public_private_outputs_and_report",
@@ -42,7 +42,7 @@
    ]
   },
   {
-   "commit": "5e49cc9",
+   "commit": "d31511e",
    "bug": "The clean-install gate refused every checkout not on one hard-coded branch name, so it could not run on main or on a fresh clone.",
    "tests": [
     "tests/integration/test_the_clean_install_gate_takes_its_branch.py::test_the_named_branch_is_accepted",
@@ -51,7 +51,7 @@
    ]
   },
   {
-   "commit": "e03ef60",
+   "commit": "cd3e815",
    "selected_by": "manual",
    "bug": "CI never installed the companion UMAT-OTI, so the connected tests could not be collected there, and the verification-record scripts refused a umat_oti installed from a wheel (a clean clone's install) because its files are not under the checkout.",
    "tests": [
@@ -61,7 +61,7 @@
    "untested_parts": "The CI workflow change is exercised only by CI itself."
   },
   {
-   "commit": "8daf75f",
+   "commit": "202bacb",
    "bug": "Two replay-history modules imported helpers with 'from conftest import', which resolves to whichever conftest was imported last, so renaming a test folder broke them; two imports of residual_core.replay.presentation had been rewritten by a folder rename.",
    "tests": [
     "tests/replay_history/test_history_example.py::test_routing_keeps_bounded_models_and_sends_the_rest_to_the_history_engine",
@@ -70,7 +70,7 @@
    ]
   },
   {
-   "commit": "71cfe86",
+   "commit": "e7d3cba",
    "selected_by": "manual",
    "bug": "The claim-5 verification script ran plain 'make'; GNU make predefines FC=f77, so the generated Makefile's 'FC ?= gfortran' never applied and the build failed wherever f77 is absent.",
    "tests": [
@@ -78,7 +78,7 @@
    ]
   },
   {
-   "commit": "924ee8c",
+   "commit": "d05d6b0",
    "bug": "The real-store contract tests refused a umat_oti installed (not editable) from the companion checkout because its files were not under the checkout, and skipped with a reason CI rejects.",
    "tests": [
     "tests/contract/test_both_readers_agree_on_the_real_store.py::test_the_two_repositories_speak_the_same_version",
@@ -88,7 +88,7 @@
    ]
   },
   {
-   "commit": "a3916be",
+   "commit": "fa52464",
    "bug": "scripts/extract_odb_fields.py failed at line 1 under Abaqus 2021's Python 2.7 (non-ASCII text without a coding line, annotations, shutil.which).",
    "tests": [
     "tests/framework/test_the_abaqus_python_scripts_run_on_python27.py::test_the_script_parses_under_python27",
@@ -96,7 +96,7 @@
    ]
   },
   {
-   "commit": "7774313",
+   "commit": "5b78667",
    "bug": "resasm sensitivity --backend dual1 printed zero derivatives and exited 0 for parameters no element seeds; a failing finite-difference comparison still exited 0; exit 3 and the OTILib hint were given for a missing tangent; missing --fields files gave tracebacks; the GUI's Job tab read the wrong folder.",
    "tests": [
     "tests/framework/test_finite_strain_hyperelastic.py::test_dual1_refuses_the_finite_strain_model_instead_of_printing_zeros",
@@ -112,7 +112,7 @@
    ]
   },
   {
-   "commit": "de8ec64",
+   "commit": "085cd99",
    "bug": "resasm request kept a valid non-J2 provider on the bounded J2 engine, which refused it as material_mapping (exit 2); run_report.txt listed public files a failed run had not written.",
    "tests": [
     "tests/replay_history/test_history_example.py::test_another_provider_on_a_bounded_deck_goes_to_the_history_engine",
@@ -120,7 +120,7 @@
    ]
   },
   {
-   "commit": "4d34c74",
+   "commit": "992c517",
    "selected_by": "manual",
    "bug": "The ODB exporter's error message and usage text told users to run extract_abaqus_fields.py, a file that no longer exists under that name.",
    "tests": [
@@ -129,7 +129,7 @@
    ]
   },
   {
-   "commit": "718ac7c",
+   "commit": "b859cad",
    "selected_by": "manual",
    "bug": "The cantilever central-difference reference script recorded its usage line as the reference's note instead of its method paragraph.",
    "tests": [
@@ -137,7 +137,7 @@
    ]
   },
   {
-   "commit": "a392cd5",
+   "commit": "ea2baee",
    "selected_by": "manual",
    "bug": "resasm backends printed 'tangent_support: none' for every material, and the UMAT adapter listed strain inputs while declaring a deformation gradient.",
    "tests": [
@@ -147,7 +147,7 @@
    ]
   },
   {
-   "commit": "07703d3",
+   "commit": "e776957",
    "bug": "The general deck path (inspect, assemble, verify) accepted *Dload, *Dsload, *Equation and amplitudes without a word although it applies none of them.",
    "tests": [
     "tests/framework/test_unapplied_deck_keywords_are_named.py::test_each_unapplied_keyword_is_named_where_the_deck_is_read",
@@ -156,7 +156,7 @@
    ]
   },
   {
-   "commit": "6df72c1",
+   "commit": "b742a05",
    "bug": "SolidC3D8SmallStrain handed a finite-strain material a strain increment and failed with a bare KeyError('F0').",
    "tests": [
     "tests/framework/test_small_strain_refuses_finite_strain_material.py::test_a_deformation_gradient_material_is_refused_by_name",
@@ -165,7 +165,7 @@
    ]
   },
   {
-   "commit": "fb3d059",
+   "commit": "28576b0",
    "bug": "When the unrelated PyPI package pyoti shadowed the genuine OTILib build, the probe said only that OTILib was not found.",
    "tests": [
     "tests/framework/test_unrelated_pyoti_is_refused.py::test_an_unrelated_pyoti_ahead_of_the_genuine_build_is_refused",
@@ -173,7 +173,7 @@
    ]
   },
   {
-   "commit": "7dfa511",
+   "commit": "22dd957",
    "bug": "resasm history --verify fd judged derivatives against max(1e-6, twice the plateau spread), so with an unresolved reference a 9.6e-1 error was reported 'Derivative verified: yes'.",
    "tests": [
     "tests/replay_history/test_history_report_verdicts.py::test_reference_resolved_is_partial_when_the_steps_do_not_agree",
@@ -182,7 +182,7 @@
    ]
   },
   {
-   "commit": "8e4cf2f",
+   "commit": "a19127b",
    "bug": "requirements/doctor called modes ready that assembled nothing (assemble exited 0 with ndof=0), C3D8 replay bound silent default constants [200000, 0.3], verify judged equilibrium without the deck's unapplied loads and constraints, and multi-step or NLGEOM decks were summed over steps.",
    "tests": [
     "tests/framework/test_inspection_commands.py::test_a_mode_called_ready_assembles_every_element",
@@ -193,7 +193,7 @@
    ]
   },
   {
-   "commit": "60c8d44",
+   "commit": "f013577",
    "bug": "resasm history, and resasm request when it hands a model to the history engine, exited 0 whatever the requested --verify found.",
    "tests": [
     "tests/replay_history/test_history_report_verdicts.py::test_every_requested_check_that_fails_is_named_and_sets_exit_1",
@@ -201,7 +201,7 @@
    ]
   },
   {
-   "commit": "30a5ab4",
+   "commit": "6e4c321",
    "bug": "The C3D8 history replay integrated a fully integrated first-order brick with the plain point deformation gradient and plain B, where Abaqus hands the material the centroid-volumetric F_bar and assembles with B_bar; the volumetric response, dR/dp and K were wrong for such elements under NLGEOM.",
    "tests": [
     "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_volume_change_is_the_element_mean",
@@ -209,10 +209,10 @@
     "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_the_initial_stress_term_is_symmetric",
     "tests/replay_history/test_the_operators_abaqus_actually_hands_the_material.py::test_an_inverted_element_is_refused_rather_than_integrated"
    ],
-   "note": "Tests renamed by 6b5357b when the operator moved from the centroid to the element-mean volume change Abaqus uses; they pin the same F_bar/B_bar operator structure."
+   "note": "Tests renamed by f62a6bf when the operator moved from the centroid to the element-mean volume change Abaqus uses; they pin the same F_bar/B_bar operator structure."
   },
   {
-   "commit": "6b5357b",
+   "commit": "f62a6bf",
    "bug": "The C3D8 replay, the deck replay's NLGEOM STRAN/DSTRAN and the finite-strain solid used the centroid (or plain-F) volume change where Abaqus uses the element-average (mean dilatation); and the mean-dilatation path silently dropped Dual1 parameter derivatives.",
    "tests": [
     "tests/replay_history/test_mean_dilatation_abaqus_probe.py::test_deck_replay_dfgrd1_is_the_mean_dilatation_fbar",
@@ -225,7 +225,7 @@
    "selected_by": "manual"
   },
   {
-   "commit": "7a490d3",
+   "commit": "6a52193",
    "bug": "The live corpus tests named their materials by registry store key, which derives from the transform fingerprint, and load_case read manifests from a fixed pass16 run; after the pass20 freeze renamed every key, the three tests could not find their materials.",
    "tests": [
     "tests/corpus/test_corpus_residual.py::test_a_verified_elastic_umat_gives_a_residual_derivative_a_difference_agrees_with",
@@ -235,7 +235,7 @@
    "selected_by": "manual"
   },
   {
-   "commit": "cde44a0",
+   "commit": "6066af8",
    "bug": "The corpus sources defaulted CORPUS_WORKSPACE, and the manifest locator its roots, to folders on one machine, and the run_corpus_residual docstring named them; on any other machine corpus reads looked there silently.",
    "tests": [
     "tests/corpus/test_corpus_residual.py::test_corpus_data_with_no_workspace_named_raises_and_names_the_variable"
@@ -243,7 +243,7 @@
    "selected_by": "manual"
   },
   {
-   "commit": "ffd986e",
+   "commit": "39554ad",
    "bug": "The corpus residual run could not solve most routine-verified sources for RA-side reasons: Newton stalled at the residual's round-off floor above the 1e-12 tolerance (nearly incompressible material); COORDS came from the [0,1]^3 probe brick, not the author's element, for routines that cache position; the probe ran 3x past the verification run's analysis time; the hidden-state probe tripped on a STATEV entry already declared undefined in the original and never read; there was no increment cut-back and one iteration matrix per build; the reference re-solves could not share the analytic solve's increments; an unsolvable reference was booked as a failed derivative; the FD ladder stopped before a plateau for nu near 1/2; the objectivity check divided round-off by round-off for a dV/dp that is zero in exact arithmetic.",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_newton_converges_at_the_roundoff_floor_and_stalls_without_it",
@@ -266,7 +266,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "748ca60",
+   "commit": "e90a550",
    "bug": "FD ladder steps whose p +/- h left the parameter's declared domain (nu crossing 1/2) stayed in the ladder and set the zero-within-resolution bound, failing a derivative the FD cannot see (f7be16bc); a round-off-floor acceptance was not confirmed by a further Newton step; the hidden-state unread check wrote only two values and probed only the first problem; records did not name COORDS as held fixed nor disclose the mixed geometry.",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_the_props_map_reads_declared_domains_from_the_source",
@@ -279,7 +279,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "a5faf5c",
+   "commit": "ebcae01",
    "bug": "global_sensitivity judged the analytic derivative against FD around the ORIGINAL's nominal equilibrium without checking it was the analytic solve's equilibrium; past a bifurcation (K_ff indefinite) the two differ and a correct derivative was reported FAILED (SeaShell d0e4297c, clamped shear, increments 5-6).",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_a_reference_on_another_equilibrium_is_not_judged",
@@ -288,7 +288,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "74eb075",
+   "commit": "cab00df",
    "bug": "The equilibrium gate could excuse an increment where primal parity was broken (a primal defect would become unsupported), and excused only the departing increments rather than every increment from the first departure on (review R-1).",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_the_branch_gate_never_excuses_a_primal_defect",
@@ -298,7 +298,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "1527a0c",
+   "commit": "7edf67e",
    "bug": "Where only the ORIGINAL converged (non-unique equilibrium, 0e56ba3c), the problem was booked failed although the analytic solve converges when started on the original's solution.",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_the_analytic_solve_is_steered_onto_the_originals_equilibrium"
@@ -306,7 +306,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "2df8d5b",
+   "commit": "f38f554",
    "bug": "The global-sensitivity re-solves of the original at p +/- h started cold, and for paths whose nominal solve needs hundreds of backtracks they did not converge, at every step down to h = 1e-8; 113 of the 157 unresolved global records had missing ladder steps, and verified comparisons were lost.",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_every_perturbed_resolve_is_started_from_the_nominal_solution",
@@ -316,7 +316,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "a4e31e5",
+   "commit": "cb930d8",
    "bug": "The provider was tied to the six 3D components: a routine with NTENS = 4 could neither be called with its own NTENS nor have its seeds and results mapped to the host; other NTENS were refused without naming what is missing.",
    "tests": [
     "tests/corpus/test_corpus_solver_robustness.py::test_components_map_between_the_host_and_a_routine_of_fewer",
@@ -326,7 +326,7 @@
    "selected_by": "message_pattern"
   },
   {
-   "commit": "0f1e5ad",
+   "commit": "8466cf4",
    "bug": "The history reader refused the deck an analysis ran when it carried *User Material, UNSYMM or results-file/printed-output requests, although neither enters the residual; the deck had to be rewritten by hand.",
    "tests": [
     "tests/replay_history/test_deck_output_requests_and_unsymm.py::test_the_deck_abaqus_ran_reads_into_the_same_model",
@@ -337,79 +337,79 @@
  ],
  "excluded": [
   {
-   "commit": "b891d74",
+   "commit": "18f837e",
    "reason": "Evidence (full-size whole-model FD); 'failed' is the suite's failure count."
   },
   {
-   "commit": "0b3746a",
+   "commit": "f1542f0",
    "reason": "Feature (ticks, output, region and Solve on the request screen); 'failed' is the suite's failure count."
   },
   {
-   "commit": "58cfcfd",
+   "commit": "6ce545d",
    "reason": "Feature and its browser test (equivalent plastic strain after Solve); 'failed' is the suite's failure count."
   },
   {
-   "commit": "2210eeb",
-   "reason": "Evidence rerun of the benchmark claim; 'defect' and 'fails' describe a UMAT source defect it measured, and 'fixes' the transformer fixes mapped in UMAT_source_transformation (b124e39, 24143f8)."
+   "commit": "0b17e57",
+   "reason": "Evidence rerun of the benchmark claim; 'defect' and 'fails' describe a UMAT source defect it measured, and 'fixes' the transformer fixes mapped in UMAT_source_transformation (d774224, b3b94a1)."
   },
   {
-   "commit": "b7a257d",
+   "commit": "e34907d",
    "reason": "New independent check (Euler's homogeneity identity); 'wrong' is a hypothetical wrong derivative the check would catch and 'fixed' is 'at fixed nu'."
   },
   {
-   "commit": "3bab862",
+   "commit": "b3442e6",
    "reason": "Pin bump of the companion; 'fixes' names commits of UMAT_source_transformation."
   },
   {
-   "commit": "9e5e3b9",
+   "commit": "d42498d",
    "reason": "Documentation (seven worked examples and guides); 'stale' describes the GUI's documented guard against stale results."
   },
   {
-   "commit": "de92890",
+   "commit": "0267ff5",
    "reason": "Documentation; 'stale' describes a documentation note it removed."
   },
   {
-   "commit": "d211658",
+   "commit": "ecff15b",
    "reason": "New tests (report verdict lines, walkthroughs, derivative-loss scan) of behaviour that was already right; no code change."
   },
   {
-   "commit": "d3cdfd5",
+   "commit": "4d7bbf7",
    "reason": "Documentation (walkthrough for example 8) and its index test; 'exits 2' describes measured behaviour."
   },
   {
-   "commit": "a288783",
-   "reason": "Evidence re-freeze and pin bump; 'fix' names the local-Jacobian fix of UMAT_source_transformation (1996782), mapped there."
+   "commit": "c9bb663",
+   "reason": "Evidence re-freeze and pin bump; 'fix' names the local-Jacobian fix of UMAT_source_transformation (2b1c93f), mapped there."
   },
   {
-   "commit": "7099a1a",
+   "commit": "b34a96e",
    "reason": "Tooling (completion-ledger mapping and its update script); 'refuses' describes the script rejecting an incomplete run directory, not a corrected behaviour."
   },
   {
-   "commit": "fe85ab8",
+   "commit": "ca04300",
    "reason": "Tooling (the integrity audits themselves); 'exit 2' and 'stale' describe what the audit reports, not a corrected behaviour."
   },
   {
-   "commit": "b8f7a85",
+   "commit": "c519df4",
    "reason": "Ledger data (row T-11 of tools/ledger_rows.json); 'regression' names the kind of test the row maps, not a corrected behaviour."
   },
   {
-   "commit": "acf7c20",
+   "commit": "42336a1",
    "reason": "Ledger and evidence of the clean-clone run; 'failed' appears in the count of suite results ('none failed'), not as a corrected behaviour."
   },
   {
-   "commit": "c8d0b0a",
+   "commit": "899977f",
    "reason": "Contract 4.0.0 adds a terminal state; 'defect' names a defect in a published source that the new state reports, not a corrected behaviour of this repository."
   },
   {
-   "commit": "7fcfa3f",
+   "commit": "2c93238",
    "reason": "New capability (corpus residual/global sensitivities, NLGEOM contract); 'fixed' appears in 'u and incoming state fixed', the quantity held constant."
   },
   {
-   "commit": "87205e3",
+   "commit": "e6523d6",
    "reason": "Re-freeze of the shared transform generation and the two fixtures. 'failed' is the suite's failure count in the message (the environmental test_connected_j2 case); no defect is corrected."
   },
   {
-   "commit": "412b68e",
+   "commit": "07ce010",
    "reason": "Re-freeze of the shared transform generation and the two fixtures. 'failed' is the suite's failure count in the message (the environmental test_connected_j2 case); no defect is corrected."
   }
  ],

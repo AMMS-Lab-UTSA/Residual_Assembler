@@ -60,8 +60,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 #: The commit each repository's completion work started from.
 BASELINES = {
-    "umat-oti": "3f340b72ec4d9d1f474fdb2e0f6bda1c41bfaa76",
-    "residual-assembler": "0789984c6c2750091d0f43b9ba42b84b3d890556",
+    "umat-oti": "9f1f9d031f765fa81830ebf1140d7edd38d1a64e",
+    "residual-assembler": "24d6c8fb743f4acf36b262e1aeecd12bf9599c83",
 }
 REPOSITORY_LABELS = {"umat-oti": "UMAT", "residual-assembler": "RA"}
 

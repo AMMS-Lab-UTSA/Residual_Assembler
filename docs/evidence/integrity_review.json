@@ -10,14 +10,14 @@
   "must be recorded. tests/test_audit_integrity.py fails on an unreviewed finding or a stale entry."
  ],
  "repository": "RA",
- "baseline": "0789984c6c2750091d0f43b9ba42b84b3d890556",
+ "baseline": "24d6c8fb743f4acf36b262e1aeecd12bf9599c83",
  "pre_work_record": "BASELINE_FAILURES.md and baseline_*.json of the workspace, recorded before the work at an earlier commit; not part of this repository.",
  "pre_work_failures": {
   "tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_passes_every_stage": {
    "status": "renamed",
    "now": "tests/framework/test_a_verified_umat_drives_the_assembler.py::test_a_verified_fixture_holds_only_at_stages_with_sufficient_evidence",
-   "commit": "5ea3da4",
-   "reason": "Before the audited range (5ea3da4 precedes the baseline): the J2 fixture used to be required to FAIL the diagnosis at constitutive_derivative; the rewritten test requires the diagnosis to pass with that stage NOT ESTABLISHED, not blamed and not complete. The expectation moved with the diagnosis semantics, which also changed in that commit."
+   "commit": "54876c4",
+   "reason": "Before the audited range (54876c4 precedes the baseline): the J2 fixture used to be required to FAIL the diagnosis at constitutive_derivative; the rewritten test requires the diagnosis to pass with that stage NOT ESTABLISHED, not blamed and not complete. The expectation moved with the diagnosis semantics, which also changed in that commit."
   },
   "tests/framework/test_compiled_umat_oti_to_resasm.py::test_compiled_oti_j2_drives_bridge_and_dRdp_matches_full_residual_fd": {
    "status": "present"
@@ -25,7 +25,7 @@
   "tests/framework/test_which_layer_the_failure_came_from.py::test_the_nine_layers_are_the_nine_the_brief_names": {
    "status": "renamed",
    "now": "tests/framework/test_which_layer_the_failure_came_from.py::test_the_layers_include_parameter_sensitivity_and_element_jacobian",
-   "commit": "5ea3da4",
+   "commit": "54876c4",
    "reason": "Before the audited range: the test pinned nine layers while the implementation had eleven; the renamed test pins the eleven (parameter_sensitivity and element_jacobian added)."
   }
  },
@@ -70,7 +70,7 @@
    "verdict": "justified",
    "reason": "The skip allow-list grows from OTILib alone to four named resources a public runner cannot provide: OTILib (external GPL build), the private corpus store (the real-store contract tests already skipped with 'is not on this machine' at the baseline), the third-party flow-rule driver sources (not redistributable) and Playwright for the browser tests. Caveat: 'is not on this machine' is a broad phrase; it also matches the companion-checkout skip, which CI prevents by cloning the companion first (that step fails loudly).",
    "quote": "its skip check names each dependency a public runner cannot provide: OTILib, the private corpus store, the third-party flow-rule driver sources and a browser for the playwright tests.",
-   "quote_source": "8daf75f",
+   "quote_source": "202bacb",
    "evidence": [
     {
      "in": "BASE:tests/contract/test_both_readers_agree_on_the_real_store.py",
@@ -101,7 +101,7 @@
      "text": "The two readers were NOT COMPARED."
     },
     {
-     "in": "924ee8c",
+     "in": "d05d6b0",
      "text": "They now run against an installed copy whose Python files"
     }
    ]
@@ -115,7 +115,7 @@
      "text": "The two readers were NOT COMPARED."
     },
     {
-     "in": "924ee8c",
+     "in": "d05d6b0",
      "text": "They now run against an installed copy whose Python files"
     }
    ]
@@ -384,12 +384,12 @@
   },
   "warn_call:residual_core/core/model.py:from_abaqus:warnings.warn:81c5b575": {
    "verdict": "justified",
-   "reason": "A new diagnostic where the deck path was silent; it does not stand in for a failure, because verify refuses a deck whose equilibrium-relevant keywords are not applied (8e4cf2f).",
+   "reason": "A new diagnostic where the deck path was silent; it does not stand in for a failure, because verify refuses a deck whose equilibrium-relevant keywords are not applied (a19127b).",
    "quote": "Assembly still runs: this is a diagnostic, and verify already refuses *Equation.",
-   "quote_source": "07703d3",
+   "quote_source": "e776957",
    "evidence": [
     {
-     "in": "8e4cf2f",
+     "in": "a19127b",
      "text": "resasm verify refuses a deck whose equilibrium-relevant keywords are not"
     }
    ]
@@ -398,7 +398,7 @@
    "verdict": "justified",
    "reason": "Regenerated in Abaqus at the 830e5ee95ce99cd2 re-freeze from a clean UMAT-OTI tree with byte-identical decks. Besides the generation time and the fingerprint, only the verification summary fields changed: UMAT-OTI's entrywise tangent gate (D-4) now chooses and judges the states, records no agreeing count (states_agreeing null) and, for J2, judges two more (unloading) states. Every number is identical (checked field by field).",
    "quote": "Every number is identical.",
-   "quote_source": "f1abeb9",
+   "quote_source": "5376416",
    "json_only_changed": [
     "generated",
     "transform_fingerprint",
@@ -411,7 +411,7 @@
    "verdict": "justified",
    "reason": "Regenerated in Abaqus at the 830e5ee95ce99cd2 re-freeze from a clean UMAT-OTI tree with byte-identical decks. Besides the generation time and the fingerprint, only the verification summary fields changed: UMAT-OTI's entrywise tangent gate (D-4) now chooses and judges the states, records no agreeing count (states_agreeing null) and, for J2, judges two more (unloading) states. Every number is identical (checked field by field).",
    "quote": "Every number is identical.",
-   "quote_source": "f1abeb9",
+   "quote_source": "5376416",
    "json_only_changed": [
     "generated",
     "transform_fingerprint",
@@ -537,7 +537,7 @@
    "verdict": "justified",
    "reason": "states_agreeing > 0 is kept for fixtures that carry a count; a fixture from the entrywise D-4 gate carries null and must instead state that every chosen state was judged and every entry agrees, which the test now requires, and describe() must say so. No case is left unchecked.",
    "quote": "The fixture test accepts a null count only together with that gate statement.",
-   "quote_source": "f1abeb9",
+   "quote_source": "5376416",
    "evidence": [
     {
      "in": "tests/contract/test_a_fixture_is_refused_at_the_wrong_fingerprint.py",

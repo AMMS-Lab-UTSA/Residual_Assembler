@@ -8,7 +8,7 @@ independently, connected by a versioned contract. Neither vendors the other.
 | Component | Version / commit |
 |---|---|
 | `residual-assembler` | 0.1.0 |
-| `umat-oti` | 1.2.1, `bf3f029d9711a2ac28fd011b6b373dd64ae24fb4` (tag `v1.2.1`; extra `bridge`) |
+| `umat-oti` | 1.2.1, `bb099d85b080a295a443773c823305671164653f` (tag `v1.2.1`; extra `bridge`) |
 | Shared contract | version 5.0.0; `schemas/contract_lock.json` equals UMAT-OTI's byte for byte |
 | Transform generation | `80a2015b780b1f25` (`schemas/transform_generation.json`) |
 | Compiled provider ABI | `UMAT`, `UMAT_OTI_EVAL`, `UMAT_OTI_MARCH`, `UMAT_OTI_EVAL_TOTAL`, described by the completed contract (`Mapping.json`) |

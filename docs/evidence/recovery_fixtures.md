@@ -4,7 +4,7 @@
 
 The two fixtures in `tests/fixtures/verified/` were re-frozen with
 `scripts/regenerate_recovery_fixture.py` against a fresh clone of UMAT-OTI
-1.2.1 (tag `v1.2.1`, `bf3f029d`): transform fingerprint `80a2015b780b1f25`,
+1.2.1 (tag `v1.2.1`, `bb099d85`): transform fingerprint `80a2015b780b1f25`,
 harness fingerprint `56e3725136cb897e`. The sections below this one are the
 2026-09-18 record and stay as history.
 
@@ -46,7 +46,7 @@ fixture guard, or pinned J2 source-hash check was changed in this task.
 The earlier result was 325 passed, 56 failed, 11 skipped, 5 errors. The exact
 failure list and JUnit in recovery_finite.md were inspected: all 61 failing
 entries hit stale generation rejection, including a collection error hiding
-the parametrized deck tests. History d3bffa2 was inspected: its legitimate
+the parametrized deck tests. History 7149026 was inspected: its legitimate
 pass12 regeneration was the precedent, not permission to relabel old numbers.
 
 The current producer remains **6aa20d22e37f14c9**, verified by the actual
