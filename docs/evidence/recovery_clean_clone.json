@@ -8,8 +8,8 @@
   "branch": "integration/recovery-2026-09-18",
   "work": "/tmp/imqc_clean_clone_20260918_RwJ8VT",
   "milestones": {
-    "UMAT_source_transformation": "397f53a47e6f2aa6a517c7eebd46254cdf094c41",
-    "Residual_Assembler": "54876c47e2ce22b2562a20d7c813629dabebd071"
+    "UMAT_source_transformation": "dbd8ff229023b57e4231a2250a54e97dc111f547",
+    "Residual_Assembler": "5ea3da4bdd250fe6eea79677cec44e59e86de197"
   },
   "clone_method": "git clone --no-hardlinks --branch integration/recovery-2026-09-18 from the two LOCAL recovery paths",
   "pretest_status": {
@@ -552,11 +552,11 @@
       "work": "/tmp/imqc_clean_clone_20260918_RwJ8VT/gate",
       "repositories": {
         "/tmp/imqc_clean_clone_20260918_RwJ8VT/Residual_Assembler": {
-          "head": "54876c47e2ce22b2562a20d7c813629dabebd071",
+          "head": "5ea3da4bdd250fe6eea79677cec44e59e86de197",
           "status": ""
         },
         "/tmp/imqc_clean_clone_20260918_RwJ8VT/UMAT_source_transformation": {
-          "head": "397f53a47e6f2aa6a517c7eebd46254cdf094c41",
+          "head": "dbd8ff229023b57e4231a2250a54e97dc111f547",
           "status": ""
         }
       },

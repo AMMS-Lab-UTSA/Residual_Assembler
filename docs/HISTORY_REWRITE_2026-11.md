@@ -2,9 +2,12 @@
 
 On 2026-11-07 the complete git history of this repository (Residual_Assembler)
 and of its companion, [UMAT_source_transformation](https://github.com/AMMS-Lab-UTSA/UMAT_source_transformation)
-(UMAT-OTI), was rewritten and force-pushed. **Every commit id changed.** The old
-ids no longer exist on GitHub. This page explains why, how it was done, and how
-to translate an old id to its new one.
+(UMAT-OTI), was rewritten and force-pushed. **Every commit id changed.** Every
+branch and tag was rewritten, so none of them carries an old id. Old objects can
+stay reachable for a while through the pull-request references of pull request
+#1, through forks and through caches, until GitHub removes them; their removal
+is being arranged with GitHub Support. This page explains why, how it was done,
+and how to translate an old id to its new one.
 
 ## Why
 
@@ -45,9 +48,12 @@ commit still served them. The rewrite removes them from every commit.
   GitHub made for pull request #1 (old `009ca3a`, new `45a9212`). It is now
   unsigned. In UMAT-OTI one signed commit (old `d817003`) is likewise unsigned.
 - **Line endings (UMAT-OTI only).** No file of this repository changed except by
-  deletion. In UMAT-OTI, some old versions of evidence files that quoted the
-  textbook were replaced by the redacted versions the project had already
-  published. The redacted versions of the two `convergence_rows.csv` files use
+  deletion. In UMAT-OTI, old versions of evidence files that quoted the textbook
+  were replaced by redacted versions: where the project had already published a
+  redaction, that version was used; nine older versions were redacted by
+  applying the same text substitutions by rule; and for one frozen snapshot the
+  manifest and checksum list were recomputed for its redacted file. The redacted
+  versions of the two `convergence_rows.csv` files use
   LF line endings where the old versions used CRLF, so those old commits now
   show LF (CRLF to LF normalisation).
 
@@ -66,8 +72,9 @@ Deleted from every commit (39 files in all):
 - `UMATs/ICP/index.html`
 
 The other files in `UMATs/ICP/` (the `UMAT_*.for` routines of the ABAQUS-US
-collection, MIT licence) are not affected. The branch tips had already dropped
-all of these paths before the rewrite.
+collection, MIT licence) are not affected. Before the rewrite all 39 files were
+still present at the tip of `main` and of most other branches; only the tips of
+this release branch and of `cross-platform-hardening` had already dropped them.
 
 ### UMAT_source_transformation (companion)
 
@@ -103,7 +110,7 @@ Deleted from every commit (43 files in all):
 
 Commit ids cited in this repository's documents, evidence files, code comments
 and tests were changed to the new ids, keeping each citation's abbreviation
-length. Two kinds of ids were deliberately left as they were:
+length. Three kinds of ids were deliberately left as they were:
 
 - the directory names of the frozen UMAT-OTI evidence snapshots, such as
   `umat-064583d71b90_ra-f928acec970a`: they name directories that still exist
@@ -111,16 +118,29 @@ length. Two kinds of ids were deliberately left as they were:
 - ids of local working commits that were never published (for example in the
   second column of the tables in `docs/BRANCH_IMPLEMENTATION_AUDIT.md`): they
   were never part of either public history, so the rewrite did not touch them,
-  and they could not be resolved on GitHub before or after.
+  and they could not be resolved on GitHub before or after;
+- captured and proof-hashed evidence records keep their pre-rewrite ids, which
+  are looked up through the map below: the raw clean-clone report and its
+  milestones (`docs/evidence/recovery_clean_clone.json`), the proof blocks and
+  captured gate heads of the usage and portability runs
+  (`docs/evidence/usage_examples.json`, `docs/evidence/recovery_portability.json`),
+  and the prose and captured output that quote the same runs
+  (`docs/evidence/recovery_clean_clone.md`, `docs/evidence/recovery_integration.md`).
+  Their sha256 digests describe the bytes as captured, so the ids stay as captured.
 
-Evidence files that embed a captured record (a clean-clone run, a usage run)
-also record sha256 digests of the captured files. Those digests describe the
-bytes as they were captured, with the old ids; they were not recomputed.
+The pre-rewrite ids kept in those records:
+
+| Repository | Old id (kept) | New id |
+|---|---|---|
+| Residual_Assembler | `5ea3da4bdd250fe6eea79677cec44e59e86de197` | `54876c47e2ce22b2562a20d7c813629dabebd071` |
+| Residual_Assembler | `69ac77cf4865ef5cfc2a46fad987bb7fb6d73e21` | `5cfa1c85fe8a8e7cee8c6eb89c7577775ee22d68` |
+| UMAT-OTI | `dbd8ff229023b57e4231a2250a54e97dc111f547` | `397f53a47e6f2aa6a517c7eebd46254cdf094c41` |
+| UMAT-OTI | `d34c7fff51e13285efaf13a57917fa34034f57cb` | `7eb31b734e1c8d8601770a20981a29634dd9f7e8` |
 
 ## Translating an old id
 
-Look the old id, or its first seven characters, up in the table below. For
-UMAT-OTI ids, see the same page in that repository.
+Look the old id, or its first seven characters, up in the table below. The
+UMAT-OTI ids this repository relies on or keeps are in the tables above.
 
 ## Residual_Assembler commit map
 

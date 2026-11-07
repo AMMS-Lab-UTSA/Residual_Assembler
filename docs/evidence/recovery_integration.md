@@ -150,8 +150,8 @@ Git HEAD alone does not describe the dirty recovery state. The manifest records
 per-source SHA-256 hashes and aggregate hashes in addition to both HEADs:
 
 ```text
-RA HEAD:   5cfa1c85fe8a8e7cee8c6eb89c7577775ee22d68
-UMAT HEAD: 7eb31b734e1c8d8601770a20981a29634dd9f7e8
+RA HEAD:   69ac77cf4865ef5cfc2a46fad987bb7fb6d73e21
+UMAT HEAD: d34c7fff51e13285efaf13a57917fa34034f57cb
 RA source tree:   cec8f09292eab723312703e9cdf8803e7570daa442ddaa2c288ab9d43a6f512d
 UMAT source tree: 90bdb927e50d83b9e2b1afdca63a8dc292555454f11250c6fd5e2a74a17a7f6f
 ORIGINAL source: 9b779f0c6cadf9c493068d84cd18bbf91f91ae14cb08aa0e7c8ac4ca119a9b40
