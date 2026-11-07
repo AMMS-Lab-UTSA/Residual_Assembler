@@ -1,6 +1,7 @@
 # Third-party licences
 
-No third-party source is vendored into this repository. External Abaqus
+Apart from the MIT files in `UMATs/ICP/` (below), no third-party source is
+vendored into this repository. External Abaqus
 UMAT/UEL sources are **pinned git submodules**, organised by licence tier, and
 the restricted tiers are never fetched by ordinary setup.
 
@@ -33,6 +34,18 @@ does it, and they own the licence consequences.
 Exact pinned commit SHAs are recorded in `sources/SUBMODULES.md` and in the
 gitlinks themselves. Each upstream `LICENSE` file travels with its submodule
 content, so attribution and licence text are retained wherever the source is used.
+
+## Files in `UMATs/ICP/`
+
+The `UMAT_*.for` files in `UMATs/ICP/` are copies of UMATs from
+[jgomezc1/ABAQUS-US](https://github.com/jgomezc1/ABAQUS-US), MIT-licensed
+(the same upstream as `permissive/jgomezc1_ABAQUS-US`).
+
+The Dunne & Petrinic book companion code that used to sit beside them
+(`elasticity/`, `plasticity_exp/`, `plasticity_imp/`, `spin/`, `visco/` and
+`index.html`) states no licence and was removed on 2026-11-06; it remains in
+the git history. [`UMATs/ICP/DUNNE_PETRINIC_REMOVED.md`](UMATs/ICP/DUNNE_PETRINIC_REMOVED.md)
+lists what was removed.
 
 ## External runtime dependencies
 
