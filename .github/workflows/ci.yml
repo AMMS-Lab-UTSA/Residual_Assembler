@@ -109,7 +109,7 @@ jobs:
           text = open("/tmp/suite.txt").read()
           reasons = re.findall(r"^SKIPPED \[\d+\] (.+)$", text, re.MULTILINE)
           declared = ("OTILib", "is not on this machine", "external flow-rule sources not found",
-                      "playwright is not installed")
+                      "playwright is not installed", "CORPUS_WORKSPACE is unset")
           unexpected = [r for r in reasons if not any(d in r for d in declared)]
           summary = text.strip().splitlines()[-1]
           print("summary:", summary)
