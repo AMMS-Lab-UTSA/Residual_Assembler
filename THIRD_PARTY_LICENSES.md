@@ -14,7 +14,7 @@ and [`sources/SUBMODULES.md`](sources/SUBMODULES.md); this file summarises it.
 |---|---|---|---|---|
 | Permissive | `sources/permissive/` | MIT, BSD-3-Clause | `checkout` | yes |
 | Copyleft | `sources/copyleft/` | GPL / AGPL | `none` | no |
-| Licence-unknown | `sources/license-unknown/` | none granted | `none` | no |
+| Licence-unknown | `sources/license-unknown/` (empty since 2026-11-06) | none granted | `none` | no |
 
 `update = none` means `git submodule update` skips the entry even with
 `--init`. Fetching a restricted source is therefore a deliberate act by whoever
@@ -29,11 +29,18 @@ does it, and they own the licence consequences.
 | `permissive/bibekanandadatta_Abaqus-UEL-Hyperelasticity` | bibekananda-datta/Abaqus-UEL-Hyperelasticity | BSD-3-Clause |
 | `permissive/jgomezc1_ABAQUS-US` | jgomezc1/ABAQUS-US | MIT |
 | `copyleft/ICAMS_Crystal_Plasticity_UMAT` | ICAMS/crystal_plasticity_UMAT | AGPL-3.0 |
-| `license-unknown/TarletonGroup_CrystalPlasticity` | TarletonGroup/CrystalPlasticity | none |
 
 Exact pinned commit SHAs are recorded in `sources/SUBMODULES.md` and in the
 gitlinks themselves. Each upstream `LICENSE` file travels with its submodule
 content, so attribution and licence text are retained wherever the source is used.
+
+## Removed licence-unknown sources
+
+The TarletonGroup/CrystalPlasticity submodule (all rights reserved) and the
+vendored Huang/Kysar single-crystal UMAT (no redistribution grant) were removed on
+2026-11-06; both remain in the git history.
+[`sources/LICENSE_UNKNOWN_REMOVED.md`](sources/LICENSE_UNKNOWN_REMOVED.md) lists
+exactly what was removed.
 
 ## Files in `UMATs/ICP/`
 

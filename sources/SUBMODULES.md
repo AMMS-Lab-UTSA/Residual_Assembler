@@ -21,7 +21,7 @@ non-copyleft core; they are a distribution and obligation boundary. See
 |---|---|---|---|---|
 | Permissive | `sources/permissive/` | MIT, BSD-3 | `checkout` | Yes |
 | Copyleft | `sources/copyleft/` | GPL / AGPL | `none` | **No** |
-| License-unknown | `sources/license-unknown/` | none granted | `none` | **No** |
+| License-unknown | `sources/license-unknown/` (empty since 2026-11-06) | none granted | `none` | **No** |
 
 `update = none` in [`.gitmodules`](../.gitmodules) means `git submodule update`
 skips the entry **even with `--init`**. Git prints `Skipping submodule ...` and
@@ -42,7 +42,6 @@ and the provenance (URL + pinned SHA) is recorded. Mapping is not vendoring.
 | `permissive/jgomezc1_ABAQUS-US` | jgomezc1/ABAQUS-US | `54181407aa7aa23055e33d354d0b2a3abc266365` | MIT |
 | `permissive/sergiolucarini_UMAT4COMSOL` | sergiolucarini/UMAT4COMSOL | `e62506fd842611566bac5b19ae1041b52b40ddc6` | MIT |
 | `copyleft/ICAMS_Crystal_Plasticity_UMAT` | ICAMS/crystal_plasticity_UMAT | `469464b646a6f250d996828559342b81a1dfbbd7` | AGPL-3.0 |
-| `license-unknown/TarletonGroup_CrystalPlasticity` | TarletonGroup/CrystalPlasticity | `2f0909472f4cdf1b0b71da6ba97db900dacc6f05` | none |
 
 Each pinned SHA was confirmed to exist in the named upstream repository. The
 upstream `LICENSE` file travels with the submodule content, so attribution and
@@ -76,7 +75,9 @@ from clean clones is in
 [../docs/evidence/final_clean_clone.md](../docs/evidence/final_clean_clone.md).
 
 No test depends on a copyleft or license-unknown submodule, so the restricted
-tiers can stay permanently empty.
+tiers can stay permanently empty. The license-unknown submodule
+(TarletonGroup/CrystalPlasticity, pinned at `2f0909472f4cdf1b0b71da6ba97db900dacc6f05`)
+was removed on 2026-11-06; see [LICENSE_UNKNOWN_REMOVED.md](LICENSE_UNKNOWN_REMOVED.md).
 
 ## Verification
 

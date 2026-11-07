@@ -9,6 +9,7 @@
 #   permissive/       MIT / BSD-3. May be fetched. Required by the offline suite.
 #   copyleft/         GPL/AGPL. Reference-only; `update = none` keeps it unfetched.
 #   license-unknown/  No license granted. Reference-only; `update = none`.
+#                     Empty since 2026-11-06 (sources/LICENSE_UNKNOWN_REMOVED.md).
 #
 # `update = none` means `git submodule update` (with or without --init) skips the
 # entry, so a default initialization never downloads restricted source. Fetching
@@ -39,10 +40,6 @@
 	url = https://github.com/ICAMS/crystal_plasticity_UMAT.git
 	update = none
 
-[submodule "sources/license-unknown/TarletonGroup_CrystalPlasticity"]
-	path = sources/license-unknown/TarletonGroup_CrystalPlasticity
-	url = https://github.com/TarletonGroup/CrystalPlasticity.git
-	update = none
 [submodule "sources/permissive/sergiolucarini_UMAT4COMSOL"]
 	path = sources/permissive/sergiolucarini_UMAT4COMSOL
 	url = https://github.com/sergiolucarini/UMAT4COMSOL.git

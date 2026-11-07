@@ -40,14 +40,15 @@ permissive core. AGPL copyleft (including the network-use clause) would relicens
 entire combined work. Use only as an independent, separately distributed component or for
 study.
 
-### `sources/license-unknown/` — no license  ⛔ reference only
+### `sources/license-unknown/` — no license  ⛔ removed 2026-11-06
 | Repo | Status |
 |------|--------|
-| `TarletonGroup_CrystalPlasticity` | No LICENSE file → all rights reserved |
-| `Huang_Kysar_Single_Crystal_UMAT` | Academic courtesy-ware, no redistribution grant |
+| `TarletonGroup_CrystalPlasticity` | No LICENSE file → all rights reserved. Submodule removed 2026-11-06 |
+| `Huang_Kysar_Single_Crystal_UMAT` | Academic courtesy-ware, no redistribution grant. Files removed 2026-11-06 |
 
-No redistribution rights granted. Study/benchmark reference only until explicit
-permission is obtained from the authors.
+No redistribution rights were granted, so both are gone from the tree; they
+remain in the git history. See [LICENSE_UNKNOWN_REMOVED.md](LICENSE_UNKNOWN_REMOVED.md).
+The tier stays defined: anything placed there in future is reference-only.
 
 ## Rule of thumb for the wrapper
 Build the residual assembler against `sources/permissive/` **only**. If any algorithm from

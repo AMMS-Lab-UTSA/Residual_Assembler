@@ -40,8 +40,6 @@ EXPECTED_PINS = {
         "54181407aa7aa23055e33d354d0b2a3abc266365",
     "sources/copyleft/ICAMS_Crystal_Plasticity_UMAT":
         "469464b646a6f250d996828559342b81a1dfbbd7",
-    "sources/license-unknown/TarletonGroup_CrystalPlasticity":
-        "2f0909472f4cdf1b0b71da6ba97db900dacc6f05",
 }
 
 RESTRICTED_TIERS = ("copyleft", "license-unknown")

@@ -123,6 +123,8 @@ permissive code:
   - `copyleft/ICAMS_Crystal_Plasticity_UMAT` — AGPL-3.0 (viral copyleft).
   - `license-unknown/TarletonGroup_CrystalPlasticity` — no license (all rights reserved).
   - `license-unknown/Huang_Kysar_Single_Crystal_UMAT` — courtesy-ware, no redistribution grant.
+  (Both license-unknown sources were removed from the tree on 2026-11-06; see
+  `sources/LICENSE_UNKNOWN_REMOVED.md`. The design notes below are kept as written.)
   These are excellent for *validation and cross-checking* (especially Huang/Kysar as the
   canonical FCC single-crystal benchmark), but any algorithm needed in the shipped wrapper
   must be **re-implemented from the published equations**, not copied.

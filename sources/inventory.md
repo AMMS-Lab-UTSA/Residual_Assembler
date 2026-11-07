@@ -21,8 +21,8 @@ sources/
 | 3 | `permissive/jgomezc1_ABAQUS-US` | Brick/plane UELs + UMATs | **MIT** | UEL8 / UEL9 = 2D 8- & 9-node quads (classical + Cosserat); assorted UMATs | Implicit | Displacement `u` (+ micro-rotation for Cosserat) | **Yes** (UELs build `RHS`/`AMATRX`) | 2D only; useful reference for UEL/UMAT coupling patterns, not a 3D brick source. |
 | 4 | `permissive/ngrilli_Oxford_Crystal_Plasticity` | CP UMAT + cohesive UEL | **MIT** | Continuum UMAT (C3D8 etc.) + cohesive/twin UEL | Implicit | Displacement `u`; UMAT returns stress + DDSDDE | UMAT: **No** (stress+tangent only). Cohesive UEL: yes | Grilli/Tarleton, based on Dunne's UEL. HCP/BCC/carbide/olivine. Permissively licensed CP stress update. |
 | 5 | `copyleft/ICAMS_Crystal_Plasticity_UMAT` | CP UMAT | **AGPL-3.0** ⚠️ | Continuum UMAT | Implicit | Displacement `u`; stress + DDSDDE | **No** (UMAT only) | Docs are CC BY-NC-SA 4.0. **Keep isolated** — see flag below. |
-| 6 | `license-unknown/TarletonGroup_CrystalPlasticity` | CP UMAT (+ CZM UEL) | **None specified** ⚠️ | Continuum UMAT (C3D8/C3D8R) + cohesive-zone UEL | Implicit (Newton; `cpsolver`/`innerloop`) | Displacement `u`; stress + DDSDDE | UMAT: **No**. CZM UEL: yes | OXFORD-UMAT v3.4, paper: doi 10.1016/j.ijsolstr.2024.113110. No LICENSE file → all-rights-reserved; reference only. |
-| 7 | `license-unknown/Huang_Kysar_Single_Crystal_UMAT` | Single-crystal UMAT | **None (courtesy-ware)** ⚠️ | Continuum UMAT (works with any solid element) | Implicit (Peirce–Asaro–Needleman rate-tangent) | Displacement `u`; stress + DDSDDE | **No** (UMAT only) | Huang 1991 / Kysar 1997 Harvard report. Downloaded from Wayback (see folder `PROVENANCE.md`). Canonical FCC single-crystal reference. |
+| 6 | `license-unknown/TarletonGroup_CrystalPlasticity` (removed 2026-11-06) | CP UMAT (+ CZM UEL) | **None specified** ⚠️ | Continuum UMAT (C3D8/C3D8R) + cohesive-zone UEL | Implicit (Newton; `cpsolver`/`innerloop`) | Displacement `u`; stress + DDSDDE | UMAT: **No**. CZM UEL: yes | OXFORD-UMAT v3.4, paper: doi 10.1016/j.ijsolstr.2024.113110. No LICENSE file → all-rights-reserved; reference only. |
+| 7 | `license-unknown/Huang_Kysar_Single_Crystal_UMAT` (removed 2026-11-06) | Single-crystal UMAT | **None (courtesy-ware)** ⚠️ | Continuum UMAT (works with any solid element) | Implicit (Peirce–Asaro–Needleman rate-tangent) | Displacement `u`; stress + DDSDDE | **No** (UMAT only) | Huang 1991 / Kysar 1997 Harvard report. Downloaded from Wayback (see folder `PROVENANCE.md`). Canonical FCC single-crystal reference. |
 
 ### Legend
 - **Exposes element residual `r`?** — "Yes" means the code computes an element-level
@@ -43,8 +43,9 @@ sources/
 - Two repos carry **no license at all** (`TarletonGroup_CrystalPlasticity`,
   `Huang_Kysar_Single_Crystal_UMAT`). Absence of a license means **all rights reserved**
   by default — for redistribution purposes these are *more* restrictive than AGPL. They
-  are isolated under `sources/license-unknown/` and must be treated as reference material
-  only until explicit permission is obtained.
+  were isolated under `sources/license-unknown/` and treated as reference material; both
+  were removed on 2026-11-06 (LICENSE_UNKNOWN_REMOVED.md); the rows above are the
+  survey as it was made.
 
 ## Redistribution-safe permissive core
 
