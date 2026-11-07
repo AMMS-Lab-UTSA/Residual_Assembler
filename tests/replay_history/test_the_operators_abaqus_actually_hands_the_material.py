@@ -3,7 +3,7 @@
 `batch_operators` builds B once in the REFERENCE configuration, which is
 right for a small-strain replay and is why `history_inputs` refuses an
 NLGEOM=YES deck outright. These are the operators such a deck needs. They were
-first measured on a 160-element Abaqus run (commit 30a5ab4) with the volume
+first measured on a 160-element Abaqus run (commit 6e4c321) with the volume
 change taken from the element CENTROID -- CENTROID-ERA figures:
 
     kinematics left at F_ip           stress 26% out, shears right to 0.4%
@@ -26,7 +26,7 @@ order: |Jmean - Jcentroid| 8.6e-5 at amplitude 0.01, 2.5e-3 at 0.05; B3
 review). The 7.3e-05 and 3.7e-04 above were therefore measured with the
 centroid operators and have NOT been re-measured under mean dilatation: the
 cantilever's Abaqus recording and its transformed-UMAT replay are not in this
-repository. They stay as the 30a5ab4 measurement, not as a property of the
+repository. They stay as the 6e4c321 measurement, not as a property of the
 operators pinned below, which are the mean.
 """
 
@@ -83,7 +83,7 @@ def test_the_volume_change_is_the_element_mean():
         w0.append(detJ0 * weight)
     mean = np.dot(w0, J) / np.sum(w0)
     assert np.allclose([np.linalg.det(F) for F in bar], mean, rtol=1e-11)
-    # the 30a5ab4 centroid form is a different number on this element
+    # the 6e4c321 centroid form is a different number on this element
     _, _, grad_c = kernel._b_from_coords(X, np.zeros(3))
     centroid = np.linalg.det(np.eye(3) + u.T @ grad_c)
     assert abs(centroid - mean) > 1e-6

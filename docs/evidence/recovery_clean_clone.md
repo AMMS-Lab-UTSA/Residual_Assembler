@@ -13,8 +13,8 @@ integration/recovery-2026-09-18` into the new parent
 
 | Canonical clone | Full committed SHA |
 | --- | --- |
-| UMAT_source_transformation | dbd8ff229023b57e4231a2250a54e97dc111f547 |
-| Residual_Assembler | 5ea3da4bdd250fe6eea79677cec44e59e86de197 |
+| UMAT_source_transformation | 397f53a47e6f2aa6a517c7eebd46254cdf094c41 |
+| Residual_Assembler | 54876c47e2ce22b2562a20d7c813629dabebd071 |
 
 Source checkouts and both clones had empty porcelain status before validation.
 Both full-suite attempts also recorded empty pre-test status. No clone source
@@ -160,7 +160,7 @@ created and ran the two previously failing templates; all five analytic
 derivative directions in each matched within `1e-8`. Focused regressions:
 **11 passed, zero failures/skips**. Follow-up wheel SHA-256:
 `7dbb43f95426529742f46fff09fffcf505e635c615946583804b4c61895c87f0`.
-This is NOT proof for RA 5ea3da4 and requires a new commit and a new clean clone.
+This is NOT proof for RA 54876c4 and requires a new commit and a new clean clone.
 The milestone environment was never replaced by the follow-up wheel.
 
 Only U-A1, U-A4, R-A1 and R-A6 are promoted in each completion ledger, bounded

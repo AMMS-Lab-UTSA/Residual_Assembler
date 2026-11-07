@@ -19,7 +19,7 @@ Kinematics presets (``KINEMATICS``):
                  element-averaged volumetric increment, DROT from the unmodified
                  spin, residual sum w0 Jbar Bbar^T sigma -- matched to an Abaqus
                  run (B2 probe). ``nlgeom_centroid``: the centroid operators of
-                 the RA replay (commit 30a5ab4), for comparison only.
+                 the RA replay (commit 6e4c321), for comparison only.
 
 Local parameter sensitivity, u_n and every incoming quantity held fixed::
 
@@ -100,7 +100,7 @@ KINEMATICS = {
     "nlgeom_full": Kinematics("nlgeom_full", True, "full", "abaqus"),
     # Abaqus C3D8 under NLGEOM (B2 probe: UMAT inputs <= 6.4e-15, reactions 4.7e-8)
     "nlgeom": Kinematics("nlgeom", True, "mean_dilatation", "abaqus"),
-    # the centroid operators of residual_core.replay.kinematics (commit 30a5ab4):
+    # the centroid operators of residual_core.replay.kinematics (commit 6e4c321):
     # NOT what Abaqus does on a distorted element; kept to measure the difference
     "nlgeom_centroid": Kinematics("nlgeom_centroid", True, "centroid", "abaqus"),
 }

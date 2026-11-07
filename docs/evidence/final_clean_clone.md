@@ -15,8 +15,8 @@ bash scripts/reproduce_from_clean_clones.sh --python python3.11 \
 
 | repository | commit tested |
 | --- | --- |
-| Residual_Assembler | `bf3600cb58d8f267020573476dc26c826c5048f5` |
-| UMAT_source_transformation | `5dcdd8d6041f970c315b999e3e0ace4fbf376bd3` |
+| Residual_Assembler | `db64d746fb0176ad94100574ac94efa64909af30` |
+| UMAT_source_transformation | `20643f2c7aeb8c5e7e1f39c6a468bc5ffa20cc01` |
 
 Environment:
 
@@ -76,7 +76,7 @@ corpora.
 ## Earlier run
 
 The first clean-clone run of the final branches, on 2026-09-18 (Residual_Assembler
-`3504a02`, UMAT_source_transformation `1352114`), passed the gate and the UMAT
+`edfb94c`, UMAT_source_transformation `e7fb49d`), passed the gate and the UMAT
 suite. It found six Residual_Assembler failures, all with one cause: the
 verification-record scripts required `umat_oti` to be imported from the UMAT
 checkout's `src/`, not from an identical installed copy. That was corrected

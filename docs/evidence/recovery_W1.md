@@ -74,7 +74,7 @@ This is the genuine compiled OTI API, not the unrelated PyPI package. No
 
 ## Baseline fixes and history
 
-Inspected `git log` and `git show ab0ee10 --
+Inspected `git log` and `git show 1748d45 --
 residual_core/core/where_it_went_wrong.py` before changing expectations. That WIP
 commit added two real diagnostic layers and stopped treating a secant across
 an evolving-state transition as proof of a bad tangent. The two failing tests

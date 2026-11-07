@@ -4,7 +4,7 @@ The real-store contract tests compare this repository's reader with the
 producer's, and must know that the imported ``umat_oti`` is the companion
 checkout's code. They refused a ``umat_oti`` installed (not editable) from
 that checkout, as CI and users install it, because its files were not under
-the checkout, and skipped (924ee8c). The rule that replaced the location test:
+the checkout, and skipped (d05d6b0). The rule that replaced the location test:
 an imported package is the checkout's code when every Python file on either
 side exists on the other with the same bytes. Those tests run only where the
 private corpus store is present; the rule is checked here on a package laid

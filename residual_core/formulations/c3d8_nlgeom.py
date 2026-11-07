@@ -189,7 +189,7 @@ class C3D8Nlgeom:
       * ``'full'`` -- 2x2x2 Gauss, unmodified F and B;
       * ``'centroid'`` -- the volume change from the element CENTROID,
         Fbar = (J_c/J_q)^(1/3) F_q, volumetric B row from the centroid gradient:
-        the operators commit 30a5ab4 put in ``residual_core.replay.kinematics``;
+        the operators commit 6e4c321 put in ``residual_core.replay.kinematics``;
         NOT what Abaqus does on a distorted element -- a labelled comparison;
       * ``'mean_dilatation'`` (alias ``'selective_reduced'``; the default and
         what Abaqus C3D8 does) -- the volume change averaged over the element,
@@ -341,7 +341,7 @@ class C3D8Nlgeom:
         weights of the residual wF (ne, 8), and the volumetric gradient gv
         (ne, 8, 3).
 
-        full: wF = w0 J_q. centroid (the 30a5ab4 comparison form):
+        full: wF = w0 J_q. centroid (the 6e4c321 comparison form):
         wF = w0 J_q, gv = g at the centroid. mean dilatation (Abaqus C3D8):
         wF = w0 Jbar -- the volume of the Fbar material, whose Kirchhoff stress
         is Jbar sigma -- and gv = sum_q w0 J_q g_q / sum_q w0 J_q (B2 probe:

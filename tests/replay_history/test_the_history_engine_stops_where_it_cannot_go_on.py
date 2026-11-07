@@ -3,9 +3,9 @@
 Two corrections of the history engine had no test of their own:
 
 * a UMAT that returns non-finite stresses at the state it is handed is refused
-  by name (a7271cd); before, a replay whose last recorded increment overflowed
+  by name (d902c21); before, a replay whose last recorded increment overflowed
   the UMAT completed without an error;
-* Newton stops when no step along its direction lowers the residual (15a5240),
+* Newton stops when no step along its direction lowers the residual (0beed34),
   instead of taking a step that does not help and iterating on roundoff up to
   the iteration limit.
 

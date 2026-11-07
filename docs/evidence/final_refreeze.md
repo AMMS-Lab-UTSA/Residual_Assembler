@@ -20,8 +20,8 @@ The re-freeze was done three times:
 | pass | fingerprint | date | followed |
 | --- | --- | --- | --- |
 | pass14 | `da1f183708c19072` | 2026-09-18 | the continued-assignment fix |
-| pass15 | `16c9f305df378089` | 2026-09-18 | the fix for lifted-helper arguments (`5b97c2f`) |
-| pass16 | `dbe9f928191e1d43` | 2026-09-19 | the fix for local-Jacobian requests (`1996782`) |
+| pass15 | `16c9f305df378089` | 2026-09-18 | the fix for lifted-helper arguments (`785a650`) |
+| pass16 | `dbe9f928191e1d43` | 2026-09-19 | the fix for local-Jacobian requests (`2b1c93f`) |
 
 The numbers below are pass16's. Where an earlier pass differs, the difference
 is stated.
@@ -155,7 +155,7 @@ That rewrites the collection, and it was not done in this step.
 ## Fixtures re-frozen at `a4f0ea8c9d124f18` (2026-10-02)
 
 UMAT-OTI moved to transform fingerprint `a4f0ea8c9d124f18` during the corpus
-robustness campaign. The contract is 4.1.0 (UMAT-OTI 8a9a0ea), with combined lock digest
+robustness campaign. The contract is 4.1.0 (UMAT-OTI 8ee8b49), with combined lock digest
 `ece44657d1350d504a5b24d3dfbee2bb20084a992fcfbdecdcd2ba7427164dc4`. The
 corpus evidence for this generation is UMAT-OTI's pass20 at `ab32cce7bec15c93`,
 with an A/B showing every generated Fortran file byte-identical between the two
@@ -173,7 +173,7 @@ was redone:
 - Diff against the `dbe9f928191e1d43` fixtures: every number is identical. Only
   `generated` and `transform_fingerprint` changed, plus one new evidence field,
   `primal_decided_by: "routine_level+jacobian_matched"`, which the verifier has
-  recorded since UMAT-OTI 4d91f0c. Under contract 4.0.0 the shared
+  recorded since UMAT-OTI 0967930. Under contract 4.0.0 the shared
   `residual_fixture_v1` schema did not list that field and refused these fixtures.
   Contract 4.1.0 declares it as optional.
 - `residual_core.core.fixture_residual_check`: elasticity 1 held / 2 not
@@ -186,11 +186,11 @@ outside the repository at
 
 ## Fixtures re-frozen at `830e5ee95ce99cd2` (2026-10-03)
 
-UMAT-OTI b95f066 recorded transform generation `830e5ee95ce99cd2`. The
+UMAT-OTI 342d502 recorded transform generation `830e5ee95ce99cd2`. The
 contract stays at 4.1.0; the combined lock digest is
 `a60065a977f5aab6217a6a57ceaecff02cbbc063b6d98dc9bd29c2813b8323ea`, and
 `transform_generation.json` has sha256 `6521ad2f2378f7dfd38c0837107ca79f2818d97455759ba960a1e9675a0c904a`.
-Only step 6 was redone, from a clean UMAT-OTI tree at b95f066:
+Only step 6 was redone, from a clean UMAT-OTI tree at 342d502:
 
 - `schemas/transform_generation.json` and `schemas/contract_lock.json` were copied
   byte for byte from UMAT-OTI. `verify_lock()` passes, and `transform_fingerprint()`
@@ -248,7 +248,7 @@ engineering batch; contract stays 5.0.0; combined lock digest
 - `scripts/regenerate_recovery_fixture.py` ran for both fixtures with the pass25
   `store_verification.jsonl` as the retained experiment and `--umat` at the UMAT
   checkout that already carries the new generation file (the pass25 run tree at
-  a7b6b4b still records the previous one, which the script asserts against), absolute
+  99df378 still records the previous one, which the script asserts against), absolute
   work paths: six Abaqus 2021.HF5 jobs, one after another. Both verified (4 of 4
   chosen states judged and every entry agrees).
 - Diff against the `50ae446f12de66d8` fixtures: only `generated` and

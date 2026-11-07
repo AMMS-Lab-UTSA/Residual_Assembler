@@ -19,8 +19,8 @@ Both original UMAT tests reproduced before editing: **2 failed in 0.28s**.
 `test_every_terminal_state_in_the_report_is_marked_external_or_internal` found
 arguments_diverged_before_the_routine incorrectly EXTERNAL.
 
-History inspected: d3bffa2 genuinely reran pass12 before recording its generation;
-bcc8605 made divergence INTERNAL because the solver's later arguments depend on
+History inspected: 7149026 genuinely reran pass12 before recording its generation;
+88c7186 made divergence INTERNAL because the solver's later arguments depend on
 each build's earlier outputs. The retained report had not been regenerated.
 Shared brief, implementation audit and both installation records were read.
 

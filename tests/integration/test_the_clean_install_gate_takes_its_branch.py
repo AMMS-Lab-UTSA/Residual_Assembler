@@ -2,7 +2,7 @@
 
 The gate compared each checkout's branch with one hard-coded branch name and
 refused everything else, so it could not run on main, on a fresh clone of
-another branch, or on a new branch (5e49cc9). The branch is now ``--branch``;
+another branch, or on a new branch (d31511e). The branch is now ``--branch``;
 without it any branch is accepted, and with it a checkout on another branch is
 still refused.
 

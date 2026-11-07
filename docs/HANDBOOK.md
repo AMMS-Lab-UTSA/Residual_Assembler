@@ -624,7 +624,7 @@ bash Residual_Assembler/scripts/reproduce_from_clean_clones.sh --python python3.
     --odb "$IN/one_element/Analysis.odb" --cantilever "$IN/cantilever" /path/to/new/folder
 ```
 
-The recorded run (`docs/evidence/final_clean_clone.md`, 2026-09-19, Residual Assembler `bf3600c`, UMAT-OTI `5dcdd8d`) took 26 min 40 s, and every step exited 0:
+The recorded run (`docs/evidence/final_clean_clone.md`, 2026-09-19, Residual Assembler `db64d74`, UMAT-OTI `20643f2`) took 26 min 40 s, and every step exited 0:
 
 | Step                             | Time  | Result                                     |
 |----------------------------------|-------|--------------------------------------------|

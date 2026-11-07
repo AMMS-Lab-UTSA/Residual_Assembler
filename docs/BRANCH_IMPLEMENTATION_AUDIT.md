@@ -27,8 +27,8 @@ was rewritten. Both repositories are covered here; the same file is kept in
 
 | Repository | Checkout | Branch | Commit | Working tree |
 |---|---|---|---|---|
-| UMAT_source_transformation | `~/softwarex_work/UMAT_source_transformation` | `integration/parallel-2026-09-11` → new `integration/2026-09-18` | `98f9d76` | clean; stash `stash@{0}` (paper_results regeneration, 4 files, left untouched) |
-| Residual_Assembler | `~/softwarex_work/Residual_Assembler` | `agent/F-resasm` → new `integration/2026-09-18` | `f1d9a32` | clean |
+| UMAT_source_transformation | `~/softwarex_work/UMAT_source_transformation` | `integration/parallel-2026-09-11` → new `integration/2026-09-18` | `0a58ee3` | clean; stash `stash@{0}` (paper_results regeneration, 4 files, left untouched) |
+| Residual_Assembler | `~/softwarex_work/Residual_Assembler` | `agent/F-resasm` → new `integration/2026-09-18` | `e4c7b61` | clean |
 
 Remotes fetched: `origin` (github.com/AMMS-Lab-UTSA/*) in both. Added as
 read-only remotes for recovery: `documents_umat` →
@@ -41,15 +41,15 @@ Baseline suites at the start: UMAT — collection error in
 RA — 279 passed, 2 failed, 20 skipped (`-m "not abaqus and not arc and not network"`);
 the failures are `test_a_verified_fixture_passes_every_stage` and
 `test_the_nine_layers_are_the_nine_the_brief_names`, both left by the
-unvalidated WIP commit `ab0ee10`.
+unvalidated WIP commit `1748d45`.
 
 ## Where the capabilities live
 
 ### A. The two-program framework (Program 1 provider + Program 2 replay)
 
-**`Residual_Assembler` `origin/cross-platform-hardening` (`bfde4d0`, 2026-07-31).**
-Layout `umat-oti/` + `residual-assembler/` (commit `4a92c50` "Two-program
-framework"). Merge base with the current line is `00c784a` (2026-07-13); nothing
+**`Residual_Assembler` `origin/cross-platform-hardening` (`ed6103c`, 2026-07-31).**
+Layout `umat-oti/` + `residual-assembler/` (commit `7f5f63b` "Two-program
+framework"). Merge base with the current line is `69e3a68` (2026-07-13); nothing
 from it was merged into `agent/F-resasm`. It carries:
 
 - `residual-assembler/residual_core/replay/` — `abi.py` (ctypes binding to the
@@ -113,7 +113,7 @@ still holds the built `umat_m3_j2_oti.obj`, `umat_m5_cpflow_oti.obj`,
 `otim17n1`, march drivers). The same subtree is in
 `origin/cross-platform-hardening:umat-oti/oti_provider/` on the RA repository.
 
-**Current `UMAT_source_transformation` (`98f9d76`)** re-implemented the provider
+**Current `UMAT_source_transformation` (`0a58ee3`)** re-implemented the provider
 as a material-point *driver executable* path rather than the `.obj` ABI:
 `parameter_sensitivity/models/*` (20 models, `contract_v2.json` schema
 `resasm_umat_transform_v2`), `src/umat_oti/services/contract_adapter.adapt_v2_contract`,
@@ -157,7 +157,7 @@ driver path as its offline verification.
   and fields; `agent/F-gui` `2f30004` WIP Abaqus-level parameter FD;
   `agent/G-gui` `b8e4668` WIP process tree; `agent/A-registry` `17c960e` WIP
   script-published decks. All marked NOT VALIDATED; to be inspected before use.
-- `origin/develop` `3b835d2` (2026-06-17) and `origin/main` `fe40e9f` (2026-07-10):
+- `origin/develop` `b437b44` (2026-06-17) and `origin/main` `a8c28c6` (2026-07-10):
   older layouts, superseded by the integration line.
 - `backup/pre-author-rewrite-20260825-111009`: pre-rewrite history, no
   provider commits.
@@ -166,8 +166,8 @@ driver path as its offline verification.
 
 ### D. Other branches (RA)
 
-- `agent/contract-ra` `0435eab` = contract 3.0.0 (merged).
-- `feature/umat-oti-residual-bridge` `031fcb7` (superseded by the integration line).
+- `agent/contract-ra` `2c809c9` = contract 3.0.0 (merged).
+- `feature/umat-oti-residual-bridge` `f2f5307` (superseded by the integration line).
 - `backup/pre-author-rewrite-20260825-111009`: 14 pre-rewrite commits (same content).
 
 ### E. External dependencies found
@@ -186,7 +186,7 @@ recovery line (committed at 14:36), an independent verification line
 (`dev/independent-verification`) and three feature lines
 (`dev/history-replay`, `dev/gui`, `dev/verification`). Their work was joined
 on one branch, `integration/final-2026-09-18`, started from the recovery
-line's commits (UMAT `3f340b7`, RA `0789984`, both descendants of `origin/main`),
+line's commits (UMAT `9f1f9d0`, RA `24d6c8f`, both descendants of `origin/main`),
 by `git cherry-pick -x` in dependency order, then fast-forwarded to `main`.
 Commits named in `docs/evidence/` for the feature lines map to the commits
 below; the feature branches themselves are local and were not pushed. The
@@ -197,127 +197,127 @@ commits are in `git log`.
 
 | On main | Picked from | Source branch | Subject |
 | --- | --- | --- | --- |
-| `0a680d9` | `f503f45` | dev/independent-verification | Fail public equilibrium verification for unbalanced or nonfinite residuals |
-| `9dd6a8c` | `2931574` | dev/history-replay | WIP: general history replay engine (any provider, prescribed displacements, sparse) |
-| `a7271cd` | `ab83fb8` | dev/history-replay | History replay: tests, committed Abaqus example, cantilever evidence scripts |
-| `107e8c0` | `d593ad9` | dev/history-replay | WIP: history replay docs and cantilever evidence (FCC full-size FD pending) |
-| `15a5240` | `81433b1` | dev/history-replay | History replay: stop Newton on stagnation, report the parsed command, output tests |
-| `b891d74` | `d9c3f64` | dev/history-replay | Evidence: full-size whole-model FD for both cantilevers, final test counts |
-| `0b3746a` | `ad75928` | dev/gui | Tick, choose and Solve on the collaborator's request screen |
-| `58cfcfd` | `845e09b` | dev/gui | Show the equivalent plastic strain at every integration point after Solve |
-| `7b396d6` | `088ab58` | dev/verification | WIP presentation claims: slide-13 sweep reproduction, C3D8 residual driver, m5 analytic reference |
-| `be00f29` | `d6c75e2` | dev/verification | WIP presentation claims 2-5, run_all driver, tests and the claims document |
-| `cb03bbb` | `78d0700` | dev/verification | Presentation claims: final run, claims 4 and 5 tables, expected summary, evidence |
-| `c51b2a1` | made on this branch |  | Route resasm request to the history engine when the model is outside the bounded scope |
-| `e15beb9` | made on this branch |  | README for the collaborator workflow as it runs now |
-| `e000345` | `36b62fd` | dev/verification | WIP claim 4: HIN and PCO run from their committed contracts |
-| `2210eeb` | `81d6615` | dev/verification | Claim 4 rerun: all 18 slide benchmarks from their committed contracts |
-| `b7a257d` | made on this branch |  | Check the history sensitivities against Euler's identity at every increment |
-| `718ac7c` | made on this branch |  | Ship the presentation cantilevers as an example anyone can rerun |
-| `5e49cc9` | made on this branch |  | Let the clean-install gate run on any clean branch and on the full-size cantilever |
-| `9999d12` | made on this branch |  | Re-freeze at da1f183708c19072: shared generation, lock and the two current fixtures |
-| `f2abb0b` | made on this branch |  | Document the final state and keep machine paths out of reviewer-facing files |
-| `e195c08` | made on this branch |  | Changelog entry for the integration; README install counts as measured |
-| `3504a02` | made on this branch |  | Branch audit: how the three assistants' work was joined on the final branch |
-| `e03ef60` | made on this branch |  | Present the repository by what it does; run CI against the pinned companion |
-| `8daf75f` | made on this branch |  | Make the offline suite independent of collection order and of Abaqus on the runner |
-| `71cfe86` | made on this branch |  | Skip the two OTILib tests by name without OTILib; pass FC to make; install as users do in CI |
-| `1bc2009` | made on this branch |  | Pin the companion UMAT-OTI at 09d661b |
-| `924ee8c` | made on this branch |  | Documentation that describes the program as it works now; contract tests run on installed copies |
-| `ea1ed80` | made on this branch |  | Re-freeze at 16c9f305df378089: shared generation, lock and the two current fixtures |
-| `133d8c8` | made on this branch |  | Attribute the hand-coded FJAC error of VPDCO and VPDCL_R to its real cause |
-| `d27a6a0` | made on this branch |  | Describe the replay package's material developer in neutral terms |
-| `3bab862` | made on this branch |  | Pin the companion UMAT-OTI at 1847059 |
-| `a3916be` | made on this branch |  | Run the ODB field export under Abaqus Python 2.7 |
-| `7774313` | made on this branch |  | Refuse what cannot be differentiated; exit codes that say what happened |
-| `de8ec64` | made on this branch |  | Hand every provider the bounded engine cannot map to the history engine |
-| `4d34c74` | made on this branch |  | Name the ODB exporter by its real path in its usage text and the CP READMEs |
-| `9e5e3b9` | made on this branch |  | Seven worked examples, installation, command-line and GUI guides |
-| `de92890` | made on this branch |  | Usage report and reference docs that describe the program as it works now |
-| `07703d3` | made on this branch |  | Name the deck keywords that are read but not applied |
-| `6df72c1` | made on this branch |  | Refuse a deformation-gradient material in the small-strain C3D8 by name |
-| `fb3d059` | made on this branch |  | Refuse an unrelated package named pyoti by name |
-| `a392cd5` | made on this branch |  | Test the inspection commands; material specs declare their real measures |
-| `d211658` | made on this branch |  | Test the history report's verdict lines, the walkthroughs and derivative loss |
-| `7dfa511` | made on this branch |  | Count derivatives as verified only when the reference resolved |
-| `8e4cf2f` | made on this branch |  | Readiness that matches what assembles; refuse what the general path cannot place |
-| `d3cdfd5` | made on this branch |  | Walkthrough for the black-box order-2 template (example 8) |
-| `60c8d44` | made on this branch |  | Exit 1 when a verification the user asked for does not pass |
-| `a288783` | made on this branch |  | Re-freeze at dbe9f928191e1d43 and pin UMAT-OTI faa0360 |
-| `83fc0a6` | made on this branch |  | Let a GUI test fail when Streamlit never settles |
-| `7099a1a` | made on this branch |  | Completion-ledger mapping, and the script that sets the ledger from a clean-clone run |
-| `fe85ab8` | made on this branch |  | Integrity audits against the pre-work baseline (T-11, T-12, CI-3) |
-| `225ad61` | made on this branch |  | Record the two tooling commits as outside the T-11 selection |
-| `f4a2073` | made on this branch |  | Tests for five earlier corrections that had none |
-| `b8f7a85` | made on this branch |  | Ledger row T-11: demonstrated by the audit and the new tests |
-| `f2f326d` | made on this branch |  | Record the ledger-row commit as outside the T-11 selection |
-| `bf3600c` | made on this branch |  | Reproduce from clean clones by documented steps only |
-| `acf7c20` | made on this branch |  | Completion ledger set from the clean-clone run of bf3600c and 5dcdd8d |
-| `8316803` | made on this branch |  | Record the ledger commit as outside the T-11 selection |
+| `7addeef` | `f503f45` | dev/independent-verification | Fail public equilibrium verification for unbalanced or nonfinite residuals |
+| `96856cf` | `2931574` | dev/history-replay | WIP: general history replay engine (any provider, prescribed displacements, sparse) |
+| `d902c21` | `ab83fb8` | dev/history-replay | History replay: tests, committed Abaqus example, cantilever evidence scripts |
+| `2deb051` | `d593ad9` | dev/history-replay | WIP: history replay docs and cantilever evidence (FCC full-size FD pending) |
+| `0beed34` | `81433b1` | dev/history-replay | History replay: stop Newton on stagnation, report the parsed command, output tests |
+| `18f837e` | `d9c3f64` | dev/history-replay | Evidence: full-size whole-model FD for both cantilevers, final test counts |
+| `f1542f0` | `ad75928` | dev/gui | Tick, choose and Solve on the collaborator's request screen |
+| `6ce545d` | `845e09b` | dev/gui | Show the equivalent plastic strain at every integration point after Solve |
+| `ea71f63` | `088ab58` | dev/verification | WIP presentation claims: slide-13 sweep reproduction, C3D8 residual driver, m5 analytic reference |
+| `551901e` | `d6c75e2` | dev/verification | WIP presentation claims 2-5, run_all driver, tests and the claims document |
+| `8d47bd9` | `78d0700` | dev/verification | Presentation claims: final run, claims 4 and 5 tables, expected summary, evidence |
+| `59c1c03` | made on this branch |  | Route resasm request to the history engine when the model is outside the bounded scope |
+| `9da43ec` | made on this branch |  | README for the collaborator workflow as it runs now |
+| `572d036` | `36b62fd` | dev/verification | WIP claim 4: HIN and PCO run from their committed contracts |
+| `0b17e57` | `81d6615` | dev/verification | Claim 4 rerun: all 18 slide benchmarks from their committed contracts |
+| `e34907d` | made on this branch |  | Check the history sensitivities against Euler's identity at every increment |
+| `b859cad` | made on this branch |  | Ship the presentation cantilevers as an example anyone can rerun |
+| `d31511e` | made on this branch |  | Let the clean-install gate run on any clean branch and on the full-size cantilever |
+| `078144d` | made on this branch |  | Re-freeze at da1f183708c19072: shared generation, lock and the two current fixtures |
+| `11f502d` | made on this branch |  | Document the final state and keep machine paths out of reviewer-facing files |
+| `7d35b29` | made on this branch |  | Changelog entry for the integration; README install counts as measured |
+| `edfb94c` | made on this branch |  | Branch audit: how the three assistants' work was joined on the final branch |
+| `cd3e815` | made on this branch |  | Present the repository by what it does; run CI against the pinned companion |
+| `202bacb` | made on this branch |  | Make the offline suite independent of collection order and of Abaqus on the runner |
+| `e7d3cba` | made on this branch |  | Skip the two OTILib tests by name without OTILib; pass FC to make; install as users do in CI |
+| `84a20ad` | made on this branch |  | Pin the companion UMAT-OTI at 0a7607a |
+| `d05d6b0` | made on this branch |  | Documentation that describes the program as it works now; contract tests run on installed copies |
+| `c98b107` | made on this branch |  | Re-freeze at 16c9f305df378089: shared generation, lock and the two current fixtures |
+| `f120f81` | made on this branch |  | Attribute the hand-coded FJAC error of VPDCO and VPDCL_R to its real cause |
+| `8b4c805` | made on this branch |  | Describe the replay package's material developer in neutral terms |
+| `b3442e6` | made on this branch |  | Pin the companion UMAT-OTI at 1272c07 |
+| `fa52464` | made on this branch |  | Run the ODB field export under Abaqus Python 2.7 |
+| `5b78667` | made on this branch |  | Refuse what cannot be differentiated; exit codes that say what happened |
+| `085cd99` | made on this branch |  | Hand every provider the bounded engine cannot map to the history engine |
+| `992c517` | made on this branch |  | Name the ODB exporter by its real path in its usage text and the CP READMEs |
+| `d42498d` | made on this branch |  | Seven worked examples, installation, command-line and GUI guides |
+| `0267ff5` | made on this branch |  | Usage report and reference docs that describe the program as it works now |
+| `e776957` | made on this branch |  | Name the deck keywords that are read but not applied |
+| `b742a05` | made on this branch |  | Refuse a deformation-gradient material in the small-strain C3D8 by name |
+| `28576b0` | made on this branch |  | Refuse an unrelated package named pyoti by name |
+| `ea2baee` | made on this branch |  | Test the inspection commands; material specs declare their real measures |
+| `ecff15b` | made on this branch |  | Test the history report's verdict lines, the walkthroughs and derivative loss |
+| `22dd957` | made on this branch |  | Count derivatives as verified only when the reference resolved |
+| `a19127b` | made on this branch |  | Readiness that matches what assembles; refuse what the general path cannot place |
+| `4d7bbf7` | made on this branch |  | Walkthrough for the black-box order-2 template (example 8) |
+| `f013577` | made on this branch |  | Exit 1 when a verification the user asked for does not pass |
+| `c9bb663` | made on this branch |  | Re-freeze at dbe9f928191e1d43 and pin UMAT-OTI 95b27ff |
+| `1ac4d68` | made on this branch |  | Let a GUI test fail when Streamlit never settles |
+| `b34a96e` | made on this branch |  | Completion-ledger mapping, and the script that sets the ledger from a clean-clone run |
+| `ca04300` | made on this branch |  | Integrity audits against the pre-work baseline (T-11, T-12, CI-3) |
+| `07582ae` | made on this branch |  | Record the two tooling commits as outside the T-11 selection |
+| `83466d6` | made on this branch |  | Tests for five earlier corrections that had none |
+| `c519df4` | made on this branch |  | Ledger row T-11: demonstrated by the audit and the new tests |
+| `5995d3f` | made on this branch |  | Record the ledger-row commit as outside the T-11 selection |
+| `db64d74` | made on this branch |  | Reproduce from clean clones by documented steps only |
+| `42336a1` | made on this branch |  | Completion ledger set from the clean-clone run of db64d74 and 20643f2 |
+| `8ab6295` | made on this branch |  | Record the ledger commit as outside the T-11 selection |
 
 ### UMAT_source_transformation
 
 | On main | Picked from | Source branch | Subject |
 | --- | --- | --- | --- |
-| `d946693` | `16c000c` | dev/independent-verification | Treat wheel build failures as failures and use declared isolated build dependencies |
-| `1f72470` | `67b1782` | dev/independent-verification | Make reporting-count tests reproducible and qualify historical branch paths |
-| `5f48e4d` | `14a4f54` | dev/history-replay | Provider: add UMAT_OTI_EVAL_TOTAL, the total-derivative entry point for history replay |
-| `0e16842` | `e2ce51b` | dev/history-replay | Document UMAT_OTI_EVAL_TOTAL (arguments, seeds, verification, fingerprint note) |
-| `2f9319d` | `1bc9aa8` | dev/gui | Give the presentation's two developer screens to the UMAT GUI |
-| `a406f55` | `f901a79` | dev/gui | Describe what happens to the tangent lines, and cover slide 16's FCC routine |
-| `7c4975c` | `884d39e` | dev/verification | Keep statement labels and predictor-stiffness inputs through the transform |
-| `063b287` | `8b7c116` | dev/verification | Document the presentation claims that rest on this repository |
-| `ff3e3d7` | made on this branch |  | README for what the program does now, and links that resolve outside this machine |
-| `b124e39` | `1cd2e58` | dev/verification | Keep a DATA constant real when the contract lists it under promote |
-| `24143f8` | `0b075b4` | dev/verification | Let a compact contract name where its helper routines are published |
-| `abbb30d` | `e17220c` | dev/verification | Record the HIN and PCO fixes and the ICP family's licence in the claims note |
-| `db84820` | made on this branch |  | Credit the ICP UMAT sources: MIT ABAQUS-US upstream and the Dunne-Petrinic book code |
-| `55a870e` | `c86c2c3` | dev/gui | WIP: provider check path from the contract and a ladder-based verdict per entry |
-| `421173d` | `d1329e1` | dev/gui | WIP: relative compile names in the provider build; --abaqus-toolchain for REAL_UMAT |
-| `98a2f28` | `9d0cb0c` | dev/gui | WIP: tests for check paths, per-entry verdicts, path-free and reproducible objects, abaqus toolchain |
-| `71d261f` | `88ab2af` | dev/gui | WIP: docs for the follow-up (check paths, verdicts, path-free objects, Abaqus teardown cause) |
-| `d430f63` | `014a1ad` | dev/gui | Verify the FCC provider on its own path, ship objects without machine paths, and explain the Abaqus teardown abort |
-| `2a4dd95` | `0651ae5` | dev/gui | Let the presentation screens run outside a source checkout |
-| `f11806f` | made on this branch |  | Rewrite a continued assignment to a real variable whole, not its first line |
-| `9884dd4` | made on this branch |  | Bring the claims note and the usage report up to the final branch |
-| `0ea76c6` | made on this branch |  | Re-freeze the transform generation with the whole corpus rerun at da1f183708c19072 |
-| `4abbae8` | made on this branch |  | Say exactly what the continued-assignment fix did to the two curing sources |
-| `63306c3` | made on this branch |  | Changelog entry for the integration |
-| `ceef6b4` | made on this branch |  | Branch audit: how the three assistants' work was joined on the final branch |
-| `1352114` | made on this branch |  | Link the Residual Assembler paths in the re-freeze evidence |
-| `4822108` | made on this branch |  | Present the repository by what it does: neutral names, examples without provenance |
-| `09d661b` | made on this branch |  | Pass FC to make in the parameter-sensitivity sweep |
-| `5b97c2f` | made on this branch |  | Keep integers out of the promotion and read lifted helpers' implicit types |
-| `bbcb7c7` | made on this branch |  | Documentation that describes the program as it works now |
-| `661f3af` | made on this branch |  | Re-freeze at 16c9f305df378089: corpus pass15, generation and lock |
-| `c43e0e7` | made on this branch |  | Make CI pass on Python 3.10-3.12 and report what failed |
-| `fbb8dff` | made on this branch |  | Record the pass15 refusal census in the refusal-classification tests |
-| `d65f34b` | made on this branch |  | Six worked examples, installation, command-line and GUI guides |
-| `9dc1945` | made on this branch |  | Attribute the hand-coded FJAC error of VPDCO and VPDCL_R to its real cause |
-| `1847059` | made on this branch |  | Usage report of the program as it works now |
-| `69f1144` | made on this branch |  | Claim only the platform that is tested |
-| `38cce3a` | made on this branch |  | Name a missing ifort; start the plain-language GUI as documented |
-| `4361a35` | made on this branch |  | Test local-Jacobian contracts, replace ranges, pipeline, batch and examples |
-| `1996782` | made on this branch |  | Promote the variable a local-Jacobian request replaces |
-| `5ffdf68` | made on this branch |  | Name a missing ifort in dash's wording; do not call an unreadable tree clean |
-| `faa0360` | made on this branch |  | Re-freeze at dbe9f928191e1d43: corpus pass16, generation and lock |
-| `19e3f89` | made on this branch |  | Let a GUI test fail when Streamlit never settles |
-| `2b45974` | made on this branch |  | Completion-ledger mapping, and the script that sets the ledger from a clean-clone run |
-| `6db975d` | made on this branch |  | Integrity audits against the pre-work baseline (T-11, T-12, CI-3) |
-| `5d9a60e` | made on this branch |  | Record the two tooling commits as outside the T-11 selection |
-| `f2fbd7d` | made on this branch |  | Tests for four earlier corrections that had none |
-| `7566328` | made on this branch |  | Ledger row T-11: demonstrated by the audit and the new tests |
-| `02ebf2d` | made on this branch |  | Record the ledger-row commit as outside the T-11 selection |
-| `0175d05` | made on this branch |  | Reproduce from clean clones by documented steps only |
-| `5dcdd8d` | made on this branch |  | Re-key the reviewed skip of the OTILib-present test |
-| `a2163c5` | made on this branch |  | Completion ledger set from the clean-clone run of bf3600c and 5dcdd8d |
-| `ac6ec75` | made on this branch |  | Record the ledger commit as outside the T-11 selection |
+| `754dd82` | `16c000c` | dev/independent-verification | Treat wheel build failures as failures and use declared isolated build dependencies |
+| `7704971` | `67b1782` | dev/independent-verification | Make reporting-count tests reproducible and qualify historical branch paths |
+| `0acd4e3` | `14a4f54` | dev/history-replay | Provider: add UMAT_OTI_EVAL_TOTAL, the total-derivative entry point for history replay |
+| `e5a2d1e` | `e2ce51b` | dev/history-replay | Document UMAT_OTI_EVAL_TOTAL (arguments, seeds, verification, fingerprint note) |
+| `dbeb53b` | `1bc9aa8` | dev/gui | Give the presentation's two developer screens to the UMAT GUI |
+| `b48936b` | `f901a79` | dev/gui | Describe what happens to the tangent lines, and cover slide 16's FCC routine |
+| `0169907` | `884d39e` | dev/verification | Keep statement labels and predictor-stiffness inputs through the transform |
+| `856d2bf` | `8b7c116` | dev/verification | Document the presentation claims that rest on this repository |
+| `ed7cf28` | made on this branch |  | README for what the program does now, and links that resolve outside this machine |
+| `d774224` | `1cd2e58` | dev/verification | Keep a DATA constant real when the contract lists it under promote |
+| `b3b94a1` | `0b075b4` | dev/verification | Let a compact contract name where its helper routines are published |
+| `0bf934b` | `e17220c` | dev/verification | Record the HIN and PCO fixes and the ICP family's licence in the claims note |
+| `f56800a` | made on this branch |  | Credit the ICP UMAT sources: MIT ABAQUS-US upstream and the Dunne-Petrinic book code |
+| `1735541` | `c86c2c3` | dev/gui | WIP: provider check path from the contract and a ladder-based verdict per entry |
+| `74882e6` | `d1329e1` | dev/gui | WIP: relative compile names in the provider build; --abaqus-toolchain for REAL_UMAT |
+| `a378627` | `9d0cb0c` | dev/gui | WIP: tests for check paths, per-entry verdicts, path-free and reproducible objects, abaqus toolchain |
+| `f1dea53` | `88ab2af` | dev/gui | WIP: docs for the follow-up (check paths, verdicts, path-free objects, Abaqus teardown cause) |
+| `67bd8ac` | `014a1ad` | dev/gui | Verify the FCC provider on its own path, ship objects without machine paths, and explain the Abaqus teardown abort |
+| `b499249` | `0651ae5` | dev/gui | Let the presentation screens run outside a source checkout |
+| `32cab36` | made on this branch |  | Rewrite a continued assignment to a real variable whole, not its first line |
+| `f88f0ef` | made on this branch |  | Bring the claims note and the usage report up to the final branch |
+| `747171d` | made on this branch |  | Re-freeze the transform generation with the whole corpus rerun at da1f183708c19072 |
+| `cf12c3f` | made on this branch |  | Say exactly what the continued-assignment fix did to the two curing sources |
+| `6893610` | made on this branch |  | Changelog entry for the integration |
+| `549aefe` | made on this branch |  | Branch audit: how the three assistants' work was joined on the final branch |
+| `e7fb49d` | made on this branch |  | Link the Residual Assembler paths in the re-freeze evidence |
+| `c8c3dd3` | made on this branch |  | Present the repository by what it does: neutral names, examples without provenance |
+| `0a7607a` | made on this branch |  | Pass FC to make in the parameter-sensitivity sweep |
+| `785a650` | made on this branch |  | Keep integers out of the promotion and read lifted helpers' implicit types |
+| `293fb4c` | made on this branch |  | Documentation that describes the program as it works now |
+| `bd1744b` | made on this branch |  | Re-freeze at 16c9f305df378089: corpus pass15, generation and lock |
+| `7d515ab` | made on this branch |  | Make CI pass on Python 3.10-3.12 and report what failed |
+| `124b9bf` | made on this branch |  | Record the pass15 refusal census in the refusal-classification tests |
+| `0043c03` | made on this branch |  | Six worked examples, installation, command-line and GUI guides |
+| `bc9c22b` | made on this branch |  | Attribute the hand-coded FJAC error of VPDCO and VPDCL_R to its real cause |
+| `1272c07` | made on this branch |  | Usage report of the program as it works now |
+| `2d870bf` | made on this branch |  | Claim only the platform that is tested |
+| `940e2a9` | made on this branch |  | Name a missing ifort; start the plain-language GUI as documented |
+| `d608f0e` | made on this branch |  | Test local-Jacobian contracts, replace ranges, pipeline, batch and examples |
+| `2b1c93f` | made on this branch |  | Promote the variable a local-Jacobian request replaces |
+| `554cd6e` | made on this branch |  | Name a missing ifort in dash's wording; do not call an unreadable tree clean |
+| `95b27ff` | made on this branch |  | Re-freeze at dbe9f928191e1d43: corpus pass16, generation and lock |
+| `8bd73df` | made on this branch |  | Let a GUI test fail when Streamlit never settles |
+| `04cb3a9` | made on this branch |  | Completion-ledger mapping, and the script that sets the ledger from a clean-clone run |
+| `7be59f5` | made on this branch |  | Integrity audits against the pre-work baseline (T-11, T-12, CI-3) |
+| `649f9d2` | made on this branch |  | Record the two tooling commits as outside the T-11 selection |
+| `79e8713` | made on this branch |  | Tests for four earlier corrections that had none |
+| `d319fe8` | made on this branch |  | Ledger row T-11: demonstrated by the audit and the new tests |
+| `d3aca40` | made on this branch |  | Record the ledger-row commit as outside the T-11 selection |
+| `176c096` | made on this branch |  | Reproduce from clean clones by documented steps only |
+| `20643f2` | made on this branch |  | Re-key the reviewed skip of the OTILib-present test |
+| `0405f1a` | made on this branch |  | Completion ledger set from the clean-clone run of db64d74 and 20643f2 |
+| `8d65208` | made on this branch |  | Record the ledger commit as outside the T-11 selection |
 
 The independent verification line's other commits, checked file by file against this branch: UMAT
 `9d751b8` and RA `4cd6c12`, `65f791e` are already here (the files are
 identical, or the recovery line's version contains the change and more); UMAT
 `a235ee5` conflicted with the recovery line's provider and is subsumed by it plus
-`5f48e4d`; UMAT `86aea29` registered the provider command, which is
+`0acd4e3`; UMAT `86aea29` registered the provider command, which is
 registered here, and rewrote `docs/PROVIDER.md`, which was revised later
 on this branch; `ecce5ee` (the pass13 registry) is superseded by pass14, pass15 and pass16.
 Nothing was rebased, reset or force-pushed, and no branch was deleted.

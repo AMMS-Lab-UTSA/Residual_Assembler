@@ -413,7 +413,7 @@ examples check above, and records every step (same section).
 The recorded run is in
 [evidence/final_clean_clone.md](evidence/final_clean_clone.md). It ran this
 script on 2026-09-19 on fresh clones of the published branches, at
-Residual_Assembler `bf3600c` and UMAT_source_transformation `5dcdd8d`, and
+Residual_Assembler `db64d74` and UMAT_source_transformation `20643f2`, and
 every step exited 0 (26 min 40 s):
 
 - all 22 gate commands exited 0 and the gate passed;

@@ -21,8 +21,8 @@ link paths).
 Statuses are computed, not edited by hand. A clean-clone run cloned the published
 `main` branches into a new directory:
 
-- Residual_Assembler `bf3600cb58d8f267020573476dc26c826c5048f5`
-- UMAT_source_transformation `5dcdd8d6041f970c315b999e3e0ace4fbf376bd3`
+- Residual_Assembler `db64d746fb0176ad94100574ac94efa64909af30`
+- UMAT_source_transformation `20643f2c7aeb8c5e7e1f39c6a468bc5ffa20cc01`
 - run date 2026-09-19
 
 It ran the clean-install gate (Residual_Assembler `scripts/clean_install_gate.py`:

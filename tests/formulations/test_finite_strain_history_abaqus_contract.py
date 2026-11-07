@@ -17,7 +17,7 @@ What Abaqus does (to round-off):
   DROT     = Hughes-Winget of skew((F1-F0) M^-1), unmodified F;
   STRESS   = DROT sigma_(n-1) DROT^T, STRAN likewise;
   RF       = sum_q w0 Jbar [dev sigma_q . g_qa + p_q gbar_a].
-The centroid operators of residual_core.replay.kinematics (commit 30a5ab4) are
+The centroid operators of residual_core.replay.kinematics (commit 6e4c321) are
 NOT what Abaqus does on a distorted element; the test pins how far off they are.
 """
 from __future__ import annotations

@@ -3653,11 +3653,11 @@
     "work": "/tmp/imq_portability_3W4QbqeM/installed-final",
     "repositories": {
       "/tmp/imq_portability_3W4QbqeM/consumer-arbitrary": {
-        "head": "5ea3da4bdd250fe6eea79677cec44e59e86de197",
+        "head": "54876c47e2ce22b2562a20d7c813629dabebd071",
         "status": " M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M residual_core/ui/cli.py\n M scripts/audit_recovery_usage.py\n M scripts/reproduce_connected_pipeline.py\n M tests/integration/test_clean_install_gate.py\n M tests/integration/test_connected_j2.py\n M tests/integration/test_presentation_request.py\n?? docs/OTILIB_VENV.md\n?? docs/evidence/recovery_clean_clone.json\n?? docs/evidence/recovery_clean_clone.md\n?? tests/integration/repository_paths.py\n"
       },
       "/tmp/imq_portability_3W4QbqeM/producer-arbitrary": {
-        "head": "dbd8ff229023b57e4231a2250a54e97dc111f547",
+        "head": "397f53a47e6f2aa6a517c7eebd46254cdf094c41",
         "status": " M docs/COMPLETION_LEDGER.md\n M docs/PROVIDER.md\n M docs/USAGE_REPORT.md\n M docs/evidence/recovery_install.md\n M pyproject.toml\n M src/umat_oti/app/streamlit_app.py\n M tests/test_packaging.py\n M tests/test_repository_standards.py\n M tests/test_source_discovery.py\n M tools/audit_documentation_commands.py\n M tools/repository_standards.json\n?? MANIFEST.in\n?? docs/evidence/recovery_clean_clone.json\n?? docs/evidence/recovery_clean_clone.md\n?? setup.py\n?? src/umat_oti/app/resources.py\n"
       }
     },
@@ -4468,7 +4468,7 @@
               "repositories": {
                 "residual_assembler": {
                   "path": "/tmp/imq_portability_3W4QbqeM/consumer-arbitrary",
-                  "commit": "5ea3da4bdd250fe6eea79677cec44e59e86de197",
+                  "commit": "54876c47e2ce22b2562a20d7c813629dabebd071",
                   "status": " M docs/COMPLETION_LEDGER.md\n M pyproject.toml\n M residual_core/ui/cli.py\n M scripts/audit_recovery_usage.py\n M scripts/reproduce_connected_pipeline.py\n M tests/integration/test_clean_install_gate.py\n M tests/integration/test_connected_j2.py\n M tests/integration/test_presentation_request.py\n?? docs/OTILIB_VENV.md\n?? docs/evidence/recovery_clean_clone.json\n?? docs/evidence/recovery_clean_clone.md\n?? tests/integration/repository_paths.py\n",
                   "source_tree_sha256": "743bcccdfa3c8c886bd00ef98015f2dd768f80cebccc9420695057b83c8e8e1e",
                   "source_sha256": {
@@ -4591,7 +4591,7 @@
                 },
                 "umat_oti": {
                   "path": "/tmp/imq_portability_3W4QbqeM/producer-arbitrary",
-                  "commit": "dbd8ff229023b57e4231a2250a54e97dc111f547",
+                  "commit": "397f53a47e6f2aa6a517c7eebd46254cdf094c41",
                   "status": " M docs/COMPLETION_LEDGER.md\n M docs/PROVIDER.md\n M docs/USAGE_REPORT.md\n M docs/evidence/recovery_install.md\n M pyproject.toml\n M src/umat_oti/app/streamlit_app.py\n M tests/test_packaging.py\n M tests/test_repository_standards.py\n M tests/test_source_discovery.py\n M tools/audit_documentation_commands.py\n M tools/repository_standards.json\n?? MANIFEST.in\n?? docs/evidence/recovery_clean_clone.json\n?? docs/evidence/recovery_clean_clone.md\n?? setup.py\n?? src/umat_oti/app/resources.py\n",
                   "source_tree_sha256": "0fd2ebf95109e658f376c2008d4346dac036fe8980a5318bd767e069e5f3a6dc",
                   "source_sha256": {

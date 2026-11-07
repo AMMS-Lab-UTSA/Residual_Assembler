@@ -83,7 +83,7 @@ def bbar_b_matrices(coordinates):
 #     f_a   = sum_q w0_q Jbar [dev sigma_q g_qa + p_q gbar_a],
 #     gbar_a = sum_q w0_q J_q g_qa / sum_q w0_q J_q    reactions to 4.7e-8
 #
-# Commit 30a5ab4 took the volume change from the element CENTROID instead.
+# Commit 6e4c321 took the volume change from the element CENTROID instead.
 # The two coincide where J is affine in the natural coordinates; on the
 # probe's element the centroid form is 2.4e-4 off in DFGRD and 2.1e-2 in the
 # reactions, and it fails the patch test on a distorted mesh (2e-5) which
@@ -109,7 +109,7 @@ def deformation_gradients(coordinates, displacement, fbar=True, volume="mean"):
     """F at every integration point, (ne, 8, 3, 3): what the UMAT is handed
     as DFGRD1. With ``fbar`` the volume change is the element's
     (``volume="mean"``: mean dilatation, Abaqus C3D8; ``"centroid"``: the
-    30a5ab4 comparison form), ``F_bar = (Jvol / J_q)^(1/3) F_q``."""
+    6e4c321 comparison form), ``F_bar = (Jvol / J_q)^(1/3) F_q``."""
     if volume not in _VOLUMES:
         raise ValueError("volume must be one of %s" % sorted(_VOLUMES))
     integration = _VOLUMES[volume] if fbar else "full"
@@ -123,7 +123,7 @@ def spatial_operators(coordinates, displacement, integration="selective_reduced"
 
     ``integration``: ``"selective_reduced"`` / ``"mean_dilatation"`` (Abaqus
     C3D8: volumetric row the current-volume average, weight w0 Jbar),
-    ``"centroid"`` (the 30a5ab4 comparison form) or ``"full"``.
+    ``"centroid"`` (the 6e4c321 comparison form) or ``"full"``.
     """
     from ..formulations.c3d8_nlgeom import ALIASES, INTEGRATIONS
     if ALIASES.get(integration, integration) not in INTEGRATIONS:

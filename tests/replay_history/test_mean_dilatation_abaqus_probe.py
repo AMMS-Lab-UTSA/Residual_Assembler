@@ -12,7 +12,7 @@ Pinned through the REPLAY API (residual_core.replay.kinematics):
 * DFGRD0/1 = F_bar with the element MEAN volume change (to 1e-14);
 * the reactions are the mean-dilatation B-bar force with weight w0 Jbar
   (to 2e-7, the ODB's resolution);
-* the centroid form of commit 30a5ab4 misses both measurably;
+* the centroid form of commit 6e4c321 misses both measurably;
 * on a distorted 3x3x3 mesh under a linear field (uniform stress), interior
   nodes are in equilibrium to round-off with mean dilatation; the centroid
   form leaves a residual -- it fails the patch test.

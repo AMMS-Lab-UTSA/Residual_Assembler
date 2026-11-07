@@ -3,7 +3,7 @@
 The exporter moved to ``residual_core/io/abaqus_odb_export.py``, but its usage
 text and the error it prints under an ordinary Python still said ``abaqus
 python extract_abaqus_fields.py``, a file the repository no longer has
-(4d34c74). Every command they give is checked here against the repository:
+(992c517). Every command they give is checked here against the repository:
 the path it names, taken from the repository root as the usage text is
 written, must be the exporter itself.
 """

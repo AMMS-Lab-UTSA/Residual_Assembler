@@ -2,7 +2,7 @@
 
 ``examples/cantilevers/fd_reference.py`` writes ``fd_reference.json`` with a
 ``note`` that tells a reader how the numbers were made. It recorded the
-script's usage line there instead of its method paragraph (718ac7c). The
+script's usage line there instead of its method paragraph (b859cad). The
 script is run here, as the example's README runs it, on reruns whose exported
 fields are exactly proportional to the perturbed parameter, so the central
 differences it records are also known exactly.
