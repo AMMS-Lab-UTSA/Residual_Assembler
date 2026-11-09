@@ -652,6 +652,48 @@
      "text": "pytest.skip(\"gfortran not on PATH (environmental blocker)\")"
     }
    ]
+  },
+  "metadata:CITATION.cff:+version: 0.2.0": {
+   "verdict": "justified",
+   "reason": "The release version, not a support claim: Residual_Assembler is released as 0.2.0, and CITATION.cff and codemeta.json state the same version as pyproject.toml and the CHANGELOG. No supported platform, Python version, dependency or capability changes.",
+   "evidence": [
+    {
+     "in": "pyproject.toml",
+     "text": "version = \"0.2.0\""
+    },
+    {
+     "in": "CHANGELOG.md",
+     "text": "## [0.2.0] - 2026-11-09"
+    }
+   ]
+  },
+  "metadata:CITATION.cff:-version: 0.1.0": {
+   "verdict": "justified",
+   "reason": "The release version, not a support claim: Residual_Assembler is released as 0.2.0, and CITATION.cff and codemeta.json state the same version as pyproject.toml and the CHANGELOG. No supported platform, Python version, dependency or capability changes.",
+   "evidence": [
+    {
+     "in": "pyproject.toml",
+     "text": "version = \"0.2.0\""
+    },
+    {
+     "in": "CHANGELOG.md",
+     "text": "## [0.2.0] - 2026-11-09"
+    }
+   ]
+  },
+  "metadata:codemeta.json:version": {
+   "verdict": "justified",
+   "reason": "The release version, not a support claim: Residual_Assembler is released as 0.2.0, and CITATION.cff and codemeta.json state the same version as pyproject.toml and the CHANGELOG. No supported platform, Python version, dependency or capability changes.",
+   "evidence": [
+    {
+     "in": "pyproject.toml",
+     "text": "version = \"0.2.0\""
+    },
+    {
+     "in": "CHANGELOG.md",
+     "text": "## [0.2.0] - 2026-11-09"
+    }
+   ]
   }
  }
 }

@@ -6,6 +6,8 @@ public interfaces may still change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-09
+
 ### UMAT-OTI 1.2.1 (2026-11-06)
 - **Companion pin.** The `bridge` extra (and therefore CI) uses UMAT-OTI 1.2.1,
   tag `v1.2.1`, commit `bb099d85b080a295a443773c823305671164653f`; it was

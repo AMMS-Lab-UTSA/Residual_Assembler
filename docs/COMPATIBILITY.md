@@ -7,7 +7,7 @@ independently, connected by a versioned contract. Neither vendors the other.
 
 | Component | Version / commit |
 |---|---|
-| `residual-assembler` | 0.1.0 |
+| `residual-assembler` | 0.2.0 |
 | `umat-oti` | 1.2.1, `bb099d85b080a295a443773c823305671164653f` (tag `v1.2.1`; extra `bridge`) |
 | Shared contract | version 5.0.0; `schemas/contract_lock.json` equals UMAT-OTI's byte for byte |
 | Transform generation | `80a2015b780b1f25` (`schemas/transform_generation.json`) |

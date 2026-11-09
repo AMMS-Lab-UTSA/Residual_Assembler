@@ -10,7 +10,7 @@ abstract: >-
   structural sensitivities without the model leaving the user's machine. It is
   the companion product to UMAT-OTI, which supplies the differentiated material.
 type: software
-version: 0.1.0
+version: 0.2.0
 repository-code: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
 url: "https://github.com/AMMS-Lab-UTSA/Residual_Assembler"
 license: GPL-3.0-only

@@ -4,7 +4,7 @@
 
 Residual Assembler takes a finished finite-element analysis and computes how its results change when you change a material parameter. It works from the saved results, so the analysis is not run again, and it never needs the material's source code.
 
-- **Version** residual-assembler 0.1.0
+- **Version** residual-assembler 0.2.0
 - **Interface** the `resasm` command (18 subcommands) and a Streamlit GUI
 - **Tested** Linux (Ubuntu 20.04), Python 3.11.7, gfortran 9.4.0
 - **Abaqus** 2021.HF5, only to run analyses and read `.odb` files

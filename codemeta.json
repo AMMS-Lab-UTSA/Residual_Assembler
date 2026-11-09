@@ -3,7 +3,7 @@
   "@type": "SoftwareSourceCode",
   "name": "Residual_Assembler",
   "description": "Model-agnostic residual assembly and structural sensitivities for Abaqus models. Abaqus never exposes the global residual; this framework assembles it from mesh, element kernels, material response, converged solution fields, loads and constraints, then differentiates it. Companion product to UMAT-OTI.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "programmingLanguage": [
     "Python",
     "Fortran"
